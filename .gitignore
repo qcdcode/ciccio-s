@@ -57,3 +57,4 @@ Makefile
 /projects/Makefile.am
 /build*
 /src/config.hpp.in*
+/compile_commands.json
