@@ -1,0 +1,17 @@
+#!/bin/sh
+
+rm -fr \
+    aclocal.m4 \
+    autom4te.cache \
+    $(find . -name "Makefile.in") \
+    config/{compile,config.guess,config.sub,depcomp,install-sh,missing,ylwrap} \
+    configure
+
+aclocal
+autoreconf --verbose --install --force
+
+#fix depcomp for cuda
+for i in depcomp
+do
+    patch -p1 config/$i < config/patch_$i
+done

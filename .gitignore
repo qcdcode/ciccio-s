@@ -47,3 +47,13 @@ m4/lt~obsolete.m4
 # can automatically generate from config.status script
 # (which is called by configure script))
 Makefile
+/config/compile
+/config/config.guess
+/config/config.sub
+/config/depcomp
+/config/install-sh
+/config/missing
+/Makefile.am
+/projects/Makefile.am
+/build*
+/src/config.hpp.in*
