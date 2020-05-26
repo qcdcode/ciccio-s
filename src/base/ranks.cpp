@@ -23,4 +23,15 @@ namespace ciccios
     MPI_Finalize();
 #endif
   }
+  
+  void ranksAbort(const int& errNo)
+  {
+#ifdef USE_MPI
+    std::cerr<<"rank "<<rank()<<" aborting"<<std::endl;
+    MPI_Abort(MPI_COMM_WORLD,errNo);
+#else
+    exit(errNo);
+#endif
+  }
+  
 }

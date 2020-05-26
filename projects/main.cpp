@@ -15,6 +15,8 @@ void initCiccios(int& narg,char **&arg)
   
   printBanner();
   
+  CRASHER<<"Ciao"<<" amico"<<endl;
+  
   finalizeRanks();
   
   //     print_banner();

@@ -44,6 +44,9 @@ namespace ciccios
   
   /// Finalize MPI
   void finalizeRanks();
+  
+  /// Abort all ranks
+  void ranksAbort(const int& errNo);
 }
 
 #undef EXTERN_RANK

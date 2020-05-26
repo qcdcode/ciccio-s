@@ -18,23 +18,36 @@ namespace ciccios
   
   namespace resources
   {
-    /// Actual logger writing to the console
-    EXTERN_LOGGER std::ofstream actualLogger INIT_LOGGER_TO("/dev/stderr");
+    /// Actual logger writing to the console, standard output
+    EXTERN_LOGGER std::ofstream logger INIT_LOGGER_TO("/dev/stdout");
+    
+    /// Actual logger writing to the console, standard error
+    EXTERN_LOGGER std::ofstream errLogger INIT_LOGGER_TO("/dev/stdout");
     
     /// Wired out logger
     EXTERN_LOGGER std::ofstream dummyLogger INIT_LOGGER_TO("/dev/null");
   }
   
-  /// Returns the true logger or the dymmy one depending if on master rank
+  /// Returns the true logger or the dummy one depending if on master rank
   inline std::ofstream& logger()
   {
-    using namespace resources;
-    
     if(isMasterRank())
-      return actualLogger;
+      return resources::logger;
     else
-      return dummyLogger;
+      return resources::dummyLogger;
   }
+  
+  /// Returns the error logger or the dummy one depending if on master rank
+  inline std::ofstream& errLogger()
+  {
+    if(isMasterRank())
+      return resources::errLogger;
+    else
+      return resources::dummyLogger;
+  }
+  
+  /// Shortcut to avoid having to put ()
+#define LOGGER logger()
   
   //print the banner
   void printBanner();
