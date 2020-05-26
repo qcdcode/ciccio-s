@@ -1,16 +1,16 @@
 AC_INIT([ciccio-s],[1.0],[fr.sanfilippo@gmail.com])
 
-#include all config flags
-config_flags="$*"
-AC_DEFINE_UNQUOTED([CONFIG_FLAGS],["$config_flags"],[Flags passed to configure])
+#include all configure flags
+CONFIGURE_FLAGS="$*"
+AC_DEFINE_UNQUOTED([CONFIGURE_FLAGS],["$CONFIGURE_FLAGS"],[Flags passed to configure])
 
 #silent automake
 AM_SILENT_RULES([yes])
 
 #get configuration time
 AC_MSG_CHECKING([configuration date and time])
-CONFIG_TIME=`date`
-AC_DEFINE_UNQUOTED([CONFIG_TIME], "$CONFIG_TIME", [time when configured])
+CONFIGURE_TIME=`date`
+AC_DEFINE_UNQUOTED([CONFIGURE_TIME], "$CONFIGURE_TIME", [time when configured])
 AC_MSG_RESULT([$CONFIG_TIME])
 
 #parameters definition

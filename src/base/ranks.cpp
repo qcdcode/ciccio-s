@@ -34,4 +34,10 @@ namespace ciccios
 #endif
   }
   
+  void ranksBarrier()
+  {
+#ifdef USE_MPI
+    MPI_Barrier(MPI_COMM_WORLD);
+#endif
+  }
 }

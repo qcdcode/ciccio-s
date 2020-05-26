@@ -47,6 +47,10 @@ namespace ciccios
   
   /// Abort all ranks
   void ranksAbort(const int& errNo);
+  
+  /// Barrier
+  void ranksBarrier();
+  
 }
 
 #undef EXTERN_RANK

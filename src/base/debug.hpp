@@ -53,6 +53,12 @@ namespace ciccios
   };
   
 #define CRASHER Crasher(__LINE__,__FILE__,__FUNCTION__)
+  
+  /// Implements the trap to debug
+  void possiblyWaitToAttachDebugger();
+  
+  /// Print version, configuration and compilation time
+  void printVersionAndCompileFlags(std::ofstream& out);
 }
 
 #endif

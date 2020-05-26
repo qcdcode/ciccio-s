@@ -15,7 +15,13 @@ void initCiccios(int& narg,char **&arg)
   
   printBanner();
   
-  CRASHER<<"Ciao"<<" amico"<<endl;
+  printVersionAndCompileFlags(LOGGER);
+  
+  possiblyWaitToAttachDebugger();
+  
+  //CRASHER<<"Ciao"<<" amico"<<endl;
+  
+  LOGGER<<"Ariciao!"<<endl;
   
   finalizeRanks();
   

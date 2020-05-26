@@ -58,3 +58,6 @@ Makefile
 /build*
 /src/config.hpp.in*
 /compile_commands.json
+GPATH
+/GRTAGS
+/GTAGS
