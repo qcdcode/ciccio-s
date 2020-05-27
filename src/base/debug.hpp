@@ -54,6 +54,10 @@ namespace ciccios
   
 #define CRASHER Crasher(__LINE__,__FILE__,__FUNCTION__)
   
+/// Include a comment in the assembler, recognizable in the compilation
+#define ASM_BOOKMARK(COMMENT)					\
+  asm("#Bookmark " __FILE__ " " COMMENT)
+  
   /// Implements the trap to debug
   void possiblyWaitToAttachDebugger();
   

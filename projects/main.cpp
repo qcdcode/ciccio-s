@@ -21,7 +21,7 @@ void initCiccios(int& narg,char **&arg)
   
   //CRASHER<<"Ciao"<<" amico"<<endl;
   
-  LOGGER<<"Ariciao!"<<endl;
+  LOGGER<<endl<<"Ariciao!"<<endl<<endl;
   
   finalizeRanks();
   
