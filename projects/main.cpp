@@ -2,13 +2,33 @@
  #include "config.hpp"
 #endif
 
+#include <eigen3/Eigen/Dense>
 #include <chrono>
+#include <complex>
 
 #include <immintrin.h>
 
 #include "ciccio-s.hpp"
 
+#if 1
 using Simd=__m256d;
+#else
+using Simd=std::array<double,1>;
+inline Simd operator+=(Simd& a, const Simd& b)
+{
+  a[0]+=b[0];
+  return a;
+}
+
+inline Simd operator*(const Simd&a, const Simd& b)
+{
+  Simd c;
+  c[0]=a[0]*b[0];
+  return c;
+}
+
+#endif
+
 constexpr int simdSize=sizeof(Simd)/sizeof(double);
 
 using namespace ciccios;
@@ -103,6 +123,58 @@ struct CPUGaugeConf
 
 /////////////////////////////////////////////////////////////////
 
+using SimdComplex=std::complex<Simd>;
+
+template <typename D>
+struct Color : public std::array<D,NCOL>
+{
+};
+
+template <typename D>
+struct SU3 : public std::array<Color<D>,NCOL>
+{
+};
+
+template <typename D>
+struct QuadSU3 : public std::array<SU3<D>,NDIM>
+{
+};
+
+template <typename D1,
+	  typename D2,
+	  typename D3=decltype(D1()*D2())>
+inline SU3<D3> operator*(const SU3<D1>& A,const SU3<D2>& B)
+{
+  SU3<D3> out;
+  
+  for(int ic1=0;ic1<NCOL;ic1++)
+    for(int ic2=0;ic2<NCOL;ic2++)
+      {
+	memset(&out[ic1][ic2],0,sizeof(D3));
+	for(int ic3=0;ic3<NCOL;ic3++)
+	  {
+	    ASM_BOOKMARK("FMA BEGIN");
+	    out[ic1][ic2]+=A[ic1][ic3]*B[ic3][ic2];
+	    ASM_BOOKMARK("FMA END");
+	  }
+      }
+  return out;
+}
+
+template <typename D1,
+	  typename D2,
+	  typename D3=decltype(D1()*D2())>
+inline QuadSU3<D3> operator*(const QuadSU3<D1>& A,const QuadSU3<D2>& B)
+{
+  QuadSU3<D3> out;
+  
+  for(int mu=0;mu<NDIM;mu++)
+    out[mu]=A[mu]*B[mu];
+  
+  return out;
+}
+
+using SimdQuadSU3=QuadSU3<Simd>;
 
 struct SimdGaugeConf
 {
@@ -159,15 +231,19 @@ struct SimdGaugeConf
   {
     ASM_BOOKMARK("here");
     
+    auto a=(SimdQuadSU3*)(this->data);
+    auto b=(SimdQuadSU3*)(oth.data);
+    
     // long int a=0;
     //#pragma omp parallel for
     for(int iSimdSite=0;iSimdSite<oth.simdVol;iSimdSite++)
-      for(int mu=0;mu<NDIM;mu++)
-    	for(int ic1=0;ic1<NCOL;ic1++)
-    	  for(int ic2=0;ic2<NCOL;ic2++)
-    	    for(int ri=0;ri<2;ri++)
-    	      {
-		(*this)(iSimdSite,mu,ic1,ic2,ri)*=oth(iSimdSite,mu,ic1,ic2,ri);
+      a[iSimdSite]=a[iSimdSite]*b[iSimdSite];
+      // for(int mu=0;mu<NDIM;mu++)
+      // 	for(int ic1=0;ic1<NCOL;ic1++)
+      // 	  for(int ic2=0;ic2<NCOL;ic2++)
+      // 	    for(int ri=0;ri<2;ri++)
+      // 	      {
+      // 		(*this)(iSimdSite,mu,ic1,ic2,ri)*=oth(iSimdSite,mu,ic1,ic2,ri);
     // for(int i=0;i<oth.simdVol*NDIM*NCOL*NCOL*2;i++)
     //   {
     // 	this->data[i]*=oth.data[i];
@@ -175,8 +251,7 @@ struct SimdGaugeConf
     //   }
     
     // LOGGER<<"Flops: "<<a<<endl;
-		ASM_BOOKMARK("there");
-	      }
+    ASM_BOOKMARK("there");
     
     return *this;
   }
@@ -266,21 +341,50 @@ void test(const int vol)
 
   const int nIters=10;
   for(int i=0;i<nIters;i++)
-    simdConf1+=simdConf2;
+    simdConf1*=simdConf2;
   
   Instant end=takeTime();
   
   conf=simdConf1;
   const double timeInSec=milliDiff(end,start)/1000.0;
-  const double nFlopsPerSite=2.0*NCOL*NCOL*NDIM,nGFlops=nFlopsPerSite*nIters*vol/1e9,gFlopsPerSec=nGFlops/timeInSec;
-  LOGGER<<"Time in s: "<<timeInSec<<endl;
-  LOGGER<<"nFlopsPerSite: "<<nFlopsPerSite<<endl;
-  LOGGER<<"nGFlops: "<<nGFlops<<endl;
+  const double nFlopsPerSite=6.0*NCOL*NCOL*NCOL*NDIM,nGFlops=nFlopsPerSite*nIters*vol/1e9,gFlopsPerSec=nGFlops/timeInSec;
+  // LOGGER<<"Time in s: "<<timeInSec<<endl;
+  // LOGGER<<"nFlopsPerSite: "<<nFlopsPerSite<<endl;
+  // LOGGER<<"nGFlops: "<<nGFlops<<endl;
   LOGGER<<"GFlops/s: "<<gFlopsPerSec<<endl;
   LOGGER<<"Check: "<<conf(0,0,0,0,0)<<endl;
   
   // conf=simdConf;
   // simdConf=conf;//(0,0,0,0,0)[0]=0.0;
+  
+  using EQSU3=std::array<Eigen::Matrix<std::complex<double>, 3, 3>,4> ;
+  
+  std::vector<EQSU3,Eigen::aligned_allocator<EQSU3>> a(vol),b(vol);
+  for(int i=0;i<vol;i++)
+    for(int mu=0;mu<NDIM;mu++)
+      {
+	a[i][mu].fill({1.1,1.1});
+	b[i][mu].fill({1.1,1.1});
+      }
+  
+  start=takeTime();
+  
+  for(int it=0;it<nIters;it++)
+    for(int i=0;i<vol;i++)
+      for(int mu=0;mu<4;mu++)
+	a[i][mu]*=b[i][mu];
+  
+  end=takeTime();
+  {
+    const double timeInSec=milliDiff(end,start)/1000.0;
+    const double nFlopsPerSite=6.0*NCOL*NCOL*NCOL*NDIM,nGFlops=nFlopsPerSite*nIters*vol/1e9,gFlopsPerSec=nGFlops/timeInSec;
+  // LOGGER<<"Time in s: "<<timeInSec<<endl;
+  // LOGGER<<"nFlopsPerSite: "<<nFlopsPerSite<<endl;
+  // LOGGER<<"nGFlops: "<<nGFlops<<endl;
+    LOGGER<<"GFlops/s: "<<gFlopsPerSec<<endl;
+    LOGGER<<"Check: "<<conf(0,0,0,0,0)<<endl;
+  }
+  LOGGER<<endl;
 }
 
 /// Factorizes a number with a simple algorithm
