@@ -11,7 +11,7 @@
 #include "ciccio-s.hpp"
 
 #if 1
-using Simd=__m256d;
+using Simd=__m256;
 #else
 using Simd=std::array<double,1>;
 inline Simd operator+=(Simd& a, const Simd& b)
@@ -150,7 +150,9 @@ inline SU3<D3> operator*(const SU3<D1>& A,const SU3<D2>& B)
   for(int ic1=0;ic1<NCOL;ic1++)
     for(int ic2=0;ic2<NCOL;ic2++)
       {
-	memset(&out[ic1][ic2],0,sizeof(D3));
+	// for(int ri=0;ri<2;ri++)
+	//   for(int iS=0;iS<sizeof(Simd)/sizeof(double);iS++)
+	//     ((Simd*)(&out[ic1][ic2]))[ri][iS]=0.0;
 	for(int ic3=0;ic3<NCOL;ic3++)
 	  {
 	    ASM_BOOKMARK("FMA BEGIN");
@@ -174,7 +176,7 @@ inline QuadSU3<D3> operator*(const QuadSU3<D1>& A,const QuadSU3<D2>& B)
   return out;
 }
 
-using SimdQuadSU3=QuadSU3<Simd>;
+using SimdQuadSU3=QuadSU3<SimdComplex>;
 
 struct SimdGaugeConf
 {
@@ -227,17 +229,18 @@ struct SimdGaugeConf
     return *this;
   }
   
-  SimdGaugeConf& operator*=(const SimdGaugeConf& oth)
+  SimdGaugeConf& sumProd(const SimdGaugeConf&oth1,const SimdGaugeConf& oth2)
   {
     ASM_BOOKMARK("here");
     
     auto a=(SimdQuadSU3*)(this->data);
-    auto b=(SimdQuadSU3*)(oth.data);
+    auto b=(SimdQuadSU3*)(oth1.data);
+    auto c=(SimdQuadSU3*)(oth2.data);
     
     // long int a=0;
     //#pragma omp parallel for
-    for(int iSimdSite=0;iSimdSite<oth.simdVol;iSimdSite++)
-      a[iSimdSite]=a[iSimdSite]*b[iSimdSite];
+    for(int iSimdSite=0;iSimdSite<this->simdVol;iSimdSite++)
+      a[iSimdSite]=b[iSimdSite]*c[iSimdSite];
       // for(int mu=0;mu<NDIM;mu++)
       // 	for(int ic1=0;ic1<NCOL;ic1++)
       // 	  for(int ic2=0;ic2<NCOL;ic2++)
@@ -334,14 +337,16 @@ void test(const int vol)
   
   SimdGaugeConf simdConf1(vol);
   SimdGaugeConf simdConf2(vol);
+  SimdGaugeConf simdConf3(vol);
   simdConf1=conf;
   simdConf2=conf;
+  simdConf3=conf;
   
   Instant start=takeTime();
-
+  
   const int nIters=10;
   for(int i=0;i<nIters;i++)
-    simdConf1*=simdConf2;
+    simdConf1.sumProd(simdConf2,simdConf3);
   
   Instant end=takeTime();
   
@@ -351,41 +356,43 @@ void test(const int vol)
   // LOGGER<<"Time in s: "<<timeInSec<<endl;
   // LOGGER<<"nFlopsPerSite: "<<nFlopsPerSite<<endl;
   // LOGGER<<"nGFlops: "<<nGFlops<<endl;
-  LOGGER<<"GFlops/s: "<<gFlopsPerSec<<endl;
-  LOGGER<<"Check: "<<conf(0,0,0,0,0)<<endl;
+  LOGGER<<"Volume: "<<vol<<endl;
+  LOGGER<<"Fantasy GFlops/s: "<<gFlopsPerSec<<endl;
+  LOGGER<<"Check: "<<conf(0,0,0,0,0)<<" "<<conf(0,0,0,0,1)<<endl;
   
   // conf=simdConf;
   // simdConf=conf;//(0,0,0,0,0)[0]=0.0;
   
   using EQSU3=std::array<Eigen::Matrix<std::complex<double>, NCOL, NCOL>,NDIM> ;
   
-  std::vector<EQSU3,Eigen::aligned_allocator<EQSU3>> a(vol),b(vol);
+  std::vector<EQSU3,Eigen::aligned_allocator<EQSU3>> a(vol),b(vol),c(vol);
   for(int i=0;i<vol;i++)
     for(int mu=0;mu<NDIM;mu++)
       {
 	a[i][mu].fill({1.1,1.1});
 	b[i][mu].fill({1.1,1.1});
+	c[i][mu].fill({1.1,1.1});
       }
   
   start=takeTime();
-  for(int it=0;it<nIters;it++)
+  for(int i=0;i<nIters;i++)
     for(int i=0;i<vol;i++)
       for(int mu=0;mu<NDIM;mu++)
 	{
 	  ASM_BOOKMARK("EIG_BEGIN");
-	  a[i][mu]*=b[i][mu];
+	  a[i][mu]+=b[i][mu]*c[i][mu];
 	  ASM_BOOKMARK("EIG_END");
 	}
   
   end=takeTime();
   {
     const double timeInSec=milliDiff(end,start)/1000.0;
-    const double nFlopsPerSite=6.0*NCOL*NCOL*NCOL*NDIM,nGFlops=nFlopsPerSite*nIters*vol/1e9,gFlopsPerSec=nGFlops/timeInSec;
+    const double nFlopsPerSite=7.0*NCOL*NCOL*NCOL*NDIM,nGFlops=nFlopsPerSite*nIters*vol/1e9,gFlopsPerSec=nGFlops/timeInSec;
   // LOGGER<<"Time in s: "<<timeInSec<<endl;
   // LOGGER<<"nFlopsPerSite: "<<nFlopsPerSite<<endl;
   // LOGGER<<"nGFlops: "<<nGFlops<<endl;
-    LOGGER<<"GFlops/s: "<<gFlopsPerSec<<endl;
-    LOGGER<<"Check: "<<conf(0,0,0,0,0)<<endl;
+    LOGGER<<"Eigen GFlops/s: "<<gFlopsPerSec<<endl;
+    LOGGER<<"Check: "<<a[0][0](0,0)<<endl;
   }
   LOGGER<<endl;
 }
