@@ -5,6 +5,11 @@
 #include <execinfo.h>
 #include <unistd.h>
 
+#ifdef USE_CUDA
+ #include <cuda_runtime.h>
+#endif
+
+#include "debug.hpp"
 #include "git_info.hpp"
 #include "logger.hpp"
 
@@ -62,7 +67,21 @@ namespace ciccios
     extern char PROG_COMPILE_DATE[];
   }
   
-  /// Print version and configuration and compilation time
+#if USE_CUDA
+  void internalDecryptCudaError(const int lineNo,const char* fileName,const char* funcName,const cudaError_t rc,const char *templ,...)
+  {
+    if(rc!=cudaSuccess)
+      {
+	char mess[1024];
+	va_list ap;
+	va_start(ap,templ);
+	va_end(ap);
+	
+	vsprintf(mess,templ,ap);
+	Crasher(lineNo,fileName,funcName)<<mess<<", cuda raisded error: "<<cudaGetErrorString(rc)<<endl;
+      }
+  }
+#endif
   void printVersionAndCompileFlags(std::ofstream& out)
   {
     out<<endl;

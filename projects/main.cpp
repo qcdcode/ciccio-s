@@ -2,14 +2,290 @@
  #include "config.hpp"
 #endif
 
+#include <chrono>
+
+#include <immintrin.h>
+
 #include "ciccio-s.hpp"
+
+using Simd=__m256d;
+constexpr int simdSize=sizeof(Simd)/sizeof(double);
 
 using namespace ciccios;
 
+/// Position where to store the data: device or host
+enum class StorLoc{ON_CPU
+#ifdef USE_CUDA
+		   ,ON_GPU
+#endif
+};
 
+// constexpr StorLoc DEFAULT_STOR_LOC=
+// #ifdef USE_CUDA
+// 	    StorLoc::ON_GPU
+// #else
+// 	    StorLoc::ON_CPU
+// #endif
+// 	    ;
+
+/// Wraps the memory manager
+template <StorLoc>
+struct MemoryManageWrapper;
+
+/// Use memory manager
+template <>
+struct MemoryManageWrapper<StorLoc::ON_CPU>
+{
+  static auto& get()
+  {
+    return cpuMemoryManager;
+  }
+};
+
+#ifdef USE_CUDA
+/// Use memory manager
+template <>
+struct MemoryManageWrapper<StorLoc::ON_GPU>
+{
+  static auto& get()
+  {
+    return gpuMemoryManager;
+  }
+};
+#endif
+
+/// Gets the appropriate memory manager
+template <StorLoc SL>
+auto memoryManager()
+{
+  return MemoryManageWrapper<SL>::get();
+}
+
+constexpr int NDIM=4;
+constexpr int NCOL=3;
+
+struct SimdGaugeConf;
+
+template <StorLoc SL>
+struct CPUGaugeConf
+{
+  double* data;
+  
+  int index(int ivol,int mu,int icol1,int icol2,int reim) const
+  {
+    return reim+2*(icol2+NCOL*(icol1+NCOL*(mu+NDIM*ivol)));
+  }
+  
+  const double& operator()(int ivol,int mu,int icol1,int icol2,int reim) const
+  {
+    return data[index(ivol,mu,icol1,icol2,reim)];
+  }
+  
+  double& operator()(int ivol,int mu,int icol1,int icol2,int reim)
+  {
+    return data[index(ivol,mu,icol1,icol2,reim)];
+  }
+  
+  CPUGaugeConf(int vol)
+  {
+    int size=index(vol,0,0,0,0);
+    
+    data=(double*)memoryManager<SL>()->template provide<double>(size);
+  }
+  
+  ~CPUGaugeConf()
+  {
+    memoryManager<SL>()->release(data);
+  }
+  
+  CPUGaugeConf& operator=(const SimdGaugeConf& oth);
+};
+
+/////////////////////////////////////////////////////////////////
+
+
+struct SimdGaugeConf
+{
+  const int simdVol;
+  
+  Simd* data;
+  
+  int index(int ivol,int mu,int icol1,int icol2,int reim) const
+  {
+    return reim+2*(icol2+NCOL*(icol1+NCOL*(mu+NDIM*ivol)));
+  }
+  
+  const Simd& operator()(int ivol,int mu,int icol1,int icol2,int reim) const
+  {
+    return data[index(ivol,mu,icol1,icol2,reim)];
+  }
+  
+  Simd& operator()(int ivol,int mu,int icol1,int icol2,int reim)
+  {
+    return data[index(ivol,mu,icol1,icol2,reim)];
+  }
+  
+  SimdGaugeConf(int vol) : simdVol(vol/simdSize)
+  {
+    int size=index(simdVol,0,0,0,0);
+    
+    data=cpuMemoryManager->template provide<Simd>(size);
+  }
+  
+  ~SimdGaugeConf()
+  {
+    cpuMemoryManager->release(data);
+  }
+  
+  SimdGaugeConf& operator=(const CPUGaugeConf<StorLoc::ON_CPU>& oth)
+  {
+    for(int iSite=0;iSite<simdVol*simdSize;iSite++)
+      {
+	const int iSimdSite=iSite/simdSize;
+	const int iSimdComp=iSite%simdSize;
+	
+	for(int mu=0;mu<NDIM;mu++)
+	  for(int ic1=0;ic1<NCOL;ic1++)
+	    for(int ic2=0;ic2<NCOL;ic2++)
+	      for(int ri=0;ri<2;ri++)
+		
+		(*this)(iSimdSite,mu,ic1,ic2,ri)[iSimdComp]=oth(iSite,mu,ic1,ic2,ri);
+      }
+    
+    return *this;
+  }
+  
+  SimdGaugeConf& operator*=(const SimdGaugeConf& oth)
+  {
+    ASM_BOOKMARK("here");
+    
+    // long int a=0;
+    //#pragma omp parallel for
+    for(int iSimdSite=0;iSimdSite<oth.simdVol;iSimdSite++)
+      for(int mu=0;mu<NDIM;mu++)
+    	for(int ic1=0;ic1<NCOL;ic1++)
+    	  for(int ic2=0;ic2<NCOL;ic2++)
+    	    for(int ri=0;ri<2;ri++)
+    	      {
+		(*this)(iSimdSite,mu,ic1,ic2,ri)*=oth(iSimdSite,mu,ic1,ic2,ri);
+    // for(int i=0;i<oth.simdVol*NDIM*NCOL*NCOL*2;i++)
+    //   {
+    // 	this->data[i]*=oth.data[i];
+    // 	a++;
+    //   }
+    
+    // LOGGER<<"Flops: "<<a<<endl;
+		ASM_BOOKMARK("there");
+	      }
+    
+    return *this;
+  }
+  
+  SimdGaugeConf& operator+=(const SimdGaugeConf& oth)
+  {
+    
+    // long int a=0;
+    //#pragma omp parallel for
+    for(int iSimdSite=0;iSimdSite<oth.simdVol;iSimdSite++)
+      for(int mu=0;mu<NDIM;mu++)
+    	for(int ic1=0;ic1<NCOL;ic1++)
+    	  for(int ic2=0;ic2<NCOL;ic2++)
+    	    for(int ri=0;ri<2;ri++)
+	      {
+		ASM_BOOKMARK("here");
+		
+		  // auto& a=(*this)(iSimdSite,mu,ic1,ic2,ri);
+		  // auto& b=(*this)(iSimdSite,mu,ic1,ic2,ri);
+		  // auto& c=oth(iSimdSite,mu,ic1,ic2,ri);
+		  // a=_mm256_add_pd(b,c);
+		  (*this)(iSimdSite,mu,ic1,ic2,ri)+=oth(iSimdSite,mu,ic1,ic2,ri);
+    // for(int i=0;i<oth.simdVol*NDIM*NCOL*NCOL*2;i++)
+    //   {
+    // 	this->data[i]*=oth.data[i];
+    // 	a++;
+    //   }
+    
+    // LOGGER<<"Flops: "<<a<<endl;
+    ASM_BOOKMARK("there");
+	      }
+    return *this;
+  }
+};
+
+template <>
+CPUGaugeConf<StorLoc::ON_CPU>& CPUGaugeConf<StorLoc::ON_CPU>::operator=(const SimdGaugeConf& oth)
+{
+  for(int iSimdSite=0;iSimdSite<oth.simdVol;iSimdSite++)
+    for(int mu=0;mu<NDIM;mu++)
+      for(int ic1=0;ic1<NCOL;ic1++)
+	for(int ic2=0;ic2<NCOL;ic2++)
+	  for(int ri=0;ri<2;ri++)
+	    for(int iSimdComp=0;iSimdComp<simdSize;iSimdComp++)
+	      {
+		const int iSite=iSimdComp+simdSize*iSimdSite;
+		
+		(*this)(iSite,mu,ic1,ic2,ri)=oth(iSimdSite,mu,ic1,ic2,ri)[iSimdComp];
+	      }
+  return *this;
+}
+
+/////////////////////////////////////////////////////////////////
+
+/// Measure time
+using Instant=std::chrono::time_point<std::chrono::steady_clock>;
+
+inline Instant takeTime()
+{
+  return std::chrono::steady_clock::now();
+}
+
+/// Difference between two times
+using Duration=decltype(Instant{}-Instant{});
+
+double milliDiff(const Instant& end,const Instant& start)
+{
+  return std::chrono::duration<double,std::milli>(end-start).count();
+}
+
+void test(const int vol)
+{
+  CPUGaugeConf<StorLoc::ON_CPU> conf(vol);
+  for(int iSite=0;iSite<vol;iSite++)
+    for(int mu=0;mu<NDIM;mu++)
+      for(int ic1=0;ic1<NCOL;ic1++)
+	for(int ic2=0;ic2<NCOL;ic2++)
+	  for(int ri=0;ri<2;ri++)
+	    conf(iSite,mu,ic1,ic2,ri)=1.1;
+  
+  SimdGaugeConf simdConf1(vol);
+  SimdGaugeConf simdConf2(vol);
+  simdConf1=conf;
+  simdConf2=conf;
+  
+  Instant start=takeTime();
+
+  const int nIters=10;
+  for(int i=0;i<nIters;i++)
+    simdConf1+=simdConf2;
+  
+  Instant end=takeTime();
+  
+  conf=simdConf1;
+  const double timeInSec=milliDiff(end,start)/1000.0;
+  const double nFlopsPerSite=2.0*NCOL*NCOL*NDIM,nGFlops=nFlopsPerSite*nIters*vol/1e9,gFlopsPerSec=nGFlops/timeInSec;
+  LOGGER<<"Time in s: "<<timeInSec<<endl;
+  LOGGER<<"nFlopsPerSite: "<<nFlopsPerSite<<endl;
+  LOGGER<<"nGFlops: "<<nGFlops<<endl;
+  LOGGER<<"GFlops/s: "<<gFlopsPerSec<<endl;
+  LOGGER<<"Check: "<<conf(0,0,0,0,0)<<endl;
+  
+  // conf=simdConf;
+  // simdConf=conf;//(0,0,0,0,0)[0]=0.0;
+}
+
+/// Factorizes a number with a simple algorithm
 void initCiccios(int& narg,char **&arg)
 {
-  //init base things
   
   initRanks(narg,arg);
   
@@ -20,6 +296,16 @@ void initCiccios(int& narg,char **&arg)
   possiblyWaitToAttachDebugger();
   
   //CRASHER<<"Ciao"<<" amico"<<endl;
+  
+  cpuMemoryManager=new CPUMemoryManager;
+  
+  for(int volLog2=4;volLog2<20;volLog2++)
+    {
+      const int vol=1<<volLog2;
+      test(vol);
+    }
+  
+  delete cpuMemoryManager;
   
   LOGGER<<endl<<"Ariciao!"<<endl<<endl;
   

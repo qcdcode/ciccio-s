@@ -2,7 +2,8 @@
  #include "config.hpp"
 #endif
 
-#include "memory_manager.hpp"
+#define EXTERN_MEMORY_MANAGER
+ #include "memory_manager.hpp"
 
 namespace ciccios
 {

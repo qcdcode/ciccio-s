@@ -1,6 +1,11 @@
 #ifndef _DEBUG_HPP
 #define _DEBUG_HPP
 
+#ifdef USE_CUDA
+ #include <cuda_runtime.h>
+#endif
+
+#include "preprocessor.hpp"
 #include "logger.hpp"
 
 namespace ciccios
@@ -56,13 +61,18 @@ namespace ciccios
   
 /// Include a comment in the assembler, recognizable in the compilation
 #define ASM_BOOKMARK(COMMENT)					\
-  asm("#Bookmark " __FILE__ " " COMMENT)
+  asm("#Bookmark file: \"" __FILE__ "\", line: " LINE_AS_STRING  ", " COMMENT)
   
   /// Implements the trap to debug
   void possiblyWaitToAttachDebugger();
   
   /// Print version, configuration and compilation time
   void printVersionAndCompileFlags(std::ofstream& out);
+  
+#ifdef USE_CUDA
+ #define DECRYPT_CUDA_ERROR(...)  internalDecryptCudaError(__LINE__,__FILE__,__FUNCTION__,__VA_ARGS__)
+  void internalDecryptCudaError(const int lineNo,const char *fileName,const char* function,const cudaError_t rc,const char *templ,...);
+#endif
 }
 
 #endif

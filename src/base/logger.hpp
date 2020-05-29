@@ -26,6 +26,8 @@ namespace ciccios
     
     /// Wired out logger
     EXTERN_LOGGER std::ofstream dummyLogger INIT_LOGGER_TO("/dev/null");
+    
+    EXTERN_LOGGER int verbosityLv INIT_LOGGER_TO(1);
   }
   
   /// Returns the true logger or the dummy one depending if on master rank
@@ -46,8 +48,20 @@ namespace ciccios
       return resources::dummyLogger;
   }
   
+  /// Verbose logger or not
+  inline std::ofstream& verbLogger(const int& lv)
+  {
+    if(lv<=resources::verbosityLv)
+      return logger();
+    else
+      return resources::dummyLogger;
+  }
+  
   /// Shortcut to avoid having to put ()
 #define LOGGER logger()
+  
+  /// Verbose logger or not, capital worded for homogeneity
+#define VERB_LOGGER(LV) verbLogger(LV)
   
   //print the banner
   void printBanner();

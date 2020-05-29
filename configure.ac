@@ -110,6 +110,10 @@ if test "$CXX" == "nvcc"
 then
 	AC_DEFINE([USE_CUDA],1,"Using CUDA")
 fi
+if test "$with_threads_type" = "cuda"
+then
+	CPPFLAGS="-dc --expt-relaxed-constexpr --expt-extended-lambda -x cu $CPPFLAGS"
+fi
 
 #AX_CXXFLAGS_WARN_ALL
 AC_MSG_CHECKING(whether compiler understands -Wall)
