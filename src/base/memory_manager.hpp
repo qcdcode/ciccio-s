@@ -247,7 +247,7 @@ namespace ciccios
     /// Release all memory from cache
     void clearCache()
     {
-      VERB_LOGGER(3)<<"Clearing cache\n"<<endl;
+      VERB_LOGGER(3)<<"Clearing cache"<<endl;
       
       /// Iterator to elements of the cached memory list
       auto el=cached.begin();
@@ -334,6 +334,7 @@ namespace ciccios
     }
   };
   
+  /// Memory manager for CPU
   EXTERN_MEMORY_MANAGER CPUMemoryManager* cpuMemoryManager;
   
 #ifdef USE_CUDA
@@ -367,9 +368,61 @@ namespace ciccios
     }
   };
   
+  /// Memory manager for gpu
   EXTERN_MEMORY_MANAGER GPUMemoryManager *gpuMemoryManager;
-
+  
 #endif
+  
+  /////////////////////////////////////////////////////////////////
+  
+  /// Position where to store the data: device or host
+  enum class StorLoc{ON_CPU
+#ifdef USE_CUDA
+		     ,ON_GPU
+#endif
+  };
+  
+  /// Wraps the memory manager
+  ///
+  /// Forward definition
+  template <StorLoc>
+  struct MemoryManageWrapper;
+  
+  /// Use memory manager
+  ///
+  /// CPU case
+  template <>
+  struct MemoryManageWrapper<StorLoc::ON_CPU>
+  {
+    static auto& get()
+    {
+      return cpuMemoryManager;
+    }
+  };
+  
+#ifdef USE_CUDA
+  
+  /// Use memory manager
+  ///
+  /// GPU case
+  template <>
+  struct MemoryManageWrapper<StorLoc::ON_GPU>
+  {
+    static auto& get()
+    {
+      return gpuMemoryManager;
+    }
+  };
+  
+#endif
+  
+  /// Gets the appropriate memory manager
+  template <StorLoc SL>
+  inline auto memoryManager()
+  {
+    return MemoryManageWrapper<SL>::get();
+  }
+  
 }
 
 #undef EXTERN_MEMORY_MANAGER

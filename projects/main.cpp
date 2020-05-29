@@ -38,53 +38,7 @@ constexpr int simdSize=sizeof(Simd)/sizeof(double);
 
 using namespace ciccios;
 
-/// Position where to store the data: device or host
-enum class StorLoc{ON_CPU
-#ifdef USE_CUDA
-		   ,ON_GPU
-#endif
-};
 
-// constexpr StorLoc DEFAULT_STOR_LOC=
-// #ifdef USE_CUDA
-// 	    StorLoc::ON_GPU
-// #else
-// 	    StorLoc::ON_CPU
-// #endif
-// 	    ;
-
-/// Wraps the memory manager
-template <StorLoc>
-struct MemoryManageWrapper;
-
-/// Use memory manager
-template <>
-struct MemoryManageWrapper<StorLoc::ON_CPU>
-{
-  static auto& get()
-  {
-    return cpuMemoryManager;
-  }
-};
-
-#ifdef USE_CUDA
-/// Use memory manager
-template <>
-struct MemoryManageWrapper<StorLoc::ON_GPU>
-{
-  static auto& get()
-  {
-    return gpuMemoryManager;
-  }
-};
-#endif
-
-/// Gets the appropriate memory manager
-template <StorLoc SL>
-auto memoryManager()
-{
-  return MemoryManageWrapper<SL>::get();
-}
 
 constexpr int NDIM=4;
 constexpr int NCOL=3;
