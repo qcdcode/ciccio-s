@@ -357,7 +357,7 @@ void test(const int vol)
   // conf=simdConf;
   // simdConf=conf;//(0,0,0,0,0)[0]=0.0;
   
-  using EQSU3=std::array<Eigen::Matrix<std::complex<double>, 3, 3>,4> ;
+  using EQSU3=std::array<Eigen::Matrix<std::complex<double>, NCOL, NCOL>,NDIM> ;
   
   std::vector<EQSU3,Eigen::aligned_allocator<EQSU3>> a(vol),b(vol);
   for(int i=0;i<vol;i++)
@@ -368,11 +368,14 @@ void test(const int vol)
       }
   
   start=takeTime();
-  
   for(int it=0;it<nIters;it++)
     for(int i=0;i<vol;i++)
-      for(int mu=0;mu<4;mu++)
-	a[i][mu]*=b[i][mu];
+      for(int mu=0;mu<NDIM;mu++)
+	{
+	  ASM_BOOKMARK("EIG_BEGIN");
+	  a[i][mu]*=b[i][mu];
+	  ASM_BOOKMARK("EIG_END");
+	}
   
   end=takeTime();
   {
