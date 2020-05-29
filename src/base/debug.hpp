@@ -5,6 +5,8 @@
  #include <cuda_runtime.h>
 #endif
 
+#include <chrono>
+
 #include "preprocessor.hpp"
 #include "logger.hpp"
 
@@ -73,6 +75,23 @@ namespace ciccios
  #define DECRYPT_CUDA_ERROR(...)  internalDecryptCudaError(__LINE__,__FILE__,__FUNCTION__,__VA_ARGS__)
   void internalDecryptCudaError(const int lineNo,const char *fileName,const char* function,const cudaError_t rc,const char *templ,...);
 #endif
+  
+  /////////////////////////////////////////////////////////////////
+  
+  /// Measure time
+  using Instant=std::chrono::time_point<std::chrono::steady_clock>;
+  
+  /// Returns the current time
+  inline Instant takeTime()
+  {
+    return std::chrono::steady_clock::now();
+  }
+  
+  /// Difference between two instants
+  inline double timeDiffInSec(const Instant& end,const Instant& start)
+  {
+    return std::chrono::duration<double>(end-start).count();
+  }
 }
 
 #endif

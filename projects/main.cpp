@@ -11,7 +11,7 @@
 #include "ciccio-s.hpp"
 
 #if 1
-using Simd=__m256;
+using Simd=__m256d;
 #else
 using Simd=std::array<double,1>;
 inline Simd operator+=(Simd& a, const Simd& b)
@@ -233,25 +233,14 @@ struct SimdGaugeConf
   {
     ASM_BOOKMARK("here");
     
-    auto a=(SimdQuadSU3*)(this->data);
-    auto b=(SimdQuadSU3*)(oth1.data);
-    auto c=(SimdQuadSU3*)(oth2.data);
+    auto a=(SimdSU3*)(this->data);
+    auto b=(SimdSU3*)(oth1.data);
+    auto c=(SimdSU3*)(oth2.data);
     
     // long int a=0;
     //#pragma omp parallel for
     for(int iSimdSite=0;iSimdSite<this->simdVol;iSimdSite++)
       a[iSimdSite]=b[iSimdSite]*c[iSimdSite];
-      // for(int mu=0;mu<NDIM;mu++)
-      // 	for(int ic1=0;ic1<NCOL;ic1++)
-      // 	  for(int ic2=0;ic2<NCOL;ic2++)
-      // 	    for(int ri=0;ri<2;ri++)
-      // 	      {
-      // 		(*this)(iSimdSite,mu,ic1,ic2,ri)*=oth(iSimdSite,mu,ic1,ic2,ri);
-    // for(int i=0;i<oth.simdVol*NDIM*NCOL*NCOL*2;i++)
-    //   {
-    // 	this->data[i]*=oth.data[i];
-    // 	a++;
-    //   }
     
     // LOGGER<<"Flops: "<<a<<endl;
     ASM_BOOKMARK("there");
@@ -265,26 +254,15 @@ struct SimdGaugeConf
     // long int a=0;
     //#pragma omp parallel for
     for(int iSimdSite=0;iSimdSite<oth.simdVol;iSimdSite++)
-      for(int mu=0;mu<NDIM;mu++)
-    	for(int ic1=0;ic1<NCOL;ic1++)
-    	  for(int ic2=0;ic2<NCOL;ic2++)
-    	    for(int ri=0;ri<2;ri++)
-	      {
-		ASM_BOOKMARK("here");
-		
-		  // auto& a=(*this)(iSimdSite,mu,ic1,ic2,ri);
-		  // auto& b=(*this)(iSimdSite,mu,ic1,ic2,ri);
-		  // auto& c=oth(iSimdSite,mu,ic1,ic2,ri);
-		  // a=_mm256_add_pd(b,c);
-		  (*this)(iSimdSite,mu,ic1,ic2,ri)+=oth(iSimdSite,mu,ic1,ic2,ri);
-    // for(int i=0;i<oth.simdVol*NDIM*NCOL*NCOL*2;i++)
-    //   {
-    // 	this->data[i]*=oth.data[i];
-    // 	a++;
-    //   }
-    
-    // LOGGER<<"Flops: "<<a<<endl;
-    ASM_BOOKMARK("there");
+      for(int ic1=0;ic1<NCOL;ic1++)
+	for(int ic2=0;ic2<NCOL;ic2++)
+	  for(int ri=0;ri<2;ri++)
+	    {
+	      ASM_BOOKMARK("here");
+	      
+	      (*this)(iSimdSite,ic1,ic2,ri)+=oth(iSimdSite,ic1,ic2,ri);
+	      
+	      ASM_BOOKMARK("there");
 	      }
     return *this;
   }
@@ -344,7 +322,7 @@ void test(const int vol)
   
   Instant start=takeTime();
   
-  const int nIters=10;
+  const int nIters=100;
   for(int i=0;i<nIters;i++)
     simdConf1.sumProd(simdConf2,simdConf3);
   
@@ -352,7 +330,7 @@ void test(const int vol)
   
   conf=simdConf1;
   const double timeInSec=milliDiff(end,start)/1000.0;
-  const double nFlopsPerSite=6.0*NCOL*NCOL*NCOL*NDIM,nGFlops=nFlopsPerSite*nIters*vol/1e9,gFlopsPerSec=nGFlops/timeInSec;
+  const double nFlopsPerSite=6.0*NCOL*NCOL*NCOL,nGFlops=nFlopsPerSite*nIters*vol/1e9,gFlopsPerSec=nGFlops/timeInSec;
   // LOGGER<<"Time in s: "<<timeInSec<<endl;
   // LOGGER<<"nFlopsPerSite: "<<nFlopsPerSite<<endl;
   // LOGGER<<"nGFlops: "<<nGFlops<<endl;
