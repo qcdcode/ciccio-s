@@ -10,9 +10,14 @@
 
 #include "ciccio-s.hpp"
 
-#if 1
+#define SIMD_TYPE M256D
+
+#if SIMD_TYPE == M256D
+
 using Simd=__m256d;
+
 #else
+
 using Simd=std::array<double,1>;
 inline Simd operator+=(Simd& a, const Simd& b)
 {
@@ -145,22 +150,30 @@ template <typename D1,
 	  typename D3=decltype(D1()*D2())>
 inline SU3<D3> operator*(const SU3<D1>& A,const SU3<D2>& B)
 {
-  SU3<D3> out;
+  SU3<D3> out={};
   
   for(int ic1=0;ic1<NCOL;ic1++)
     for(int ic2=0;ic2<NCOL;ic2++)
-      {
-	// for(int ri=0;ri<2;ri++)
-	//   for(int iS=0;iS<sizeof(Simd)/sizeof(double);iS++)
-	//     ((Simd*)(&out[ic1][ic2]))[ri][iS]=0.0;
-	for(int ic3=0;ic3<NCOL;ic3++)
-	  {
-	    ASM_BOOKMARK("FMA BEGIN");
-	    out[ic1][ic2]+=A[ic1][ic3]*B[ic3][ic2];
-	    ASM_BOOKMARK("FMA END");
-	  }
-      }
+      for(int ic3=0;ic3<NCOL;ic3++)
+	{
+	  ASM_BOOKMARK("FMA BEGIN");
+	  out[ic1][ic2]+=A[ic1][ic3]*B[ic3][ic2];
+	  ASM_BOOKMARK("FMA END");
+	}
+  
   return out;
+}
+
+template <typename D1,
+	  typename D2,
+	  typename D3=decltype(D1()*D2())>
+inline SU3<D3> operator+=(SU3<D1>& A,const SU3<D2>& B)
+{
+  for(int ic1=0;ic1<NCOL;ic1++)
+    for(int ic2=0;ic2<NCOL;ic2++)
+      A[ic1][ic2]+=B[ic1][ic2];
+  
+  return A;
 }
 
 template <typename D1,
@@ -174,6 +187,17 @@ inline QuadSU3<D3> operator*(const QuadSU3<D1>& A,const QuadSU3<D2>& B)
     out[mu]=A[mu]*B[mu];
   
   return out;
+}
+
+template <typename D1,
+	  typename D2,
+	  typename D3=decltype(D1()*D2())>
+inline QuadSU3<D3> operator+=(QuadSU3<D1>& A,const QuadSU3<D2>& B)
+{
+  for(int mu=0;mu<NDIM;mu++)
+    A[mu]+=B[mu];
+  
+  return A;
 }
 
 using SimdQuadSU3=QuadSU3<SimdComplex>;
@@ -233,14 +257,14 @@ struct SimdGaugeConf
   {
     ASM_BOOKMARK("here");
     
-    auto a=(SimdSU3*)(this->data);
-    auto b=(SimdSU3*)(oth1.data);
-    auto c=(SimdSU3*)(oth2.data);
+    auto a=(SimdQuadSU3*)(this->data);
+    auto b=(SimdQuadSU3*)(oth1.data);
+    auto c=(SimdQuadSU3*)(oth2.data);
     
     // long int a=0;
     //#pragma omp parallel for
     for(int iSimdSite=0;iSimdSite<this->simdVol;iSimdSite++)
-      a[iSimdSite]=b[iSimdSite]*c[iSimdSite];
+      a[iSimdSite]+=b[iSimdSite]*c[iSimdSite];
     
     // LOGGER<<"Flops: "<<a<<endl;
     ASM_BOOKMARK("there");
@@ -254,16 +278,18 @@ struct SimdGaugeConf
     // long int a=0;
     //#pragma omp parallel for
     for(int iSimdSite=0;iSimdSite<oth.simdVol;iSimdSite++)
-      for(int ic1=0;ic1<NCOL;ic1++)
-	for(int ic2=0;ic2<NCOL;ic2++)
-	  for(int ri=0;ri<2;ri++)
-	    {
-	      ASM_BOOKMARK("here");
-	      
-	      (*this)(iSimdSite,ic1,ic2,ri)+=oth(iSimdSite,ic1,ic2,ri);
-	      
-	      ASM_BOOKMARK("there");
+      for(int mu=0;mu<NDIM;mu++)
+	for(int ic1=0;ic1<NCOL;ic1++)
+	  for(int ic2=0;ic2<NCOL;ic2++)
+	    for(int ri=0;ri<2;ri++)
+	      {
+		ASM_BOOKMARK("here");
+		
+		(*this)(iSimdSite,mu,ic1,ic2,ri)+=oth(iSimdSite,mu,ic1,ic2,ri);
+		
+		ASM_BOOKMARK("there");
 	      }
+    
     return *this;
   }
 };
@@ -286,22 +312,6 @@ CPUGaugeConf<StorLoc::ON_CPU>& CPUGaugeConf<StorLoc::ON_CPU>::operator=(const Si
 }
 
 /////////////////////////////////////////////////////////////////
-
-/// Measure time
-using Instant=std::chrono::time_point<std::chrono::steady_clock>;
-
-inline Instant takeTime()
-{
-  return std::chrono::steady_clock::now();
-}
-
-/// Difference between two times
-using Duration=decltype(Instant{}-Instant{});
-
-double milliDiff(const Instant& end,const Instant& start)
-{
-  return std::chrono::duration<double,std::milli>(end-start).count();
-}
 
 void test(const int vol)
 {
@@ -329,19 +339,13 @@ void test(const int vol)
   Instant end=takeTime();
   
   conf=simdConf1;
-  const double timeInSec=milliDiff(end,start)/1000.0;
-  const double nFlopsPerSite=6.0*NCOL*NCOL*NCOL,nGFlops=nFlopsPerSite*nIters*vol/1e9,gFlopsPerSec=nGFlops/timeInSec;
-  // LOGGER<<"Time in s: "<<timeInSec<<endl;
-  // LOGGER<<"nFlopsPerSite: "<<nFlopsPerSite<<endl;
-  // LOGGER<<"nGFlops: "<<nGFlops<<endl;
+  const double timeInSec=timeDiffInSec(end,start);
+  const double nFlopsPerSite=7.0*NCOL*NCOL*NCOL*NDIM,nGFlops=nFlopsPerSite*nIters*vol/1e9,gFlopsPerSec=nGFlops/timeInSec;
   LOGGER<<"Volume: "<<vol<<endl;
   LOGGER<<"Fantasy GFlops/s: "<<gFlopsPerSec<<endl;
   LOGGER<<"Check: "<<conf(0,0,0,0,0)<<" "<<conf(0,0,0,0,1)<<endl;
   
-  // conf=simdConf;
-  // simdConf=conf;//(0,0,0,0,0)[0]=0.0;
-  
-  using EQSU3=std::array<Eigen::Matrix<std::complex<double>, NCOL, NCOL>,NDIM> ;
+  using EQSU3=std::array<Eigen::Matrix<std::complex<double>,NCOL,NCOL>,NDIM>;
   
   std::vector<EQSU3,Eigen::aligned_allocator<EQSU3>> a(vol),b(vol),c(vol);
   for(int i=0;i<vol;i++)
@@ -364,7 +368,7 @@ void test(const int vol)
   
   end=takeTime();
   {
-    const double timeInSec=milliDiff(end,start)/1000.0;
+    const double timeInSec=timeDiffInSec(end,start);
     const double nFlopsPerSite=7.0*NCOL*NCOL*NCOL*NDIM,nGFlops=nFlopsPerSite*nIters*vol/1e9,gFlopsPerSec=nGFlops/timeInSec;
   // LOGGER<<"Time in s: "<<timeInSec<<endl;
   // LOGGER<<"nFlopsPerSite: "<<nFlopsPerSite<<endl;
