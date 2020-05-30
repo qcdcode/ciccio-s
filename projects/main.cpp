@@ -84,75 +84,76 @@ struct CPUGaugeConf
 
 using SimdComplex=std::complex<Simd>;
 
-template <typename D>
-struct Color : public std::array<D,NCOL>
+template <typename T,
+	  int N>
+struct ArithmeticArray : public std::array<T,N>
 {
+  template <typename U>
+  auto operator*(const ArithmeticArray<U,N>& oth) const
+  {
+    ArithmeticArray<decltype(T()*U()),N> out={};
+    
+    for(int i=0;i<N;i++)
+      out[i]+=(*this)[i]*oth[i];
+    
+    return out;
+  }
+  
+  template <typename U>
+  auto operator+=(const ArithmeticArray<U,N>& oth)
+  {
+    for(int i=0;i<N;i++)
+      (*this)[i]+=oth[i];
+    
+    return *this;
+  }
 };
 
-template <typename D>
-struct SU3 : public std::array<Color<D>,NCOL>
+template <typename T,
+	  int N>
+struct ArithmeticMatrix : public std::array<std::array<T,N>,N>
 {
+  template <typename U>
+  auto operator*(const ArithmeticMatrix<U,N>& oth) const
+  {
+    ArithmeticMatrix<decltype(T()*U()),N> out={};
+    
+#pragma unroll
+    for(int ir=0;ir<N;ir++)
+#pragma unroll
+      for(int ic=0;ic<N;ic++)
+#pragma unroll
+	for(int i=0;i<N;i++)
+	  {
+	    ASM_BOOKMARK("FMA BEGIN");
+	    out[ir][ic]+=(*this)[ir][i]*oth[i][ic];
+	    ASM_BOOKMARK("FMA END");
+	  }
+    
+    return out;
+  }
+  
+  template <typename U>
+  auto operator+=(const ArithmeticMatrix<U,N>& oth)
+  {
+#pragma unroll
+    for(int ir=0;ir<N;ir++)
+#pragma unroll
+      for(int ic=0;ic<N;ic++)
+	(*this)[ir][ic]+=oth[ir][ic];
+    
+    return *this;
+  }
 };
 
-template <typename D>
-struct QuadSU3 : public std::array<SU3<D>,NDIM>
-{
-};
+// template <typename T>
+// using Color=ArithmeticArray<T,NCOL>;
 
-template <typename D1,
-	  typename D2,
-	  typename D3=decltype(D1()*D2())>
-inline SU3<D3> operator*(const SU3<D1>& A,const SU3<D2>& B)
-{
-  SU3<D3> out={};
-  
-  for(int ic1=0;ic1<NCOL;ic1++)
-    for(int ic2=0;ic2<NCOL;ic2++)
-      for(int ic3=0;ic3<NCOL;ic3++)
-	{
-	  ASM_BOOKMARK("FMA BEGIN");
-	  out[ic1][ic2]+=A[ic1][ic3]*B[ic3][ic2];
-	  ASM_BOOKMARK("FMA END");
-	}
-  
-  return out;
-}
+template <typename T>
+using SU3=ArithmeticMatrix<T,NCOL>;
 
-template <typename D1,
-	  typename D2,
-	  typename D3=decltype(D1()*D2())>
-inline SU3<D3> operator+=(SU3<D1>& A,const SU3<D2>& B)
-{
-  for(int ic1=0;ic1<NCOL;ic1++)
-    for(int ic2=0;ic2<NCOL;ic2++)
-      A[ic1][ic2]+=B[ic1][ic2];
-  
-  return A;
-}
-
-template <typename D1,
-	  typename D2,
-	  typename D3=decltype(D1()*D2())>
-inline QuadSU3<D3> operator*(const QuadSU3<D1>& A,const QuadSU3<D2>& B)
-{
-  QuadSU3<D3> out;
-  
-  for(int mu=0;mu<NDIM;mu++)
-    out[mu]=A[mu]*B[mu];
-  
-  return out;
-}
-
-template <typename D1,
-	  typename D2,
-	  typename D3=decltype(D1()*D2())>
-inline QuadSU3<D3> operator+=(QuadSU3<D1>& A,const QuadSU3<D2>& B)
-{
-  for(int mu=0;mu<NDIM;mu++)
-    A[mu]+=B[mu];
-  
-  return A;
-}
+template <typename T>
+using QuadSU3=ArithmeticArray<SU3<T>,NDIM>;
 
 using SimdQuadSU3=QuadSU3<SimdComplex>;
 
