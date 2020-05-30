@@ -4,7 +4,6 @@
 
 #include <eigen3/Eigen/Dense>
 #include <chrono>
-#include <complex>
 
 #include <immintrin.h>
 
@@ -82,7 +81,31 @@ struct CPUGaugeConf
 
 /////////////////////////////////////////////////////////////////
 
-using SimdComplex=std::complex<Simd>;
+template <typename T>
+struct Complex : public std::array<T,2>
+{
+  Complex operator*(const Complex& oth) const
+  {
+    const Complex& t=*this;
+    Complex out;
+    
+    out[0]=t[0]*oth[0]-t[1]*oth[1];
+    out[1]=t[0]*oth[1]+t[1]*oth[0];
+    
+    return out;
+  }
+  Complex& operator+=(const Complex& oth)
+  {
+    Complex& t=*this;
+    
+    t[0]+=oth[0];
+    t[1]+=oth[1];
+    
+    return t;
+  }
+};
+
+using SimdComplex=Complex<Simd>;
 
 template <typename T,
 	  int N>
