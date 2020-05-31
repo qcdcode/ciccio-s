@@ -37,8 +37,6 @@ constexpr int simdSize=sizeof(Simd)/sizeof(double);
 
 using namespace ciccios;
 
-
-
 constexpr int NDIM=4;
 constexpr int NCOL=3;
 
@@ -81,29 +79,6 @@ struct CPUGaugeConf
 
 /////////////////////////////////////////////////////////////////
 
-template <typename T>
-struct Complex : public std::array<T,2>
-{
-  Complex operator*(const Complex& oth) const
-  {
-    const Complex& t=*this;
-    Complex out;
-    
-    out[0]=t[0]*oth[0]-t[1]*oth[1];
-    out[1]=t[0]*oth[1]+t[1]*oth[0];
-    
-    return out;
-  }
-  Complex& operator+=(const Complex& oth)
-  {
-    Complex& t=*this;
-    
-    t[0]+=oth[0];
-    t[1]+=oth[1];
-    
-    return t;
-  }
-};
 
 using SimdComplex=Complex<Simd>;
 
