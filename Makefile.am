@@ -11,6 +11,6 @@ CLEANFILES=
 %.s: %.cpp %.o
 	$(CXXCOMPILE) -S $< -c -o -|$(top_srcdir)/config/asm_inspect.sh > $@
 
-include $(top_srcdir)/projects/Makefile.am
 include $(top_srcdir)/src/Makefile.am
+include $(top_srcdir)/projects/Makefile.am
 

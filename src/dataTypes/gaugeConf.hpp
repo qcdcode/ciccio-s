@@ -113,8 +113,6 @@ namespace ciccios
     /// Sum the prodcut of the two passed conf
     SimdGaugeConf& sumProd(const SimdGaugeConf&oth1,const SimdGaugeConf& oth2)
     {
-      ASM_BOOKMARK("here");
-      
       /// Take reference to the actual data, to convert to the arithmetic-aware datatype
       auto a=(SimdQuadSU3*)(this->data);
       auto b=(SimdQuadSU3*)(oth1.data);
@@ -123,8 +121,6 @@ namespace ciccios
       //#pragma omp parallel for
       for(int iSimdSite=0;iSimdSite<this->simdVol;iSimdSite++)
 	a[iSimdSite]+=b[iSimdSite]*c[iSimdSite];
-      
-      ASM_BOOKMARK("there");
       
       return *this;
     }
