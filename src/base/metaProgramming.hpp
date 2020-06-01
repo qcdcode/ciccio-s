@@ -6,19 +6,12 @@
 
 namespace ciccios
 {
-#if __cplusplus > 201402L
-  
-  using std::as_const;
-  
-#else
-  
+  /// Returns the argument as a constant
   template <typename T>
-  constexpr const T& as_const(T& t) noexcept
+  constexpr const T& asConst(T& t) noexcept
   {
     return t;
   }
-  
-#endif
   
   /// Provides a SFINAE to be used in template par list
   ///
@@ -76,7 +69,7 @@ namespace ciccios
   template <typename...Ts> /* Type of all arguments                  */	\
   decltype(auto) NAME(Ts&&...ts) /*!< Arguments                      */ \
   {									\
-    return remove_const_if_ref(as_const(*this).NAME(std::forward<Ts>(ts)...)); \
+    return remove_const_if_ref(asConst(*this).NAME(std::forward<Ts>(ts)...)); \
   }
   
   /// Implements the CRTP pattern
@@ -91,6 +84,57 @@ namespace ciccios
     
     PROVIDE_ALSO_NON_CONST_METHOD(crtp);
   };
+  
+  /////////////////////////////////////////////////////////////////
+  
+  // To be moved to a dedicated inline/unroll file
+  
+/// Force the compiler to inline the function
+#define ALWAYS_INLINE                           \
+  __attribute__((always_inline)) inline
+  
+  namespace resources
+  {
+    /// Unroll a loop
+    template <int N>
+    struct Unroller
+    {
+      /// Actual loop
+      ///
+      /// Forward definition
+      template <typename F>
+      static ALWAYS_INLINE void loop(const F& f);
+    };
+    
+    /// Unroll a loop
+    ///
+    /// Last entry, not doing anything
+    template <>
+    template <typename F>
+    ALWAYS_INLINE void Unroller<0>::loop(const F& f)
+    {
+    }
+    
+    /// Unroll a loop
+    ///
+    /// Generic case, calling iteratively up to zero
+    template <int N>
+    template <typename F>
+    ALWAYS_INLINE void Unroller<N>::loop(const F& f)
+    {
+      Unroller<N-1>::loop(f);
+      
+      f(N-1);
+    }
+  }
+  
+  /// Unroll a loop, wrapping the actual implementation
+  template <int N,
+	    typename F>
+  ALWAYS_INLINE void unrollLoop(const F& f)
+  {
+    resources::Unroller<N>::loop(f);
+  }
 }
 
 #endif

@@ -17,6 +17,35 @@ namespace ciccios
     /// Holds the date at which the program has been compiled
     char PROG_COMPILE_DATE[]=__DATE__;
   }
+  
+  /// Initialize the library and jump to f
+  ///
+  /// \c f will be used to initialize thread pool
+  template <typename F>
+  void initCiccios(int& narg,char **&arg,const F& f)
+  {
+    initRanks(narg,arg);
+    
+    printBanner();
+    
+    printVersionAndCompileFlags(LOGGER);
+    
+    possiblyWaitToAttachDebugger();
+    
+    cpuMemoryManager=new CPUMemoryManager;
+    
+    f();
+  }
+  
+  /// Finalizes
+  void finalizeCiccios()
+  {
+    delete cpuMemoryManager;
+    
+    LOGGER<<endl<<"Ariciao!"<<endl<<endl;
+    
+    finalizeRanks();
+  }
 }
 
 #endif

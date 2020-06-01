@@ -3,7 +3,7 @@
 #endif
 
 #define EXTERN_MEMORY_MANAGER
- #include "memory_manager.hpp"
+ #include "memoryManager.hpp"
 
 namespace ciccios
 {
