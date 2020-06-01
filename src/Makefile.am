@@ -1,5 +1,3 @@
-include_HEADERS=ciccio-s.hpp
-
 #add ciccio-s library
 lib_LIBRARIES=$(top_builddir)/lib/libciccio-s.a
 __top_builddir__lib_libciccio_s_a_SOURCES=
@@ -10,7 +8,6 @@ __top_builddir__lib_libciccio_s_a_SOURCES=
 $(top_srcdir)/.git/HEAD:
 $(top_srcdir)/.git/index:
 
-
-BUILT_SOURCES=%D%/git_info.hpp
+BUILT_SOURCES+=%D%/git_info.hpp
 
 include $(top_srcdir)/src/base/Makefile.am
