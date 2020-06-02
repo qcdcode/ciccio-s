@@ -6,6 +6,7 @@ include_HEADERS=
 bin_PROGRAMS=
 BUILT_SOURCES=
 CLEANFILES=
+generate_assembly=
 
 #rule to create assembly output and get it filtered
 %.s: %.cpp %.o
@@ -13,4 +14,10 @@ CLEANFILES=
 
 include $(top_srcdir)/src/Makefile.am
 include $(top_srcdir)/projects/Makefile.am
+
+#generate assembly if needed
+if GENERATE_SIDE_ASSEMBLY
+BUILT_SOURCES+=$(generate_assembly)
+CLEANFILES+=$(generate_assembly)
+endif
 

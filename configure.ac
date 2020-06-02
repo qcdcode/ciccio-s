@@ -169,8 +169,6 @@ Configuration OK
 
 #create config.hpp
 AC_CONFIG_FILES(
-	Makefile
-	src/Makefile
-	projects/Makefile)
+	Makefile)
 
 AC_OUTPUT
