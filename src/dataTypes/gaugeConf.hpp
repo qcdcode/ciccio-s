@@ -9,25 +9,27 @@ namespace ciccios
   /// SIMD gauge conf
   ///
   /// Forward definition
+  template <typename Fund>
   struct SimdGaugeConf;
   
   /// Trivial gauge conf
-  template <StorLoc SL>
+  template <StorLoc SL,
+	    typename Fund>
   struct CPUGaugeConf
   {
     /// Internal data
-    double* data;
+    Fund* data;
     
     /// Index function
-    int index(int ivol,int mu,int icol1,int icol2,int reim) const
+    int index(int iSite,int icol1,int icol2,int reim) const
     {
-      return reim+2*(icol2+NCOL*(icol1+NCOL*(mu+NDIM*ivol)));
+      return reim+2*(icol2+NCOL*(icol1+NCOL*iSite));
     }
     
     /// Access to data
-    const double& operator()(int ivol,int mu,int icol1,int icol2,int reim) const
+    const Fund& operator()(int iSite,int icol1,int icol2,int reim) const
     {
-      return data[index(ivol,mu,icol1,icol2,reim)];
+      return data[index(iSite,icol1,icol2,reim)];
     }
     
     PROVIDE_ALSO_NON_CONST_METHOD(operator());
@@ -36,9 +38,9 @@ namespace ciccios
     CPUGaugeConf(int vol)
     {
       /// Compute size
-      const int size=index(vol,0,0,0,0);
+      const int size=index(vol,0,0,0);
       
-      data=(double*)memoryManager<SL>()->template provide<double>(size);
+      data=(Fund*)memoryManager<SL>()->template provide<Fund>(size);
     }
     
     /// Destroy
@@ -48,39 +50,51 @@ namespace ciccios
     }
     
     /// Assign from a SIMD version
-    CPUGaugeConf& operator=(const SimdGaugeConf& oth);
+    CPUGaugeConf& operator=(const SimdGaugeConf<Fund>& oth);
   };
   
   /////////////////////////////////////////////////////////////////
   
   /// SIMD version of the conf
+  template <typename Fund>
   struct SimdGaugeConf
   {
     /// Volume
-    const int simdVol;
+    const int fusedVol;
     
     /// Internal data
-    Simd* data;
+    Simd<Fund>* data;
     
-    int index(int ivol,int mu,int icol1,int icol2,int reim) const
+    /// Index to internal data
+    int index(const int iFusedSite,const int icol1,const int icol2,const int reim) const
     {
-      return reim+2*(icol2+NCOL*(icol1+NCOL*(mu+NDIM*ivol)));
+      return reim+2*(icol2+NCOL*(icol1+NCOL*iFusedSite));
     }
     
     /// Access to data
-    const Simd& operator()(int ivol,int mu,int icol1,int icol2,int reim) const
+    const Simd<Fund>& operator()(const int iFusedSite,const int icol1,const int icol2,const int reim) const
     {
-      return data[index(ivol,mu,icol1,icol2,reim)];
+      return data[index(iFusedSite,icol1,icol2,reim)];
     }
     
     PROVIDE_ALSO_NON_CONST_METHOD(operator());
     
-    /// Creates starting from the physical volume
-    SimdGaugeConf(int vol) : simdVol(vol/simdLength)
+    /// Access to the fused site
+    const SimdSU3<Fund>& simdSite(const int iFusedSite) const
     {
-      int size=index(simdVol,0,0,0,0);
+      const Simd<Fund>& ref=(*this)(iFusedSite,0,0,0);
       
-      data=cpuMemoryManager->template provide<Simd>(size);
+      return *reinterpret_cast<const SimdSU3<Fund>*>(&ref);
+    }
+    
+    PROVIDE_ALSO_NON_CONST_METHOD(simdSite);
+    
+    /// Creates starting from the physical volume
+    SimdGaugeConf(int vol) : fusedVol(vol/simdLength<Fund>)
+    {
+      int size=index(fusedVol,0,0,0);
+      
+      data=cpuMemoryManager->template provide<Simd<Fund>>(size);
     }
     
     /// Destroy
@@ -90,21 +104,20 @@ namespace ciccios
     }
     
     /// Assign from a non-simd version
-    SimdGaugeConf& operator=(const CPUGaugeConf<StorLoc::ON_CPU>& oth)
+    SimdGaugeConf& operator=(const CPUGaugeConf<StorLoc::ON_CPU,Fund>& oth)
     {
-      for(int iSite=0;iSite<simdVol*simdLength;iSite++)
+      for(int iSite=0;iSite<fusedVol*simdLength<Fund>;iSite++)
 	{
 	  /// Index of the simd fused sites
-	  const int iSimdSite=iSite/simdLength;
+	  const int iFusedSite=iSite/simdLength<Fund>;
 	  
 	  /// Index of the simd component
-	  const int iSimdComp=iSite%simdLength;
+	  const int iSimdComp=iSite%simdLength<Fund>;
 	  
-	  for(int mu=0;mu<NDIM;mu++)
-	    for(int ic1=0;ic1<NCOL;ic1++)
-	      for(int ic2=0;ic2<NCOL;ic2++)
-		for(int ri=0;ri<2;ri++)
-		  (*this)(iSimdSite,mu,ic1,ic2,ri)[iSimdComp]=oth(iSite,mu,ic1,ic2,ri);
+	  for(int ic1=0;ic1<NCOL;ic1++)
+	    for(int ic2=0;ic2<NCOL;ic2++)
+	      for(int ri=0;ri<2;ri++)
+		(*this)(iFusedSite,ic1,ic2,ri)[iSimdComp]=oth(iSite,ic1,ic2,ri);
 	}
       
       return *this;
@@ -113,34 +126,38 @@ namespace ciccios
     /// Sum the prodcut of the two passed conf
     SimdGaugeConf& sumProd(const SimdGaugeConf&oth1,const SimdGaugeConf& oth2)
     {
-      /// Take reference to the actual data, to convert to the arithmetic-aware datatype
-      auto a=(SimdQuadSU3*)(this->data);
-      auto b=(SimdQuadSU3*)(oth1.data);
-      auto c=(SimdQuadSU3*)(oth2.data);
-      
-      //#pragma omp parallel for
-      for(int iSimdSite=0;iSimdSite<this->simdVol;iSimdSite++)
-	a[iSimdSite]+=b[iSimdSite]*c[iSimdSite];
+      for(int iFusedSite=0;iFusedSite<this->fusedVol;iFusedSite++)
+	{
+	  auto& a=this->simdSite(iFusedSite);
+	  const auto& b=oth1.simdSite(iFusedSite);
+	  const auto& c=oth2.simdSite(iFusedSite);
+	  
+	  if(0)
+	    a+=b*c;
+	  else
+	    a.sumProd(b,c);
+	}
       
       return *this;
     }
   };
   
   /// Assign from SIMD version
-  template <>
-  CPUGaugeConf<StorLoc::ON_CPU>& CPUGaugeConf<StorLoc::ON_CPU>::operator=(const SimdGaugeConf& oth)
+  template <StorLoc SL,
+	    typename Fund>
+  CPUGaugeConf<SL,Fund>& CPUGaugeConf<SL,Fund>::operator=(const SimdGaugeConf<Fund>& oth)
   {
-    for(int iSimdSite=0;iSimdSite<oth.simdVol;iSimdSite++)
-      for(int mu=0;mu<NDIM;mu++)
-	for(int ic1=0;ic1<NCOL;ic1++)
-	  for(int ic2=0;ic2<NCOL;ic2++)
-	    for(int ri=0;ri<2;ri++)
-	      for(int iSimdComp=0;iSimdComp<simdLength;iSimdComp++)
-		{
-		  const int iSite=iSimdComp+simdLength*iSimdSite;
-		  
-		  (*this)(iSite,mu,ic1,ic2,ri)=oth(iSimdSite,mu,ic1,ic2,ri)[iSimdComp];
-		}
+    for(int iFusedSite=0;iFusedSite<oth.fusedVol;iFusedSite++)
+      
+      for(int ic1=0;ic1<NCOL;ic1++)
+	for(int ic2=0;ic2<NCOL;ic2++)
+	  for(int ri=0;ri<2;ri++)
+	    for(int iSimdComp=0;iSimdComp<simdLength<Fund>;iSimdComp++)
+	      {
+		const int iSite=iSimdComp+simdLength<Fund>*iFusedSite;
+		
+		(*this)(iSite,ic1,ic2,ri)=oth(iFusedSite,ic1,ic2,ri)[iSimdComp];
+	      }
     
     return *this;
   }

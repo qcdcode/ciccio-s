@@ -7,6 +7,8 @@
 
 namespace ciccios
 {
+  enum{RE,IM};
+  
   /// Complex number
   template <typename T>
   struct Complex : public std::array<T,2>
@@ -20,8 +22,8 @@ namespace ciccios
       /// Result
       Complex out;
       
-      out[0]=t[0]*oth[0]-t[1]*oth[1];
-      out[1]=t[0]*oth[1]+t[1]*oth[0];
+      out[RE]=t[RE]*oth[RE]-t[IM]*oth[IM];
+      out[IM]=t[RE]*oth[IM]+t[IM]*oth[RE];
       
       return out;
     }
@@ -32,15 +34,38 @@ namespace ciccios
       /// Alias for this
       Complex& t=*this;
       
-      t[0]+=oth[0];
-      t[1]+=oth[1];
+      t[RE]+=oth[RE];
+      t[IM]+=oth[IM];
+      
+      return t;
+    }
+    
+    /// Product with another complex
+    Complex& sumProd(const Complex& oth1,const Complex& oth2)
+    {
+      /// Alias for this
+      Complex& t=*this;
+      
+      if(0)
+	{
+	  t[RE]+=oth1[RE]*oth2[RE]-oth1[IM]*oth2[IM];
+	  t[IM]+=oth1[RE]*oth2[IM]+oth1[IM]*oth2[RE];
+	}
+      else
+	{
+	  t[RE]+=oth1[RE]*oth2[RE];
+	  t[RE]-=oth1[IM]*oth2[IM];
+	  t[IM]+=oth1[RE]*oth2[IM];
+	  t[IM]+=oth1[IM]*oth2[RE];
+	}
       
       return t;
     }
   };
   
   /// Simd version of a complex
-  using SimdComplex=Complex<Simd>;
+  template <typename Fund>
+  using SimdComplex=Complex<Simd<Fund>>;
   
 }
 

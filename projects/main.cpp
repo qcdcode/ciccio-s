@@ -4,32 +4,33 @@
 
 #include <eigen3/Eigen/Dense>
 #include <chrono>
-
+//#define WITH_DIR
 #include "ciccio-s.hpp"
 
 using namespace ciccios;
 
+using Fund=double;
+
 /////////////////////////////////////////////////////////////////
 
-void test(const int vol,const int nIters=100)
+void test(const int vol,const int nIters=10000)
 {
   /// Number of flops per site
-  const double nFlopsPerSite=7.0*NCOL*NCOL*NCOL*NDIM;
+  const double nFlopsPerSite=7.0*NCOL*NCOL*NCOL;
   
   /// Number of GFlops in total
   const double nGFlops=nFlopsPerSite*nIters*vol/1e9;
   
   /// Prepare the configuration in the CPU format
-  CPUGaugeConf<StorLoc::ON_CPU> conf(vol);
+  CPUGaugeConf<StorLoc::ON_CPU,Fund> conf(vol);
   for(int iSite=0;iSite<vol;iSite++)
-    for(int mu=0;mu<NDIM;mu++)
-      for(int ic1=0;ic1<NCOL;ic1++)
-	for(int ic2=0;ic2<NCOL;ic2++)
-	  for(int ri=0;ri<2;ri++)
-	    conf(iSite,mu,ic1,ic2,ri)=1.1;
+    for(int ic1=0;ic1<NCOL;ic1++)
+      for(int ic2=0;ic2<NCOL;ic2++)
+	for(int ri=0;ri<2;ri++)
+	  conf(iSite,ic1,ic2,ri)=1.1;
   
   /// Allocate three confs, this could be short-circuited through cast operator
-  SimdGaugeConf simdConf1(vol),simdConf2(vol),simdConf3(vol);
+  SimdGaugeConf<Fund> simdConf1(vol),simdConf2(vol),simdConf3(vol);
   simdConf1=conf;
   simdConf2=conf;
   simdConf3=conf;
@@ -38,7 +39,34 @@ void test(const int vol,const int nIters=100)
   Instant start=takeTime();
   
   for(int i=0;i<nIters;i++)
-    simdConf1.sumProd(simdConf2,simdConf3);
+    if(0)
+      simdConf1.sumProd(simdConf2,simdConf3);
+    else
+        {
+      ASM_BOOKMARK("Explicit BEG");
+      //#pragma omp parallel for
+      for(int iFusedSite=0;iFusedSite<simdConf1.fusedVol;iFusedSite++)
+  	{
+  	  auto a=simdConf1.simdSite(iFusedSite);
+  	  const auto& b=simdConf2.simdSite(iFusedSite);
+  	  const auto& c=simdConf3.simdSite(iFusedSite);
+	  
+#pragma GCC unroll 3
+  	  for(int i=0;i<3;i++)
+#pragma GCC unroll 3
+	    for(int k=0;k<3;k++)
+#pragma GCC unroll 3
+	      for(int j=0;j<3;j++)
+		{
+		  a[i][j][0]+=b[i][k][0]*c[k][j][0];
+		  a[i][j][0]-=b[i][k][1]*c[k][j][1];
+		  a[i][j][1]+=b[i][k][0]*c[k][j][1];
+		  a[i][j][1]+=b[i][k][1]*c[k][j][0];
+		}
+  	  simdConf1.simdSite(iFusedSite)=a;
+  	}
+      ASM_BOOKMARK("Explicit END");
+  }
   
   /// Takes note of ending moment
   Instant end=takeTime();
@@ -51,34 +79,32 @@ void test(const int vol,const int nIters=100)
   
   /// Compute performances
   const double gFlopsPerSec=nGFlops/timeInSec;
-  LOGGER<<"Volume: "<<vol<<endl;
+  LOGGER<<"Volume: "<<vol<<" dataset: "<<3*(double)vol*sizeof(SU3<Complex<double>>)/(1<<20)<<endl;
   LOGGER<<"Fantasy GFlops/s: "<<gFlopsPerSec<<endl;
-  LOGGER<<"Check: "<<conf(0,0,0,0,0)<<" "<<conf(0,0,0,0,1)<<endl;
+  LOGGER<<"Check: "<<conf(0,0,0,0)<<" "<<conf(0,0,0,1)<<endl;
   
   /////////////////////////////////////////////////////////////////
   
   /// Eigen equivalent of 4xSU3
-  using EQSU3=std::array<Eigen::Matrix<std::complex<double>,NCOL,NCOL>,NDIM>;
+  using EQSU3=Eigen::Matrix<std::complex<Fund>,NCOL,NCOL>;
   
   /// Allocate three confs through Eigen
   std::vector<EQSU3,Eigen::aligned_allocator<EQSU3>> a(vol),b(vol),c(vol);
   for(int i=0;i<vol;i++)
-    for(int mu=0;mu<NDIM;mu++)
-      {
-	a[i][mu].fill({1.1,1.1});
-	b[i][mu].fill({1.1,1.1});
-	c[i][mu].fill({1.1,1.1});
-      }
+    {
+      a[i].fill({1.1,1.1});
+      b[i].fill({1.1,1.1});
+      c[i].fill({1.1,1.1});
+    }
   
   start=takeTime();
   for(int i=0;i<nIters;i++)
     for(int i=0;i<vol;i++)
-      for(int mu=0;mu<NDIM;mu++)
-	{
-	  ASM_BOOKMARK("EIG_BEGIN");
-	  a[i][mu]+=b[i][mu]*c[i][mu];
-	  ASM_BOOKMARK("EIG_END");
-	}
+      {
+	ASM_BOOKMARK("EIG_BEGIN");
+	a[i]+=b[i]*c[i];
+	ASM_BOOKMARK("EIG_END");
+      }
   
   end=takeTime();
   {
@@ -86,7 +112,7 @@ void test(const int vol,const int nIters=100)
     const double gFlopsPerSec=nGFlops/timeInSec;
     
     LOGGER<<"Eigen GFlops/s: "<<gFlopsPerSec<<endl;
-    LOGGER<<"Check: "<<a[0][0](0,0)<<endl;
+    LOGGER<<"Check: "<<a[0](0,0)<<endl;
   }
   LOGGER<<endl;
 }

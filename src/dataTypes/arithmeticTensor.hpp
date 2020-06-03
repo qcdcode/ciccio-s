@@ -73,11 +73,56 @@ namespace ciccios
     template <typename U>
     auto operator+=(const ArithmeticMatrix<U,N>& oth)
     {
+      ASM_BOOKMARK("Matrix sum begin");
       unrollLoop<N>([&](int ir){
 		      unrollLoop<N>([&](int ic){
 				      (*this)[ir][ic]+=oth[ir][ic];
 				    });
 		    });
+      ASM_BOOKMARK("Matrix sum end");
+      
+      return *this;
+    }
+    
+    /// Sum the product between two another matrices
+    template <typename U1,
+	      typename U2,
+	      typename R=decltype(T()+=U1()*U2())>
+    auto sumProd(const ArithmeticMatrix<U1,N>& oth1,const ArithmeticMatrix<U2,N>& oth2)
+    {
+      ASM_BOOKMARK("Matrix sum-multiplication begin");
+      
+      auto thisCopy=(*this);
+
+#if 1
+      #pragma GCC unroll 3
+      for(int ir=0;ir<3;ir++)
+      #pragma GCC unroll 3
+      for(int i=0;i<3;i++)
+      #pragma GCC unroll 3
+      for(int ic=0;ic<3;ic++)
+#else
+	unrollLoop<N>([&](int ir){
+      		      unrollLoop<N>([&](int i){
+      				      unrollLoop<N>([&](int ic)
+#endif
+						    {
+						      auto& o=thisCopy[ir][ic];
+						      const auto& f=oth1[ir][i];
+						      const auto& s=oth2[i][ic];
+						      
+						      if(0)
+							o+=f*s;
+						      else
+							o.sumProd(f,s);
+						    }
+#if 0
+					);}
+			);});
+#endif
+      (*this)=thisCopy;
+      
+      ASM_BOOKMARK("Matrix sum-multiplication end");
       
       return *this;
     }
