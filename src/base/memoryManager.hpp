@@ -32,7 +32,7 @@ namespace ciccios
   using Size=long int;
   
   /// Minimal alignment
-#define DEFAULT_ALIGNMENT 32
+#define DEFAULT_ALIGNMENT 64
   
   /// Memory manager, base type
   template <typename C>
