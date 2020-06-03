@@ -22,7 +22,7 @@ namespace ciccios
   ///
   /// \c f will be used to initialize thread pool
   template <typename F>
-  void initCiccios(int& narg,char **&arg,const F& f)
+  void initCiccios(int& narg,char **&arg,const F& inMain)
   {
     initRanks(narg,arg);
     
@@ -33,8 +33,9 @@ namespace ciccios
     possiblyWaitToAttachDebugger();
     
     cpuMemoryManager=new CPUMemoryManager;
+    cpuMemoryManager->disableCache();
     
-    f();
+    inMain();
   }
   
   /// Finalizes
