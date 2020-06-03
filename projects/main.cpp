@@ -27,7 +27,7 @@ void test(const int vol,const int nIters=10000)
     for(int ic1=0;ic1<NCOL;ic1++)
       for(int ic2=0;ic2<NCOL;ic2++)
 	for(int ri=0;ri<2;ri++)
-	  conf(iSite,ic1,ic2,ri)=1.1;
+	  conf(iSite,ic1,ic2,ri)=ri+2*(ic2+NCOL*(ic1+NCOL*iSite));
   
   /// Allocate three confs, this could be short-circuited through cast operator
   SimdGaugeConf<Fund> simdConf1(vol),simdConf2(vol),simdConf3(vol);
@@ -39,7 +39,7 @@ void test(const int vol,const int nIters=10000)
   Instant start=takeTime();
   
   for(int i=0;i<nIters;i++)
-    if(0)
+    if(1)
       simdConf1.sumProd(simdConf2,simdConf3);
     else
         {
@@ -58,10 +58,11 @@ void test(const int vol,const int nIters=10000)
 #pragma GCC unroll 3
 	      for(int j=0;j<3;j++)
 		{
-		  a[i][j][0]+=b[i][k][0]*c[k][j][0];
-		  a[i][j][0]-=b[i][k][1]*c[k][j][1];
-		  a[i][j][1]+=b[i][k][0]*c[k][j][1];
-		  a[i][j][1]+=b[i][k][1]*c[k][j][0];
+		  a[i][j].sumProd(b[i][k],c[k][j]);
+		  // a[i][j][0]+=b[i][k][0]*c[k][j][0];
+		  // a[i][j][0]-=b[i][k][1]*c[k][j][1];
+		  // a[i][j][1]+=b[i][k][0]*c[k][j][1];
+		  // a[i][j][1]+=b[i][k][1]*c[k][j][0];
 		}
   	  simdConf1.simdSite(iFusedSite)=a;
   	}
@@ -90,20 +91,24 @@ void test(const int vol,const int nIters=10000)
   
   /// Allocate three confs through Eigen
   std::vector<EQSU3,Eigen::aligned_allocator<EQSU3>> a(vol),b(vol),c(vol);
-  for(int i=0;i<vol;i++)
+  for(int iSite=0;iSite<vol;iSite++)
+    for(int ic1=0;ic1<NCOL;ic1++)
+      for(int ic2=0;ic2<NCOL;ic2++)
+	for(int ri=0;ri<2;ri++)
     {
-      a[i].fill({1.1,1.1});
-      b[i].fill({1.1,1.1});
-      c[i].fill({1.1,1.1});
+      const int y=ic2+NCOL*(ic1+NCOL*iSite);
+      a[iSite](ic1,ic2)=
+	b[iSite](ic1,ic2)=
+	c[iSite](ic1,ic2)={0.0+2*y,1.0+2*y};
     }
   
   start=takeTime();
   for(int i=0;i<nIters;i++)
     for(int i=0;i<vol;i++)
       {
-	ASM_BOOKMARK("EIG_BEGIN");
+	//ASM_BOOKMARK("EIG_BEGIN");
 	a[i]+=b[i]*c[i];
-	ASM_BOOKMARK("EIG_END");
+	//ASM_BOOKMARK("EIG_END");
       }
   
   end=takeTime();

@@ -19,7 +19,6 @@ namespace ciccios
   /// Simd version of SU3 matrices
   template <typename Fund>
   using SimdSU3=SU3<SimdComplex<Fund>>;
-  
 }
 
 #endif

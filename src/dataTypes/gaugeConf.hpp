@@ -123,8 +123,8 @@ namespace ciccios
       return *this;
     }
     
-    /// Sum the prodcut of the two passed conf
-    SimdGaugeConf& sumProd(const SimdGaugeConf&oth1,const SimdGaugeConf& oth2)
+    /// Sum the product of the two passed conf
+    SimdGaugeConf& sumProd(const SimdGaugeConf& oth1,const SimdGaugeConf& oth2)
     {
       for(int iFusedSite=0;iFusedSite<this->fusedVol;iFusedSite++)
 	{
