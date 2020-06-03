@@ -9,9 +9,6 @@
 
 namespace ciccios
 {
-  /// Number of dimension
-  constexpr int NDIM=4;
-  
   /// Number of colors
   constexpr int NCOL=3;
   
@@ -19,12 +16,10 @@ namespace ciccios
   template <typename T>
   using SU3=ArithmeticMatrix<T,NCOL>;
   
-  /// Four SU3 matrices
-  template <typename T>
-  using QuadSU3=ArithmeticArray<SU3<T>,NDIM>;
+  /// Simd version of SU3 matrices
+  template <typename Fund>
+  using SimdSU3=SU3<SimdComplex<Fund>>;
   
-  /// Simd version of 4 SU3 matrices
-  using SimdQuadSU3=QuadSU3<SimdComplex>;
 }
 
 #endif
