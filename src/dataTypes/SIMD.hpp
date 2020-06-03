@@ -7,15 +7,28 @@
 
 namespace ciccios
 {
-#define SIMD_TYPE M256D
+#if 1
   
-#if SIMD_TYPE == M256D
+  namespace resources
+  {
+    template <typename Fund>
+    struct Simd;
+    
+    template <>
+    struct Simd<double>
+    {
+      using Type=__m256d;
+    };
+    
+    template <>
+    struct Simd<float>
+    {
+      using Type=__m256;
+    };
+  }
   
-  using Simd=__m256d;
-  
-#elif SIMD_TYPE == M256
-  
-  using Simd=__m256;
+  template <typename Fund>
+  using Simd=typename resources::Simd<Fund>::Type;
   
 #else
   
@@ -43,7 +56,8 @@ namespace ciccios
 #endif
   
   /// Length of a SIMD vector
-  constexpr int simdLength=sizeof(Simd)/sizeof(double);
+  template <typename Fund>
+  constexpr int simdLength=sizeof(Simd<Fund>)/sizeof(Fund);
 }
 
 #endif
