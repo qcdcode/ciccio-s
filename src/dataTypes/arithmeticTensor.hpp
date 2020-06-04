@@ -90,13 +90,13 @@ namespace ciccios
 	      typename R=decltype(T()+=U1()*U2())>
     auto& sumProd(const ArithmeticMatrix<U1,N>& oth1,const ArithmeticMatrix<U2,N>& oth2)
     {
-      ASM_BOOKMARK("Matrix sum-multiplication begin");
+      ASM_BOOKMARK_BEGIN("Metaprog unrolled");
       
       auto thisCopy=(*this);
       
-      unrollLoop<N>([&](int i){
-		      unrollLoop<N>([&](int ir){
-      				      unrollLoop<N>([&](int ic)
+      unrollLoopAlt<N>([&](int i){
+		      unrollLoopAlt<N>([&](int ir){
+      				      unrollLoopAlt<N>([&](int ic)
 						    {
 						      auto& o=thisCopy[ir][ic];
 						      const auto& f=oth1[ir][i];
@@ -112,7 +112,7 @@ namespace ciccios
       
       (*this)=thisCopy;
       
-      ASM_BOOKMARK("Matrix sum-multiplication end");
+      ASM_BOOKMARK_END("Metaprog unrolled");
       
       return *this;
     }

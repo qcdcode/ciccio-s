@@ -135,6 +135,36 @@ namespace ciccios
   {
     resources::Unroller<N>::loop(f);
   }
+  
+  /////////////////////////////////////////////////////////////////
+  
+  namespace resources
+  {
+    template <typename F,
+	      typename...Args>
+    int call(F&& f,Args&&...args)
+    {
+      f(std::forward<Args>(args)...);
+      
+      return 0;
+    }
+    
+  template <int...Is,
+	    typename F>
+  ALWAYS_INLINE void unrollLoop(std::integer_sequence<int,Is...>,F f)
+  {
+    [[ maybe_unused ]]auto list={call(f,Is)...};
+  }
+  }
+  
+  /// Unroll a loop, wrapping the actual implementation
+  template <int N,
+	    typename F>
+  ALWAYS_INLINE void unrollLoopAlt(const F& f)
+  {
+    resources::unrollLoop(std::make_integer_sequence<int, N>{},f);
+  }
+  
 }
 
 #endif
