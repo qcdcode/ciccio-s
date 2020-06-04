@@ -47,18 +47,11 @@ namespace ciccios
       /// Alias for this
       Complex& t=*this;
       
-      if(0)
-	{
-	  t[RE]+=oth1[RE]*oth2[RE]-oth1[IM]*oth2[IM];
-	  t[IM]+=oth1[RE]*oth2[IM]+oth1[IM]*oth2[RE];
-	}
-      else
-	{
-	  t[RE]+=oth1[RE]*oth2[RE];
-	  t[RE]-=oth1[IM]*oth2[IM];
-	  t[IM]+=oth1[RE]*oth2[IM];
-	  t[IM]+=oth1[IM]*oth2[RE];
-	}
+      // Dumb compiler would not fuse this if we put together
+      t[RE]+=oth1[RE]*oth2[RE];
+      t[RE]-=oth1[IM]*oth2[IM];
+      t[IM]+=oth1[RE]*oth2[IM];
+      t[IM]+=oth1[IM]*oth2[RE];
       
       return t;
     }

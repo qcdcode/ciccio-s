@@ -4,7 +4,7 @@
 
 #include <eigen3/Eigen/Dense>
 #include <chrono>
-//#define WITH_DIR
+
 #include "ciccio-s.hpp"
 
 using namespace ciccios;
@@ -13,8 +13,8 @@ using Fund=double;
 
 /////////////////////////////////////////////////////////////////
 
-/// Unroll loops with pragmas
-void pragmaUnrolledSumProd(SimdGaugeConf<Fund>& simdConf1,const SimdGaugeConf<Fund>& simdConf2,const SimdGaugeConf<Fund>& simdConf3)
+/// Unroll loops with metaprogramming
+void unrolledSumProd(SimdGaugeConf<Fund>& simdConf1,const SimdGaugeConf<Fund>& simdConf2,const SimdGaugeConf<Fund>& simdConf3)
 {
   ASM_BOOKMARK_BEGIN("AltUnrolled");
   
@@ -39,6 +39,33 @@ void pragmaUnrolledSumProd(SimdGaugeConf<Fund>& simdConf1,const SimdGaugeConf<Fu
   ASM_BOOKMARK_END("AltUnrolled");
 }
 
+/// Unroll loops with metaprogramming
+template <StorLoc SL=StorLoc::ON_CPU>
+void unrolledSumProd(CPUGaugeConf<SL,Fund>& conf1,const CPUGaugeConf<SL,Fund>& conf2,const CPUGaugeConf<SL,Fund>& conf3)
+{
+  ASM_BOOKMARK_BEGIN("AltUnrolledCPU");
+  
+  //#pragma omp parallel for
+  for(int iSite=0;iSite<conf1.vol;iSite++)
+    {
+      auto a=conf1.site(iSite);
+      const auto& b=conf2.site(iSite);
+      const auto& c=conf3.site(iSite);
+      
+      //così fa 77 vmovapd, se invece usiamo la versione dentro a gaugeconf ne fa 117, prova a spostare quanto sotto così comìè
+      
+      unrollLoopAlt<NCOL>([&](const int& i){
+			 unrollLoopAlt<NCOL>([&](const int& k){
+					    unrollLoopAlt<NCOL>([&](const int& j)
+							     {
+							       a[i][j].sumProd(b[i][k],c[k][j]);
+							     });});});
+      conf1.site(iSite)=a;
+    }
+  
+  ASM_BOOKMARK_END("AltUnrolledCPU");
+}
+
 template <int FMA=0>
 void test(const int vol,const int nIters=10000)
 {
@@ -56,6 +83,37 @@ void test(const int vol,const int nIters=10000)
 	for(int ri=0;ri<2;ri++)
 	  conf(iSite,ic1,ic2,ri)=ri+2*(ic2+NCOL*(ic1+NCOL*iSite));
   
+  LOGGER<<"Volume: "<<vol<<" dataset: "<<3*(double)vol*sizeof(SU3<Complex<double>>)/(1<<20)<<endl;
+  
+  /////////////////////////////////////////////////////////////////
+  
+  /// Allocate three confs, this could be short-circuited through cast operator
+  CPUGaugeConf<StorLoc::ON_CPU,Fund> conf1(vol),conf2(vol),conf3(vol);
+  conf1=conf;
+  conf2=conf;
+  conf3=conf;
+  
+  /// Takes note of starting moment
+  Instant start=takeTime();
+  
+  for(int i=0;i<nIters;i++)
+    unrolledSumProd(conf1,conf2,conf3);
+  
+  /// Takes note of ending moment
+  Instant end=takeTime();
+  
+  
+  {
+    /// Compute time
+  const double timeInSec=timeDiffInSec(end,start);
+  
+  /// Compute performances
+  const double gFlopsPerSec=nGFlops/timeInSec;
+  LOGGER<<"GFlops/s: "<<gFlopsPerSec<<endl;
+  LOGGER<<"Check: "<<conf1(0,0,0,0)<<" "<<conf1(0,0,0,1)<<endl;
+  }
+  /////////////////////////////////////////////////////////////////
+  
   /// Allocate three confs, this could be short-circuited through cast operator
   SimdGaugeConf<Fund> simdConf1(vol),simdConf2(vol),simdConf3(vol);
   simdConf1=conf;
@@ -63,29 +121,29 @@ void test(const int vol,const int nIters=10000)
   simdConf3=conf;
   
   /// Takes note of starting moment
-  Instant start=takeTime();
+  start=takeTime();
   
   for(int i=0;i<nIters;i++)
-    if(FMA%2==0)
+    if(FMA%2==1)
       simdConf1.sumProd(simdConf2,simdConf3);
     else
-      pragmaUnrolledSumProd(simdConf1,simdConf2,simdConf3);
+      unrolledSumProd(simdConf1,simdConf2,simdConf3);
   
   /// Takes note of ending moment
-  Instant end=takeTime();
+  end=takeTime();
   
   // Copy back
   conf=simdConf1;
   
-  /// Compute time
+  {
+    /// Compute time
   const double timeInSec=timeDiffInSec(end,start);
   
   /// Compute performances
   const double gFlopsPerSec=nGFlops/timeInSec;
-  LOGGER<<"Volume: "<<vol<<" dataset: "<<3*(double)vol*sizeof(SU3<Complex<double>>)/(1<<20)<<endl;
   LOGGER<<"Fantasy GFlops/s: "<<gFlopsPerSec<<endl;
   LOGGER<<"Check: "<<conf(0,0,0,0)<<" "<<conf(0,0,0,1)<<endl;
-  
+  }
   /////////////////////////////////////////////////////////////////
   
   /// Eigen equivalent of 4xSU3

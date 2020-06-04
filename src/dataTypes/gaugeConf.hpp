@@ -17,6 +17,9 @@ namespace ciccios
 	    typename Fund>
   struct CPUGaugeConf
   {
+    /// Volume
+    const int vol;
+    
     /// Internal data
     Fund* data;
     
@@ -34,8 +37,18 @@ namespace ciccios
     
     PROVIDE_ALSO_NON_CONST_METHOD(operator());
     
+    /// Access to the fused site
+    const SU3<Complex<Fund>>& site(const int iSite) const
+    {
+      const Fund& ref=(*this)(iSite,0,0,0);
+      
+      return *reinterpret_cast<const SU3<Complex<Fund>>*>(&ref);
+    }
+    
+    PROVIDE_ALSO_NON_CONST_METHOD(site);
+    
     /// Create knowning volume
-    CPUGaugeConf(int vol)
+    CPUGaugeConf(const int vol) : vol(vol)
     {
       /// Compute size
       const int size=index(vol,0,0,0);
@@ -47,6 +60,37 @@ namespace ciccios
     ~CPUGaugeConf()
     {
       memoryManager<SL>()->release(data);
+    }
+    
+    /// Sum the product of the two passed conf
+    ALWAYS_INLINE CPUGaugeConf& sumProd(const CPUGaugeConf& oth1,const CPUGaugeConf& oth2)
+    {
+      ASM_BOOKMARK_BEGIN("UnrolledCPUmethod");
+      for(int iSite=0;iSite<this->vol;iSite++)
+      	{
+      	  auto& a=this->CPUSite(iSite);
+      	  const auto& b=oth1.CPUSite(iSite);
+      	  const auto& c=oth2.CPUSite(iSite);
+	  
+	  a.sumProd(b,c);
+	}
+      ASM_BOOKMARK_END("UnrolledCPUmethod");
+      
+      return *this;
+    }
+    
+    /// Assign from a non-simd version
+    CPUGaugeConf& operator=(const CPUGaugeConf<StorLoc::ON_CPU,Fund>& oth)
+    {
+      for(int iSite=0;iSite<vol;iSite++)
+	{
+	  for(int ic1=0;ic1<NCOL;ic1++)
+	    for(int ic2=0;ic2<NCOL;ic2++)
+	      for(int ri=0;ri<2;ri++)
+		(*this)(iSite,ic1,ic2,ri)=oth(iSite,ic1,ic2,ri);
+	}
+      
+      return *this;
     }
     
     /// Assign from a SIMD version
@@ -126,7 +170,7 @@ namespace ciccios
     /// Sum the product of the two passed conf
     ALWAYS_INLINE SimdGaugeConf& sumProd(const SimdGaugeConf& oth1,const SimdGaugeConf& oth2)
     {
-      ASM_BOOKMARK_BEGIN("AltUnrolled method");
+      ASM_BOOKMARK_BEGIN("UnrolledSIMDmethod");
       for(int iFusedSite=0;iFusedSite<this->fusedVol;iFusedSite++)
       	{
       	  auto& a=this->simdSite(iFusedSite);
@@ -135,7 +179,7 @@ namespace ciccios
 	  
 	  a.sumProd(b,c);
 	}
-      ASM_BOOKMARK_END("AltUnrolled method");
+      ASM_BOOKMARK_END("UnrolledSIMDmethod");
       
       return *this;
     }
