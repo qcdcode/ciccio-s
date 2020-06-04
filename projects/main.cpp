@@ -16,7 +16,7 @@ using Fund=double;
 /// Unroll loops with pragmas
 void pragmaUnrolledSumProd(SimdGaugeConf<Fund>& simdConf1,const SimdGaugeConf<Fund>& simdConf2,const SimdGaugeConf<Fund>& simdConf3)
 {
-  ASM_BOOKMARK_BEGIN("PragmaUnrolled");
+  ASM_BOOKMARK_BEGIN("AltUnrolled");
   
   //#pragma omp parallel for
   for(int iFusedSite=0;iFusedSite<simdConf1.fusedVol;iFusedSite++)
@@ -27,22 +27,19 @@ void pragmaUnrolledSumProd(SimdGaugeConf<Fund>& simdConf1,const SimdGaugeConf<Fu
       
       //così fa 77 vmovapd, se invece usiamo la versione dentro a gaugeconf ne fa 117, prova a spostare quanto sotto così comìè
       
-#pragma GCC unroll 3
-      for(int i=0;i<3;i++)
-#pragma GCC unroll 3
-	for(int k=0;k<3;k++)
-#pragma GCC unroll 3
-	  for(int j=0;j<3;j++)
-	    {
-	      a[i][j].sumProd(b[i][k],c[k][j]);
+      unrollLoopAlt<3>([&](const int& i){
+			 unrollLoopAlt<3>([&](const int& k){
+					    unrollLoopAlt<3>([&](const int& j)
+							     {
+							       a[i][j].sumProd(b[i][k],c[k][j]);
 	      // a[i][j][0]+=b[i][k][0]*c[k][j][0];
 	      // a[i][j][0]-=b[i][k][1]*c[k][j][1];
 	      // a[i][j][1]+=b[i][k][0]*c[k][j][1];
 	      // a[i][j][1]+=b[i][k][1]*c[k][j][0];
-	    }
+							     });});});
       simdConf1.simdSite(iFusedSite)=a;
     }
-  ASM_BOOKMARK_END("PragmaUnrolled");
+  ASM_BOOKMARK_END("AltUnrolled");
 }
 
 template <int FMA=0>

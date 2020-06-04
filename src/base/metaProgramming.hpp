@@ -142,7 +142,7 @@ namespace ciccios
   {
     template <typename F,
 	      typename...Args>
-    int call(F&& f,Args&&...args)
+    ALWAYS_INLINE int call(F&& f,Args&&...args)
     {
       f(std::forward<Args>(args)...);
       
