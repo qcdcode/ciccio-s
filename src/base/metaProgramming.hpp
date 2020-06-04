@@ -93,53 +93,13 @@ namespace ciccios
 #define ALWAYS_INLINE                           \
   __attribute__((always_inline)) inline
   
-  namespace resources
-  {
-    /// Unroll a loop
-    template <int N>
-    struct Unroller
-    {
-      /// Actual loop
-      ///
-      /// Forward definition
-      template <typename F>
-      static ALWAYS_INLINE void loop(const F& f);
-    };
-    
-    /// Unroll a loop
-    ///
-    /// Last entry, not doing anything
-    template <>
-    template <typename F>
-    ALWAYS_INLINE void Unroller<0>::loop(const F& f)
-    {
-    }
-    
-    /// Unroll a loop
-    ///
-    /// Generic case, calling iteratively up to zero
-    template <int N>
-    template <typename F>
-    ALWAYS_INLINE void Unroller<N>::loop(const F& f)
-    {
-      Unroller<N-1>::loop(f);
-      
-      f(N-1);
-    }
-  }
-  
-  /// Unroll a loop, wrapping the actual implementation
-  template <int N,
-	    typename F>
-  ALWAYS_INLINE void unrollLoop(const F& f)
-  {
-    resources::Unroller<N>::loop(f);
-  }
-  
   /////////////////////////////////////////////////////////////////
   
   namespace resources
   {
+    /// Wraps the function to be called
+    ///
+    /// Return an integer, to allow variadic expansion
     template <typename F,
 	      typename...Args>
     ALWAYS_INLINE int call(F&& f,Args&&...args)
@@ -149,20 +109,26 @@ namespace ciccios
       return 0;
     }
     
-  template <int...Is,
-	    typename F>
-  ALWAYS_INLINE void unrollLoop(std::integer_sequence<int,Is...>,F f)
-  {
-    [[ maybe_unused ]]auto list={call(f,Is)...};
-  }
+    /// Unroll a loop
+    ///
+    /// Actual implementation
+    template <int...Is,
+	      typename F>
+    ALWAYS_INLINE void unrollFor(std::integer_sequence<int,Is...>,F f)
+    {
+      /// Dummy initialized list, discarded at compile time
+      ///
+      /// The attribute avoids compiler warning
+      [[ maybe_unused ]]auto list={call(f,Is)...};
+    }
   }
   
   /// Unroll a loop, wrapping the actual implementation
   template <int N,
 	    typename F>
-  ALWAYS_INLINE void unrollLoopAlt(const F& f)
+  ALWAYS_INLINE void unrollFor(const F& f)
   {
-    resources::unrollLoop(std::make_integer_sequence<int, N>{},f);
+    resources::unrollFor(std::make_integer_sequence<int, N>{},f);
   }
   
 }
