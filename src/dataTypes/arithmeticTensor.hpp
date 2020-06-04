@@ -88,29 +88,24 @@ namespace ciccios
     template <typename U1,
 	      typename U2,
 	      typename R=decltype(T()+=U1()*U2())>
-    auto& sumProd(const ArithmeticMatrix<U1,N>& oth1,const ArithmeticMatrix<U2,N>& oth2)
+    ALWAYS_INLINE auto& sumProd(const ArithmeticMatrix<U1,N>& __restrict oth1,const ArithmeticMatrix<U2,N>& __restrict oth2)
     {
       ASM_BOOKMARK_BEGIN("Metaprog unrolled");
       
-      auto thisCopy=(*this);
-      
-      unrollLoopAlt<N>([&](int i){
-		      unrollLoopAlt<N>([&](int ir){
-      				      unrollLoopAlt<N>([&](int ic)
-						    {
-						      auto& o=thisCopy[ir][ic];
-						      const auto& f=oth1[ir][i];
-						      const auto& s=oth2[i][ic];
-						      
-						      if(0)
-							o+=f*s;
-						      else
-							o.sumProd(f,s);
-						    }
-					);}
-			);});
-      
-      (*this)=thisCopy;
+      unrollLoopAlt<N>([&](int ir){
+			 unrollLoopAlt<N>([&](int ic){
+					    unrollLoopAlt<N>([&](int i){
+							       auto& o=(*this)[ir][ic];
+							       const auto& f=oth1[ir][i];
+							       const auto& s=oth2[i][ic];
+							       
+							       if(0)
+								 o+=f*s;
+							       else
+								 o.sumProd(f,s);
+							     });
+					  });
+			   });
       
       ASM_BOOKMARK_END("Metaprog unrolled");
       

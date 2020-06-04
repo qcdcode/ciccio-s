@@ -124,26 +124,16 @@ namespace ciccios
     }
     
     /// Sum the product of the two passed conf
-    SimdGaugeConf& sumProd(const SimdGaugeConf& oth1,const SimdGaugeConf& oth2)
+    ALWAYS_INLINE SimdGaugeConf& sumProd(const SimdGaugeConf& oth1,const SimdGaugeConf& oth2)
     {
       ASM_BOOKMARK_BEGIN("AltUnrolled method");
       for(int iFusedSite=0;iFusedSite<this->fusedVol;iFusedSite++)
       	{
-      	  auto a=this->simdSite(iFusedSite);
+      	  auto& a=this->simdSite(iFusedSite);
       	  const auto& b=oth1.simdSite(iFusedSite);
       	  const auto& c=oth2.simdSite(iFusedSite);
 	  
-	  unrollLoopAlt<3>([&](const int& ir){
-			     unrollLoopAlt<3>([&](const int& ic){
-						unrollLoopAlt<3>([&](const int& i){
-								   a[ir][ic].sumProd(b[ir][i],c[i][ic]);
-								 }
-						  );}
-			       );});
-	  
-	  // // 	    a.sumProd(b,c);
-	  
-	  this->simdSite(iFusedSite)=a;
+	  a.sumProd(b,c);
 	}
       ASM_BOOKMARK_END("AltUnrolled method");
       

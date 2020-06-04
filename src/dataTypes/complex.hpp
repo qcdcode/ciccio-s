@@ -3,6 +3,7 @@
 
 #include <array>
 
+#include "base/metaProgramming.hpp"
 #include "dataTypes/SIMD.hpp"
 
 namespace ciccios
@@ -41,7 +42,7 @@ namespace ciccios
     }
     
     /// Product with another complex
-    Complex& sumProd(const Complex& oth1,const Complex& oth2)
+    ALWAYS_INLINE Complex& sumProd(const Complex oth1,const Complex oth2) //Don't take it by reference or aliasing might arise
     {
       /// Alias for this
       Complex& t=*this;
@@ -66,7 +67,6 @@ namespace ciccios
   /// Simd version of a complex
   template <typename Fund>
   using SimdComplex=Complex<Simd<Fund>>;
-  
 }
 
 #endif

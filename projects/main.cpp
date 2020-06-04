@@ -27,15 +27,11 @@ void pragmaUnrolledSumProd(SimdGaugeConf<Fund>& simdConf1,const SimdGaugeConf<Fu
       
       //così fa 77 vmovapd, se invece usiamo la versione dentro a gaugeconf ne fa 117, prova a spostare quanto sotto così comìè
       
-      unrollLoopAlt<3>([&](const int& i){
-			 unrollLoopAlt<3>([&](const int& k){
-					    unrollLoopAlt<3>([&](const int& j)
+      unrollLoopAlt<NCOL>([&](const int& i){
+			 unrollLoopAlt<NCOL>([&](const int& k){
+					    unrollLoopAlt<NCOL>([&](const int& j)
 							     {
 							       a[i][j].sumProd(b[i][k],c[k][j]);
-	      // a[i][j][0]+=b[i][k][0]*c[k][j][0];
-	      // a[i][j][0]-=b[i][k][1]*c[k][j][1];
-	      // a[i][j][1]+=b[i][k][0]*c[k][j][1];
-	      // a[i][j][1]+=b[i][k][1]*c[k][j][0];
 							     });});});
       simdConf1.simdSite(iFusedSite)=a;
     }
@@ -47,10 +43,10 @@ template <int FMA=0>
 void test(const int vol,const int nIters=10000)
 {
   /// Number of flops per site
-  const double nFlopsPerSite=7.0*NCOL*NCOL*NCOL;
+  const double nFlopsPerSite=8.0*NCOL*NCOL*NCOL;
   
   /// Number of GFlops in total
-  const double nGFlops=nFlopsPerSite*nIters*vol/1e9;
+  const double nGFlops=nFlopsPerSite*nIters*vol/(1<<30);
   
   /// Prepare the configuration in the CPU format
   CPUGaugeConf<StorLoc::ON_CPU,Fund> conf(vol);
