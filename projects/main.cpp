@@ -13,6 +13,39 @@ using Fund=double;
 
 /////////////////////////////////////////////////////////////////
 
+/// Unroll loops with pragmas
+void pragmaUnrolledSumProd(SimdGaugeConf<Fund>& simdConf1,const SimdGaugeConf<Fund>& simdConf2,const SimdGaugeConf<Fund>& simdConf3)
+{
+  ASM_BOOKMARK_BEGIN("PragmaUnrolled");
+  
+  //#pragma omp parallel for
+  for(int iFusedSite=0;iFusedSite<simdConf1.fusedVol;iFusedSite++)
+    {
+      auto a=simdConf1.simdSite(iFusedSite);
+      const auto& b=simdConf2.simdSite(iFusedSite);
+      const auto& c=simdConf3.simdSite(iFusedSite);
+      
+      //così fa 77 vmovapd, se invece usiamo la versione dentro a gaugeconf ne fa 117, prova a spostare quanto sotto così comìè
+      
+#pragma GCC unroll 3
+      for(int i=0;i<3;i++)
+#pragma GCC unroll 3
+	for(int k=0;k<3;k++)
+#pragma GCC unroll 3
+	  for(int j=0;j<3;j++)
+	    {
+	      a[i][j].sumProd(b[i][k],c[k][j]);
+	      // a[i][j][0]+=b[i][k][0]*c[k][j][0];
+	      // a[i][j][0]-=b[i][k][1]*c[k][j][1];
+	      // a[i][j][1]+=b[i][k][0]*c[k][j][1];
+	      // a[i][j][1]+=b[i][k][1]*c[k][j][0];
+	    }
+      simdConf1.simdSite(iFusedSite)=a;
+    }
+  ASM_BOOKMARK_END("PragmaUnrolled");
+}
+
+template <int FMA=0>
 void test(const int vol,const int nIters=10000)
 {
   /// Number of flops per site
@@ -39,35 +72,10 @@ void test(const int vol,const int nIters=10000)
   Instant start=takeTime();
   
   for(int i=0;i<nIters;i++)
-    if(1)
+    if(FMA%2==0)
       simdConf1.sumProd(simdConf2,simdConf3);
     else
-        {
-      ASM_BOOKMARK("Explicit BEG");
-      //#pragma omp parallel for
-      for(int iFusedSite=0;iFusedSite<simdConf1.fusedVol;iFusedSite++)
-  	{
-  	  auto a=simdConf1.simdSite(iFusedSite);
-  	  const auto& b=simdConf2.simdSite(iFusedSite);
-  	  const auto& c=simdConf3.simdSite(iFusedSite);
-	  
-#pragma GCC unroll 3
-  	  for(int i=0;i<3;i++)
-#pragma GCC unroll 3
-	    for(int k=0;k<3;k++)
-#pragma GCC unroll 3
-	      for(int j=0;j<3;j++)
-		{
-		  a[i][j].sumProd(b[i][k],c[k][j]);
-		  // a[i][j][0]+=b[i][k][0]*c[k][j][0];
-		  // a[i][j][0]-=b[i][k][1]*c[k][j][1];
-		  // a[i][j][1]+=b[i][k][0]*c[k][j][1];
-		  // a[i][j][1]+=b[i][k][1]*c[k][j][0];
-		}
-  	  simdConf1.simdSite(iFusedSite)=a;
-  	}
-      ASM_BOOKMARK("Explicit END");
-  }
+      pragmaUnrolledSumProd(simdConf1,simdConf2,simdConf3);
   
   /// Takes note of ending moment
   Instant end=takeTime();
