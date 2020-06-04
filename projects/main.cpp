@@ -39,6 +39,7 @@ void pragmaUnrolledSumProd(SimdGaugeConf<Fund>& simdConf1,const SimdGaugeConf<Fu
 							     });});});
       simdConf1.simdSite(iFusedSite)=a;
     }
+  
   ASM_BOOKMARK_END("AltUnrolled");
 }
 
