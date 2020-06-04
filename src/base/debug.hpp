@@ -65,6 +65,14 @@ namespace ciccios
 #define ASM_BOOKMARK(COMMENT)					\
   asm("#Bookmark file: \"" __FILE__ "\", line: " LINE_AS_STRING  ", " COMMENT)
   
+  /// Put a BEGIN for asm bookmark section
+#define ASM_BOOKMARK_BEGIN(COMMENT)					\
+  ASM_BOOKMARK("BEGIN " COMMENT)
+  
+  /// Put an END for asm bookmark section
+#define ASM_BOOKMARK_END(COMMENT)					\
+  ASM_BOOKMARK("END " COMMENT)
+  
   /// Implements the trap to debug
   void possiblyWaitToAttachDebugger();
   
