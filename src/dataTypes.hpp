@@ -3,8 +3,8 @@
 
 #include "dataTypes/arithmeticTensor.hpp"
 #include "dataTypes/complex.hpp"
-#include "dataTypes/gaugeConf.hpp"
+#include "dataTypes/su3Field.hpp"
 #include "dataTypes/SIMD.hpp"
-#include "dataTypes/SU3.hpp"
+#include "dataTypes/su3.hpp"
 
 #endif

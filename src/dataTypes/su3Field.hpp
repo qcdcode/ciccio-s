@@ -1,21 +1,21 @@
-#ifndef _GAUGECONF_HPP
-#define _GAUGECONF_HPP
+#ifndef _SU3FIELD_HPP
+#define _SU3FIELD_HPP
 
 #include "base/memoryManager.hpp"
-#include "dataTypes/SU3.hpp"
+#include "dataTypes/su3.hpp"
 
 namespace ciccios
 {
-  /// SIMD gauge conf
+  /// SIMD su3 field
   ///
   /// Forward definition
   template <typename Fund>
-  struct SimdGaugeConf;
+  struct SimdSu3Field;
   
-  /// Trivial gauge conf
+  /// Trivial su3 field
   template <StorLoc SL,
 	    typename Fund>
-  struct CPUGaugeConf
+  struct CpuSU3Field
   {
     /// Volume
     const int vol;
@@ -48,7 +48,7 @@ namespace ciccios
     PROVIDE_ALSO_NON_CONST_METHOD(site);
     
     /// Create knowning volume
-    CPUGaugeConf(const int vol) : vol(vol)
+    CpuSU3Field(const int vol) : vol(vol)
     {
       /// Compute size
       const int size=index(vol,0,0,0);
@@ -57,13 +57,13 @@ namespace ciccios
     }
     
     /// Destroy
-    ~CPUGaugeConf()
+    ~CpuSU3Field()
     {
       memoryManager<SL>()->release(data);
     }
     
-    /// Sum the product of the two passed conf
-    ALWAYS_INLINE CPUGaugeConf& sumProd(const CPUGaugeConf& oth1,const CPUGaugeConf& oth2)
+    /// Sum the product of the two passed fields
+    ALWAYS_INLINE CpuSU3Field& sumProd(const CpuSU3Field& oth1,const CpuSU3Field& oth2)
     {
       ASM_BOOKMARK_BEGIN("UnrolledCPUmethod");
       for(int iSite=0;iSite<this->vol;iSite++)
@@ -80,7 +80,7 @@ namespace ciccios
     }
     
     /// Assign from a non-simd version
-    CPUGaugeConf& operator=(const CPUGaugeConf<StorLoc::ON_CPU,Fund>& oth)
+    CpuSU3Field& operator=(const CpuSU3Field<StorLoc::ON_CPU,Fund>& oth)
     {
       for(int iSite=0;iSite<vol;iSite++)
 	{
@@ -94,14 +94,14 @@ namespace ciccios
     }
     
     /// Assign from a SIMD version
-    CPUGaugeConf& operator=(const SimdGaugeConf<Fund>& oth);
+    CpuSU3Field& operator=(const SimdSu3Field<Fund>& oth);
   };
   
   /////////////////////////////////////////////////////////////////
   
-  /// SIMD version of the conf
+  /// SIMD version of the field
   template <typename Fund>
-  struct SimdGaugeConf
+  struct SimdSu3Field
   {
     /// Volume
     const int fusedVol;
@@ -134,7 +134,7 @@ namespace ciccios
     PROVIDE_ALSO_NON_CONST_METHOD(simdSite);
     
     /// Creates starting from the physical volume
-    SimdGaugeConf(int vol) : fusedVol(vol/simdLength<Fund>)
+    SimdSu3Field(int vol) : fusedVol(vol/simdLength<Fund>)
     {
       int size=index(fusedVol,0,0,0);
       
@@ -142,13 +142,13 @@ namespace ciccios
     }
     
     /// Destroy
-    ~SimdGaugeConf()
+    ~SimdSu3Field()
     {
       cpuMemoryManager->release(data);
     }
     
     /// Assign from a non-simd version
-    SimdGaugeConf& operator=(const CPUGaugeConf<StorLoc::ON_CPU,Fund>& oth)
+    SimdSu3Field& operator=(const CpuSU3Field<StorLoc::ON_CPU,Fund>& oth)
     {
       for(int iSite=0;iSite<fusedVol*simdLength<Fund>;iSite++)
 	{
@@ -167,8 +167,8 @@ namespace ciccios
       return *this;
     }
     
-    /// Sum the product of the two passed conf
-    ALWAYS_INLINE SimdGaugeConf& sumProd(const SimdGaugeConf& oth1,const SimdGaugeConf& oth2)
+    /// Sum the product of the two passed fields
+    ALWAYS_INLINE SimdSu3Field& sumProd(const SimdSu3Field& oth1,const SimdSu3Field& oth2)
     {
       ASM_BOOKMARK_BEGIN("UnrolledSIMDmethod");
       for(int iFusedSite=0;iFusedSite<this->fusedVol;iFusedSite++)
@@ -188,7 +188,7 @@ namespace ciccios
   /// Assign from SIMD version
   template <StorLoc SL,
 	    typename Fund>
-  CPUGaugeConf<SL,Fund>& CPUGaugeConf<SL,Fund>::operator=(const SimdGaugeConf<Fund>& oth)
+  CpuSU3Field<SL,Fund>& CpuSU3Field<SL,Fund>::operator=(const SimdSu3Field<Fund>& oth)
   {
     for(int iFusedSite=0;iFusedSite<oth.fusedVol;iFusedSite++)
       
