@@ -19,7 +19,7 @@ void unrolledSumProd(SimdSu3Field<Fund>& simdField1,const SimdSu3Field<Fund>& si
 {
   ASM_BOOKMARK_BEGIN("UnrolledSIMD");
   
-  //#pragma omp parallel for
+  #pragma omp parallel for
   for(int iFusedSite=0;iFusedSite<simdField1.fusedVol;iFusedSite++)
     {
       auto a=simdField1.simdSite(iFusedSite); // This copy gets compiled away, and no alias is induced
@@ -44,7 +44,7 @@ void unrolledSumProd(CpuSU3Field<SL,Fund>& field1,const CpuSU3Field<SL,Fund>& fi
 {
   ASM_BOOKMARK_BEGIN("UnrolledCPU");
   
-  //#pragma omp parallel for
+  #pragma omp parallel for
   for(int iSite=0;iSite<field1.vol;iSite++)
     {
       auto a=field1.site(iSite); // Same as above
