@@ -145,6 +145,23 @@ then
 	fi
 fi
 
+#simd set to be used
+AC_ARG_WITH(simd-inst-set,
+	AS_HELP_STRING([--with-simd-inst-set],[Select the set of SIMD instruction (avx or avx512)]),
+	with_simd_inst_set="${withval}",
+	with_simd_inst_set=avx)
+case "$with_simd_inst_set" in
+     avx) CPPFLAGS_SIMD="-mavx"
+     	  SIMD_INST_SET=AVX;;
+     avx512) CPPFLAGS_SIMD="-mavx512f"
+     	     SIMD_INST_SET=AVX512;;
+      *) AC_MSG_ERROR(["Unkwnown SIMD instruction set ${withval}"])
+esac
+CPPFLAGS="$CPPFLAGS_SIMD -mfma $CPPFLAGS"
+SUMMARY_RESULT="$SUMMARY_RESULT
+Simd Inst set      : $with_simd_inst_set"
+AC_MSG_RESULT(with SIMD insttruction set ... ${with_simd_inst_set})
+AC_DEFINE_UNQUOTED([SIMD_INST_SET],[$SIMD_INST_SET],[Instruction set to be used])
 
 #result of conf to screen
 AC_MSG_RESULT([

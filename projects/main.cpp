@@ -123,8 +123,10 @@ void simdTest(CpuSU3Field<StorLoc::ON_CPU,Fund>& field,const int nIters,const do
   LOGGER<<"Check: "<<fieldRes(0,0,0,0)<<" "<<fieldRes(0,0,0,1)<<endl;
 }
 
-void test(const int vol,const int nIters=10000)
+void test(const int vol)
 {
+  const int nIters=40000000/vol;
+  
   /// Number of flops per site
   const double nFlopsPerSite=8.0*NCOL*NCOL*NCOL;
   

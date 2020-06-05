@@ -1,6 +1,10 @@
 #ifndef _SIMD_HPP
 #define _SIMD_HPP
 
+#ifdef HAVE_CONFIG_H
+ #include "config.hpp"
+#endif
+
 #include <immintrin.h>
 
 // \todo Rename Simd into something more appropriate
@@ -9,26 +13,41 @@ namespace ciccios
 {
 #if 1
   
+  enum InstSet{AVX,AVX512};
+  
   namespace resources
   {
-    template <typename Fund>
+    template <InstSet IS,
+	      typename Fund>
     struct Simd;
     
     template <>
-    struct Simd<double>
+    struct Simd<AVX,double>
     {
       using Type=__m256d;
     };
     
     template <>
-    struct Simd<float>
+    struct Simd<AVX,float>
     {
       using Type=__m256;
+    };
+    
+    template <>
+    struct Simd<AVX512,double>
+    {
+      using Type=__m512d;
+    };
+    
+    template <>
+    struct Simd<AVX512,float>
+    {
+      using Type=__m512;
     };
   }
   
   template <typename Fund>
-  using Simd=typename resources::Simd<Fund>::Type;
+  using Simd=typename resources::Simd<SIMD_INST_SET,Fund>::Type;
   
 #else
   
