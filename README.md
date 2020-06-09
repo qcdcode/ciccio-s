@@ -36,7 +36,7 @@ bin/main
   nvcc support
 
 
-#ASM reporting
+ASM reporting
 
 When --enable-assembly_report is issued, a .s file is compiled aside a
 selection of the .o files, and the file itself is analyzed to check
