@@ -126,28 +126,11 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([],[])],
   AC_MSG_RESULT(no)
   CXXFLAGS="$OLD_CXXFLAGS")
 
-
-#enable eigen for linear algebra
-AC_ARG_ENABLE(eigen_everywhere,
-	AS_HELP_STRING([--enable-eigen-everywhere],[Enable Eigen Everywhere (default: no)]),
-	enable_eigen_everywhere="${enableval}",
-	enable_eigen_everywhere="no")
-AC_MSG_RESULT(enabling Eigen everywhere ... ${enable_eigen_everywhere})
-
-#check activability
-if test "$enable_eigen_everywhere" == "yes"
-then
-	if test "$eigen_found" == "no"
-	then
-		AC_MSG_ERROR(["Unable to find Eigen"])
-	else
-		AC_DEFINE_UNQUOTED([USE_EIGEN_EVERYWHERE],[1],[Enable Eigen everywhere])
-	fi
-fi
+AX_SUBPACKAGE(eigen,Eigen/Dense,,,EIGEN,".",".")
 
 #simd set to be used
 AC_ARG_WITH(simd-inst-set,
-	AS_HELP_STRING([--with-simd-inst-set],[Select the set of SIMD instruction (avx or avx512)]),
+	AS_HELP_STRING([--with-simd-inst-set=set],[Select the set of SIMD instruction (avx [default] or avx512)]),
 	with_simd_inst_set="${withval}",
 	with_simd_inst_set=avx)
 case "$with_simd_inst_set" in

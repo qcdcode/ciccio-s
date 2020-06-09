@@ -2,37 +2,39 @@
  #include "config.hpp"
 #endif
 
-#include <eigen3/Eigen/Dense>
+#ifdef USE_EIGEN
+ #include <eigen3/Eigen/Dense>
+#endif
+
 #include <chrono>
 
 #include "ciccio-s.hpp"
 
 using namespace ciccios;
 
-/// Type used for the test
-using Fund=double;
-
 /////////////////////////////////////////////////////////////////
 
 PROVIDE_ASM_DEBUG_HANDLE(UnrolledSIMD,double)
 PROVIDE_ASM_DEBUG_HANDLE(UnrolledSIMD,float)
+
 /// Unroll loops with metaprogramming, SIMD version
-void unrolledSumProd(SimdSu3Field<Fund>& simdField1,const SimdSu3Field<Fund>& simdField2,const SimdSu3Field<Fund>& simdField3)
+template <typename Fund>
+ALWAYS_INLINE void unrolledSumProd(SimdSu3Field<Fund>& simdField1,const SimdSu3Field<Fund>& simdField2,const SimdSu3Field<Fund>& simdField3)
 {
   BOOKMARK_BEGIN_UnrolledSIMD(Fund{});
   
-  #pragma omp parallel for
+  //#pragma omp parallel for // To be done when thread pool exists
   for(int iFusedSite=0;iFusedSite<simdField1.fusedVol;iFusedSite++)
     {
       auto a=simdField1.simdSite(iFusedSite); // This copy gets compiled away, and no alias is induced
-      const auto& b=simdField2.simdSite(iFusedSite);
-      const auto& c=simdField3.simdSite(iFusedSite);
+      const auto &b=simdField2.simdSite(iFusedSite);
+      const auto &c=simdField3.simdSite(iFusedSite);
       
       unrollFor<NCOL>([&](const int& i){
 			 unrollFor<NCOL>([&](const int& k){
 					    unrollFor<NCOL>([&](const int& j)
-							     {
-							       a[i][j].sumProd(b[i][k],c[k][j]);
+							    {
+							      a[i][j].sumProd(b[i][k],c[k][j]);
 							     });});});
       simdField1.simdSite(iFusedSite)=a;
     }
@@ -42,13 +44,15 @@ void unrolledSumProd(SimdSu3Field<Fund>& simdField1,const SimdSu3Field<Fund>& si
 
 PROVIDE_ASM_DEBUG_HANDLE(UnrolledCPU,double)
 PROVIDE_ASM_DEBUG_HANDLE(UnrolledCPU,float)
+
 /// Unroll loops with metaprogramming, scalar version
-template <StorLoc SL=StorLoc::ON_CPU>
+template <typename Fund,
+	  StorLoc SL=StorLoc::ON_CPU>
 void unrolledSumProd(CpuSU3Field<SL,Fund>& field1,const CpuSU3Field<SL,Fund>& field2,const CpuSU3Field<SL,Fund>& field3)
 {
-  ASM_BOOKMARK_BEGIN("UnrolledCPU");
+  BOOKMARK_BEGIN_UnrolledCPU(Fund{});
   
-  #pragma omp parallel for
+  //#pragma omp parallel for
   for(int iSite=0;iSite<field1.vol;iSite++)
     {
       auto a=field1.site(iSite); // Same as above
@@ -68,7 +72,8 @@ void unrolledSumProd(CpuSU3Field<SL,Fund>& field1,const CpuSU3Field<SL,Fund>& fi
 }
 
 /// Perform the non-simd CPU version of a+=b*c
-void cpuTest(CpuSU3Field<StorLoc::ON_CPU,Fund>& field,const int nIters,const double gFlops)
+template <typename Fund>
+void cpuTest(CpuSU3Field<StorLoc::ON_CPU,Fund>& field,const int64_t nIters,const double gFlops)
 {
   /// Allocate three fields, and copy inside
   CpuSU3Field<StorLoc::ON_CPU,Fund> field1(field.vol),field2(field.vol),field3(field.vol);
@@ -79,7 +84,7 @@ void cpuTest(CpuSU3Field<StorLoc::ON_CPU,Fund>& field,const int nIters,const dou
   /// Takes note of starting moment
   const Instant start=takeTime();
   
-  for(int i=0;i<nIters;i++)
+  for(int64_t i=0;i<nIters;i++)
     unrolledSumProd(field1,field2,field3);
   
   /// Takes note of ending moment
@@ -90,11 +95,12 @@ void cpuTest(CpuSU3Field<StorLoc::ON_CPU,Fund>& field,const int nIters,const dou
   
   /// Compute performances
   const double gFlopsPerSec=gFlops/timeInSec;
-  LOGGER<<"GFlops/s: "<<gFlopsPerSec<<endl;
-  LOGGER<<"Check: "<<field1(0,0,0,0)<<" "<<field1(0,0,0,1)<<endl;
+  LOGGER<<"CPU \t GFlops/s: "<<gFlopsPerSec<<"\t Check: "<<field1(0,0,0,0)<<" "<<field1(0,0,0,1)<<endl;
 }
 
-void simdTest(CpuSU3Field<StorLoc::ON_CPU,Fund>& field,const int nIters,const double gFlops)
+/// Issue the test on SIMD field
+template <typename Fund>
+void simdTest(CpuSU3Field<StorLoc::ON_CPU,Fund>& field,const int64_t nIters,const double gFlops)
 {
   /// Allocate three fields, this could be short-circuited through cast operator
   SimdSu3Field<Fund> simdField1(field.vol),simdField2(field.vol),simdField3(field.vol);
@@ -105,11 +111,8 @@ void simdTest(CpuSU3Field<StorLoc::ON_CPU,Fund>& field,const int nIters,const do
   /// Takes note of starting moment
   const Instant start=takeTime();
   
-  for(int i=0;i<nIters;i++)
-    if(0) // Thsi performs "much worse" even if doing the same, most likely for aliasing issue
-      simdField1.sumProd(simdField2,simdField3);
-    else
-      unrolledSumProd(simdField1,simdField2,simdField3);
+  for(int64_t i=0;i<nIters;i++)
+    unrolledSumProd(simdField1,simdField2,simdField3);
   
   /// Takes note of ending moment
   const Instant end=takeTime();
@@ -123,12 +126,60 @@ void simdTest(CpuSU3Field<StorLoc::ON_CPU,Fund>& field,const int nIters,const do
   
   /// Compute performances
   const double gFlopsPerSec=gFlops/timeInSec;
-  LOGGER<<"SIMD GFlops/s: "<<gFlopsPerSec<<endl;
-  LOGGER<<"Check: "<<fieldRes(0,0,0,0)<<" "<<fieldRes(0,0,0,1)<<endl;
+  LOGGER<<"SIMD \t GFlops/s: "<<gFlopsPerSec<<"\t Check: "<<fieldRes(0,0,0,RE)<<" "<<fieldRes(0,0,0,IM)<<endl;
 }
 
+#ifdef USE_EIGEN
+
+PROVIDE_ASM_DEBUG_HANDLE(Eigen,double)
+PROVIDE_ASM_DEBUG_HANDLE(Eigen,float)
+
+/// Test eigen
+template <typename Fund>
+void eigenTest(CpuSU3Field<StorLoc::ON_CPU,Fund>& field,const int64_t nIters,const double gFlops)
+{
+  /// Copy volume
+  const int vol=field.vol;
+  
+  /// Eigen equivalent of SU3
+  using EQSU3=Eigen::Matrix<std::complex<Fund>,NCOL,NCOL>;
+  
+  /// Allocate three fields through Eigen
+  std::vector<EQSU3,Eigen::aligned_allocator<EQSU3>> a(vol),b(vol),c(vol);
+  for(int iSite=0;iSite<vol;iSite++)
+    for(int ic1=0;ic1<NCOL;ic1++)
+      for(int ic2=0;ic2<NCOL;ic2++)
+	a[iSite](ic1,ic2)=
+	  b[iSite](ic1,ic2)=
+	  c[iSite](ic1,ic2)=
+	  {field(iSite,ic1,ic2,RE),field(iSite,ic1,ic2,IM)};
+  
+  /// Starting instant
+  const Instant start=takeTime();
+  for(int64_t i=0;i<nIters;i++)
+    {
+      BOOKMARK_BEGIN_Eigen(Fund{});
+      for(int iSite=0;iSite<vol;iSite++)
+	a[iSite]+=b[iSite]*c[iSite];
+      BOOKMARK_END_Eigen(Fund{});
+    }
+  
+  /// Ending instant
+  const Instant end=takeTime();
+  
+  const double timeInSec=timeDiffInSec(end,start);
+  const double gFlopsPerSec=gFlops/timeInSec;
+  
+  LOGGER<<"Eigen\t GFlops/s: "<<gFlopsPerSec<<"\t Check: "<<a[0](0,0).real()<<" "<<a[0](0,0).imag()<<(std::is_same<float,Fund>::value?" (might differ by rounding)":"")<<endl;
+}
+
+#endif
+
+/// Perform the tests
+template <typename Fund>
 void test(const int vol)
 {
+  /// Number of iterations
   const int nIters=40000000/vol;
   
   /// Number of flops per site
@@ -143,60 +194,43 @@ void test(const int vol)
     for(int ic1=0;ic1<NCOL;ic1++)
       for(int ic2=0;ic2<NCOL;ic2++)
 	for(int ri=0;ri<2;ri++)
-	  field(iSite,ic1,ic2,ri)=ri+2*(ic2+NCOL*(ic1+NCOL*iSite));
+	  field(iSite,ic1,ic2,ri)=(ri+2*(ic2+NCOL*(ic1+NCOL*iSite)))/Fund((NCOL*NCOL*2)*(iSite+1));
   
-  LOGGER<<"Volume: "<<vol<<" dataset: "<<3*(double)vol*sizeof(SU3<Complex<double>>)/(1<<20)<<endl;
+  LOGGER<<"Volume: "<<vol<<" dataset: "<<3*(double)vol*sizeof(SU3<Complex<Fund>>)/(1<<20)<<endl;
   
   cpuTest(field,nIters,gFlops);
+  
+#ifdef USE_EIGEN
+  eigenTest(field,nIters,gFlops);
+#endif
   
   simdTest(field,nIters,gFlops);
   
   /////////////////////////////////////////////////////////////////
   
-  /// Eigen equivalent of SU3
-  using EQSU3=Eigen::Matrix<std::complex<Fund>,NCOL,NCOL>;
-  
-  /// Allocate three fields through Eigen
-  std::vector<EQSU3,Eigen::aligned_allocator<EQSU3>> a(vol),b(vol),c(vol);
-  for(int iSite=0;iSite<vol;iSite++)
-    for(int ic1=0;ic1<NCOL;ic1++)
-      for(int ic2=0;ic2<NCOL;ic2++)
-	for(int ri=0;ri<2;ri++)
-    {
-      const int y=ic2+NCOL*(ic1+NCOL*iSite);
-      a[iSite](ic1,ic2)=
-	b[iSite](ic1,ic2)=
-	c[iSite](ic1,ic2)={0.0+2*y,1.0+2*y};
-    }
-  
-  const Instant start=takeTime();
-  for(int i=0;i<nIters;i++)
-    for(int i=0;i<vol;i++)
-      {
-	ASM_BOOKMARK_BEGIN("EIGEN");
-	a[i]+=b[i]*c[i];
-	ASM_BOOKMARK_END("EIGEN");
-      }
-  
-  const Instant end=takeTime();
-  
-  const double timeInSec=timeDiffInSec(end,start);
-  const double gFlopsPerSec=gFlops/timeInSec;
-  
-  LOGGER<<"Eigen GFlops/s: "<<gFlopsPerSec<<endl;
-  LOGGER<<"Check: "<<a[0](0,0)<<endl;
-  
   LOGGER<<endl;
+}
+
+template <typename Fund>
+void testType()
+{
+  LOGGER<<"/////////////////////////////////////////////////////////////////"<<endl;
+  LOGGER<<"                      "<<nameOfType(Fund{})<<" version"<<endl;
+  LOGGER<<"/////////////////////////////////////////////////////////////////"<<endl;
+  
+  for(int volLog2=4;volLog2<20;volLog2++)
+    {
+      const int vol=1<<volLog2;
+      test<Fund>(vol);
+    }
 }
 
 /// Internal main
 void inMain()
 {
-  for(int volLog2=4;volLog2<20;volLog2++)
-    {
-      const int vol=1<<volLog2;
-      test(vol);
-    }
+  testType<float>();
+  
+  testType<double>();
 }
 
 int main(int narg,char **arg)
