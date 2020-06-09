@@ -120,6 +120,23 @@ namespace ciccios
   {
     return std::chrono::duration<double>(end-start).count();
   }
+  
+  /////////////////////////////////////////////////////////////////
+  
+  
+  /// Return "double"
+  ///
+  /// \todo All type traits into a struct
+  ALWAYS_INLINE const char* nameOfType(double)
+  {
+    return "double";
+  }
+  
+  /// Return "float"
+  ALWAYS_INLINE const char* nameOfType(float)
+  {
+    return "float";
+  }
 }
 
 #endif
