@@ -31,7 +31,7 @@ AC_LANG([C++])
 LIBRARY_RESULT="---"
 SUMMARY_RESULT="---"
 
-AX_GENERATE_SIDE_ASSEMBLY
+AX_ASSEMBLY_REPORT
 
 #check if we enable fortran
 AC_ARG_ENABLE(fortran,

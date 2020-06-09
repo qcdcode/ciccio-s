@@ -14,10 +14,12 @@ using Fund=double;
 
 /////////////////////////////////////////////////////////////////
 
+PROVIDE_ASM_DEBUG_HANDLE(UnrolledSIMD,double)
+PROVIDE_ASM_DEBUG_HANDLE(UnrolledSIMD,float)
 /// Unroll loops with metaprogramming, SIMD version
 void unrolledSumProd(SimdSu3Field<Fund>& simdField1,const SimdSu3Field<Fund>& simdField2,const SimdSu3Field<Fund>& simdField3)
 {
-  ASM_BOOKMARK_BEGIN("UnrolledSIMD");
+  BOOKMARK_BEGIN_UnrolledSIMD(Fund{});
   
   #pragma omp parallel for
   for(int iFusedSite=0;iFusedSite<simdField1.fusedVol;iFusedSite++)
@@ -35,9 +37,11 @@ void unrolledSumProd(SimdSu3Field<Fund>& simdField1,const SimdSu3Field<Fund>& si
       simdField1.simdSite(iFusedSite)=a;
     }
   
-  ASM_BOOKMARK_END("UnrolledSIMD");
+  BOOKMARK_END_UnrolledSIMD(Fund{});
 }
 
+PROVIDE_ASM_DEBUG_HANDLE(UnrolledCPU,double)
+PROVIDE_ASM_DEBUG_HANDLE(UnrolledCPU,float)
 /// Unroll loops with metaprogramming, scalar version
 template <StorLoc SL=StorLoc::ON_CPU>
 void unrolledSumProd(CpuSU3Field<SL,Fund>& field1,const CpuSU3Field<SL,Fund>& field2,const CpuSU3Field<SL,Fund>& field3)
@@ -60,7 +64,7 @@ void unrolledSumProd(CpuSU3Field<SL,Fund>& field1,const CpuSU3Field<SL,Fund>& fi
       field1.site(iSite)=a;
     }
   
-  ASM_BOOKMARK_END("AltUnrolledCPU");
+  BOOKMARK_END_UnrolledCPU(Fund{});
 }
 
 /// Perform the non-simd CPU version of a+=b*c

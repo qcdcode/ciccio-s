@@ -6,4 +6,4 @@ bin_PROGRAMS+= \
 
 __top_builddir__bin_main_SOURCES=%D%/main.cpp
 
-generate_assembly+=%D%/main.s
+assembly_reports+=%D%/main.s

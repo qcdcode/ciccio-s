@@ -1,8 +1,8 @@
 
-# usage: AX_GENERATE_SIDE_ASSEMBLY
-AC_DEFUN([AX_GENERATE_SIDE_ASSEMBLY], [
+# usage: AX_ASSEMBLY_REPORT
+AC_DEFUN([AX_ASSEMBLY_REPORT], [
 
-AX_GET_ENABLE(generate_side_assembly,false,"Automatic generate assembly")
+AX_GET_ENABLE(assembly_report,false,"Generate assembly report")
 
-AM_CONDITIONAL([GENERATE_SIDE_ASSEMBLY],[test "$enable_generate_side_assembly" != "false" ],[true],[false])
+AM_CONDITIONAL([ASSEMBLY_REPORT],[test "$enable_assembly_report" != "false" ],[true],[false])
 ])

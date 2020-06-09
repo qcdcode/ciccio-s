@@ -73,6 +73,26 @@ namespace ciccios
 #define ASM_BOOKMARK_END(COMMENT)					\
   ASM_BOOKMARK("END " COMMENT)
   
+/////////////////////////////////////////////////////////////////
+
+/// Defines an inlined function BOOKMARK_BEGIN/END_NAME(Args...)
+///
+/// Internal implementation
+#define PROVIDE_ASM_DEBUG_HANDLE_BEGIN_OR_END(BE,NAME,ARGS...)		\
+  /*! Put in the assembly a bookmark named composing name and the arguments */ \
+  ALWAYS_INLINE void BOOKMARK_ ## BE ## _ ## NAME (ARGS)		\
+  {									\
+    ASM_BOOKMARK_ ## BE(#NAME #ARGS);					\
+  }
+  
+  /// Defines an inlined function BOOKMARK_BEGIN/END_NAME(Args...)
+  ///
+  /// The arguments can be used to distinguish different template
+  /// instances (e.g. double from float)
+#define PROVIDE_ASM_DEBUG_HANDLE(NAME,ARGS...)			\
+  PROVIDE_ASM_DEBUG_HANDLE_BEGIN_OR_END(BEGIN,NAME,ARGS)	\
+  PROVIDE_ASM_DEBUG_HANDLE_BEGIN_OR_END(END,NAME,ARGS)
+  
   /// Implements the trap to debug
   void possiblyWaitToAttachDebugger();
   
