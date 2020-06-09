@@ -7,5 +7,6 @@
 #include "base/metaProgramming.hpp"
 #include "base/ranks.hpp"
 #include "base/timings.hpp"
+#include "base/unroll.hpp"
 
 #endif

@@ -9,6 +9,7 @@
 
 #include "preprocessor.hpp"
 #include "logger.hpp"
+#include "unroll.hpp"
 
 namespace ciccios
 {

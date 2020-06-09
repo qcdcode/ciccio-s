@@ -20,7 +20,7 @@ namespace ciccios
   /// as in this example
   /// \code
   /// template <typename D,
-  ///           SFINAE_ON_TEMPLATE_ARG(IsSame<D,int>)>
+  ///           SFINAE_ON_TEMPLATE_ARG(std::is_same<D,int>::value)>
   /// void foo(D i) {} // fails if D is not int
   /// \endcode
 #define SFINAE_ON_TEMPLATE_ARG(...)	\
@@ -45,9 +45,12 @@ namespace ciccios
   
   /// Provides also a non-const version of the method \c NAME
   ///
-  /// See
+  /// See Scott Meyers
   /// https://stackoverflow.com/questions/123758/how-do-i-remove-code-duplication-between-similar-const-and-non-const-member-func
-  /// A const method NAME must be already present Example
+  /// One or more const method NAME must be already present, the
+  /// correct one will be chosen perfectly forwarding the arguments
+  ///
+  ///Example
   ///
   /// \code
   // class ciccio
@@ -76,7 +79,9 @@ namespace ciccios
   template <typename T>
   struct Crtp
   {
-    /// Crtp access the type
+    /// Cast to the base type
+    ///
+    /// This is customarily done by ~ operator, but I don't like it
     const T& crtp() const
     {
       return *static_cast<const T*>(this);
@@ -84,53 +89,6 @@ namespace ciccios
     
     PROVIDE_ALSO_NON_CONST_METHOD(crtp);
   };
-  
-  /////////////////////////////////////////////////////////////////
-  
-  // To be moved to a dedicated inline/unroll file
-  
-/// Force the compiler to inline the function
-#define ALWAYS_INLINE                           \
-  __attribute__((always_inline)) inline
-  
-  /////////////////////////////////////////////////////////////////
-  
-  namespace resources
-  {
-    /// Wraps the function to be called
-    ///
-    /// Return an integer, to allow variadic expansion
-    template <typename F,
-	      typename...Args>
-    ALWAYS_INLINE int call(F&& f,Args&&...args)
-    {
-      f(std::forward<Args>(args)...);
-      
-      return 0;
-    }
-    
-    /// Unroll a loop
-    ///
-    /// Actual implementation
-    template <int...Is,
-	      typename F>
-    ALWAYS_INLINE void unrollFor(std::integer_sequence<int,Is...>,F f)
-    {
-      /// Dummy initialized list, discarded at compile time
-      ///
-      /// The attribute avoids compiler warning
-      [[ maybe_unused ]]auto list={call(f,Is)...};
-    }
-  }
-  
-  /// Unroll a loop, wrapping the actual implementation
-  template <int N,
-	    typename F>
-  ALWAYS_INLINE void unrollFor(const F& f)
-  {
-    resources::unrollFor(std::make_integer_sequence<int, N>{},f);
-  }
-  
 }
 
 #endif
