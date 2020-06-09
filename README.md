@@ -19,8 +19,15 @@ cd build
 	     --with-simd-inst-set=(avx [default] or avx512) \
 	     --disable-openmp #so far not used \
 	     --enable-assembly_report #To output parsed .s file for each highlighted region
+make
 
 ```
+
+To test:
+```
+bin/main
+```
+
 
 Eigen is optional
 C++14 is needed for perfect forwarding, integer sequences and other stuff. We could painfully degrade to c++11
