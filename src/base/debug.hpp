@@ -81,7 +81,7 @@ namespace ciccios
 /// Internal implementation
 #define PROVIDE_ASM_DEBUG_HANDLE_BEGIN_OR_END(BE,NAME,ARGS...)		\
   /*! Put in the assembly a bookmark named composing name and the arguments */ \
-  ALWAYS_INLINE void BOOKMARK_ ## BE ## _ ## NAME (ARGS)		\
+  INLINE_FUNCTION void BOOKMARK_ ## BE ## _ ## NAME (ARGS)		\
   {									\
     ASM_BOOKMARK_ ## BE(#NAME #ARGS);					\
   }
@@ -128,13 +128,13 @@ namespace ciccios
   /// Return "double"
   ///
   /// \todo All type traits into a struct
-  ALWAYS_INLINE const char* nameOfType(double)
+  INLINE_FUNCTION const char* nameOfType(double)
   {
     return "double";
   }
   
   /// Return "float"
-  ALWAYS_INLINE const char* nameOfType(float)
+  INLINE_FUNCTION const char* nameOfType(float)
   {
     return "float";
   }

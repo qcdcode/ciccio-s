@@ -50,7 +50,7 @@ namespace ciccios
   {
     T data[N][N];
     
-    ALWAYS_INLINE const T& __restrict get(const int& i,const int& j) const
+    INLINE_FUNCTION const T& __restrict get(const int& i,const int& j) const
     {
       return data[i][j];
     }
@@ -66,13 +66,15 @@ namespace ciccios
       ArithmeticMatrix<R,N> out={};
       
       ASM_BOOKMARK("Matrix multiplication begin");
-      unrollFor<N>([&](int ir){
-		      unrollFor<N>([&](int ic){
-				      unrollFor<N>([&](int i)
-						    {
-						      out[ir][ic]+=(*this)[ir][i]*oth[i][ic];
-						    });}
-			);});
+      
+      UNROLLED_FOR(ir,N)
+	UNROLLED_FOR(i,N)
+	  UNROLLED_FOR(ic,N)
+	    out[ir][ic]+=(*this)[ir][i]*oth[i][ic];
+          UNROLLED_FOR_END;
+        UNROLLED_FOR_END;
+      UNROLLED_FOR_END;
+      
       ASM_BOOKMARK("Matrix multiplication end");
       
       return out;
@@ -83,41 +85,37 @@ namespace ciccios
     auto operator+=(const ArithmeticMatrix<U,N>& oth)
     {
       ASM_BOOKMARK("Matrix sum begin");
-      unrollFor<N>([&](int ir){
-		      unrollFor<N>([&](int ic){
-				      (*this)[ir][ic]+=oth[ir][ic];
-				    });
-		    });
+      
+      UNROLLED_FOR(ir,N)
+	UNROLLED_FOR(ic,N)
+	  (*this)[ir][ic]+=oth[ir][ic];
+        UNROLLED_FOR_END;
+      UNROLLED_FOR_END;
+      
       ASM_BOOKMARK("Matrix sum end");
       
       return *this;
     }
     
     /// Sum the product between two another matrices
-    ///
-    /// This routine performs "much worse" because aliasing cannot be
-    /// properly deduced and more loads than needed are employed
     template <typename U1,
 	      typename U2,
 	      typename R=decltype(T()+=U1()*U2())>
-    ALWAYS_INLINE auto& sumProd(const ArithmeticMatrix<U1,N>& oth1,const ArithmeticMatrix<U2,N>& oth2)
+    INLINE_FUNCTION auto& sumProd(const ArithmeticMatrix<U1,N>& oth1,const ArithmeticMatrix<U2,N>& oth2)
     {
       ASM_BOOKMARK_BEGIN("sumProdMethod");
       
-      unrollFor<N>([&](int ir){
-			 unrollFor<N>([&](int ic){
-					    unrollFor<N>([&](int i){
-							       auto& o=(*this)[ir][ic];
-							       const auto& f=oth1[ir][i];
-							       const auto& s=oth2[i][ic];
-							       
-							       if(0) // Does not fuse sum and mult
-								 o+=f*s;
-							       else
-								 o.sumProd(f,s);
-							     });
-					  });
-			   });
+      auto o=(*this);
+      
+      UNROLLED_FOR(ir,N)
+	UNROLLED_FOR(i,N)
+	  UNROLLED_FOR(ic,N)
+	    o.get(ir,ic).sumProd(oth1.get(ir,i),oth2.get(i,ic));
+          UNROLLED_FOR_END;
+        UNROLLED_FOR_END;
+      UNROLLED_FOR_END;
+      
+      (*this)=o;
       
       ASM_BOOKMARK_END("sumProdMethod");
       

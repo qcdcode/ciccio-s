@@ -46,7 +46,7 @@ namespace ciccios
     }
     
     /// Product with another complex
-    ALWAYS_INLINE Complex& sumProd(const Complex oth1,const Complex oth2) //Don't take it by reference or aliasing might arise
+    INLINE_FUNCTION Complex& sumProd(const Complex oth1,const Complex oth2) //Don't take it by reference or aliasing might arise
     {
       /// Alias for this
       Complex& t=*this;
