@@ -63,7 +63,7 @@ namespace ciccios
     }
     
     /// Sum the product of the two passed fields
-    ALWAYS_INLINE CpuSU3Field& sumProd(const CpuSU3Field& oth1,const CpuSU3Field& oth2)
+    INLINE_FUNCTION CpuSU3Field& sumProd(const CpuSU3Field& oth1,const CpuSU3Field& oth2)
     {
       ASM_BOOKMARK_BEGIN("UnrolledCPUmethod");
       for(int iSite=0;iSite<this->vol;iSite++)
@@ -168,17 +168,13 @@ namespace ciccios
     }
     
     /// Sum the product of the two passed fields
-    ALWAYS_INLINE SimdSu3Field& sumProd(const SimdSu3Field& oth1,const SimdSu3Field& oth2)
+    INLINE_FUNCTION SimdSu3Field& sumProd(const SimdSu3Field& oth1,const SimdSu3Field& oth2)
     {
       ASM_BOOKMARK_BEGIN("UnrolledSIMDmethod");
+      
       for(int iFusedSite=0;iFusedSite<this->fusedVol;iFusedSite++)
-      	{
-      	  auto& a=this->simdSite(iFusedSite);
-      	  const auto& b=oth1.simdSite(iFusedSite);
-      	  const auto& c=oth2.simdSite(iFusedSite);
-	  
-	  a.sumProd(b,c);
-	}
+	this->simdSite(iFusedSite).sumProd(oth1.simdSite(iFusedSite),oth2.simdSite(iFusedSite));
+      
       ASM_BOOKMARK_END("UnrolledSIMDmethod");
       
       return *this;
