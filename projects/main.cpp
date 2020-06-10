@@ -107,7 +107,7 @@ ALWAYS_INLINE void unrolledSumProdRestrict(SimdSu3Field<Fund>&  simdField1,const
   a->data[(A)].imag+=b->data[(B)].imag*c->data[(C)].real
   
 #define S(A,B,C)				\
-  COMPLEX_SUM_PROD(B+NCOL*A,C+NCOL*A,C+NCOL*B)
+  COMPLEX_SUM_PROD(B+NCOL*A,C+NCOL*A,B+NCOL*C)
   
   //#pragma omp parallel for // To be done when thread pool exists
   for(int iFusedSite=0;iFusedSite<simdField1.fusedVol;iFusedSite++)
@@ -124,7 +124,7 @@ ALWAYS_INLINE void unrolledSumProdRestrict(SimdSu3Field<Fund>&  simdField1,const
 			 unrollFor<NCOL>([&](const int& k){
 					    unrollFor<NCOL>([&](const int& j)
 							    {
-							      COMPLEX_SUM_PROD(i,j,k);
+							      S(i,j,k);
 							    });});});
       // simdField1.simdSite(iFusedSite)=a;
     }
@@ -397,17 +397,17 @@ void test(const int vol)
   
   LOGGER<<"Volume: "<<vol<<" dataset: "<<3*(double)vol*sizeof(SU3<Complex<Fund>>)/(1<<20)<<endl;
   
-  cpuTest(field,nIters,gFlops);
-  
-#ifdef USE_EIGEN
-  eigenTest(field,nIters,gFlops);
-#endif
-  
   simdTest(field,nIters,gFlops);
   
   simdAliasingTest(field,nIters,gFlops);
   
   simdRestrictTest(field,nIters,gFlops);
+  
+  cpuTest(field,nIters,gFlops);
+  
+#ifdef USE_EIGEN
+  eigenTest(field,nIters,gFlops);
+#endif
   
   /////////////////////////////////////////////////////////////////
   
