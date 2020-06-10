@@ -34,13 +34,104 @@ ALWAYS_INLINE void unrolledSumProd(SimdSu3Field<Fund>& simdField1,const SimdSu3F
 			 unrollFor<NCOL>([&](const int& k){
 					    unrollFor<NCOL>([&](const int& j)
 							    {
-							      a[i][j].sumProd(b[i][k],c[k][j]);
+							      a.get(i,j).sumProd(b.get(i,k),c.get(k,j));
 							     });});});
       simdField1.simdSite(iFusedSite)=a;
     }
   
   BOOKMARK_END_UnrolledSIMD(Fund{});
 }
+
+/////////////////////////////////////////////////////////////////
+
+PROVIDE_ASM_DEBUG_HANDLE(UnrolledSIMDAliasing,double)
+PROVIDE_ASM_DEBUG_HANDLE(UnrolledSIMDAliasing,float)
+
+/// Unroll loops with metaprogramming, SIMD version
+template <typename Fund>
+ALWAYS_INLINE void unrolledSumProdAliasing(SimdSu3Field<Fund>& simdField1,const SimdSu3Field<Fund>& simdField2,const SimdSu3Field<Fund>& simdField3)
+{
+  BOOKMARK_BEGIN_UnrolledSIMDAliasing(Fund{});
+  
+  //#pragma omp parallel for // To be done when thread pool exists
+  for(int iFusedSite=0;iFusedSite<simdField1.fusedVol;iFusedSite++)
+    {
+      auto& a=simdField1.simdSite(iFusedSite);
+      const auto &b=simdField2.simdSite(iFusedSite);
+      const auto &c=simdField3.simdSite(iFusedSite);
+      
+      unrollFor<NCOL>([&](const int& i){
+			 unrollFor<NCOL>([&](const int& k){
+					    unrollFor<NCOL>([&](const int& j)
+							    {
+							      a.get(i,j).sumProd(b.get(i,k),c.get(k,j));
+							    });});});
+    }
+  
+  BOOKMARK_END_UnrolledSIMDAliasing(Fund{});
+}
+
+/////////////////////////////////////////////////////////////////
+
+PROVIDE_ASM_DEBUG_HANDLE(UnrolledSIMDRestrict,double)
+PROVIDE_ASM_DEBUG_HANDLE(UnrolledSIMDRestrict,float)
+
+template <typename Fund>
+struct A
+{
+  SimdComplex<Fund> data[NCOL*NCOL];
+};
+
+template <typename Fund>
+struct B
+{
+  SimdComplex<Fund> data[NCOL*NCOL];
+};
+
+template <typename Fund>
+struct C
+{
+  SimdComplex<Fund> data[NCOL*NCOL];
+};
+
+/// Unroll loops with metaprogramming, SIMD version
+template <typename Fund>
+ALWAYS_INLINE void unrolledSumProdRestrict(SimdSu3Field<Fund>&  simdField1,const SimdSu3Field<Fund>&  simdField2,const SimdSu3Field<Fund>&  simdField3)
+{
+  BOOKMARK_BEGIN_UnrolledSIMDRestrict(Fund{});
+  
+#define COMPLEX_SUM_PROD(A,B,C)						\
+  a->data[(A)].real+=b->data[(B)].real*c->data[(C)].real;		\
+  a->data[(A)].real-=b->data[(B)].imag*c->data[(C)].imag;		\
+  a->data[(A)].imag+=b->data[(B)].real*c->data[(C)].imag;		\
+  a->data[(A)].imag+=b->data[(B)].imag*c->data[(C)].real
+  
+#define S(A,B,C)				\
+  COMPLEX_SUM_PROD(B+NCOL*A,C+NCOL*A,C+NCOL*B)
+  
+  //#pragma omp parallel for // To be done when thread pool exists
+  for(int iFusedSite=0;iFusedSite<simdField1.fusedVol;iFusedSite++)
+    {
+      auto a=(A<Fund>*)&simdField1.simdSite(iFusedSite);
+      const auto b=(const B<Fund>*)&simdField2.simdSite(iFusedSite);
+      const auto c=(const C<Fund>*)&simdField3.simdSite(iFusedSite);
+      
+      // auto  a=simdField1.simdSite(iFusedSite);
+      // const auto& __restrict b=simdField2.simdSite(iFusedSite);
+      // const auto& __restrict c=simdField3.simdSite(iFusedSite);
+      
+      unrollFor<NCOL>([&](const int& i){
+			 unrollFor<NCOL>([&](const int& k){
+					    unrollFor<NCOL>([&](const int& j)
+							    {
+							      COMPLEX_SUM_PROD(i,j,k);
+							    });});});
+      // simdField1.simdSite(iFusedSite)=a;
+    }
+  BOOKMARK_END_UnrolledSIMDRestrict(Fund{});
+}
+
+/////////////////////////////////////////////////////////////////
 
 PROVIDE_ASM_DEBUG_HANDLE(UnrolledCPU,double)
 PROVIDE_ASM_DEBUG_HANDLE(UnrolledCPU,float)
@@ -63,7 +154,7 @@ void unrolledSumProd(CpuSU3Field<SL,Fund>& field1,const CpuSU3Field<SL,Fund>& fi
 			 unrollFor<NCOL>([&](const int& k){
 					    unrollFor<NCOL>([&](const int& j)
 							     {
-							       a[i][j].sumProd(b[i][k],c[k][j]);
+							       a.get(i,j).sumProd(b.get(i,k),c.get(k,j));
 							     });});});
       field1.site(iSite)=a;
     }
@@ -129,6 +220,114 @@ void simdTest(CpuSU3Field<StorLoc::ON_CPU,Fund>& field,const int64_t nIters,cons
   LOGGER<<"SIMD \t GFlops/s: "<<gFlopsPerSec<<"\t Check: "<<fieldRes(0,0,0,RE)<<" "<<fieldRes(0,0,0,IM)<<endl;
 }
 
+/// Issue the test on SIMD field
+template <typename Fund>
+void simdAliasingTest(CpuSU3Field<StorLoc::ON_CPU,Fund>& field,const int64_t nIters,const double gFlops)
+{
+  /// Allocate three fields, this could be short-circuited through cast operator
+  SimdSu3Field<Fund> simdField1(field.vol),simdField2(field.vol),simdField3(field.vol);
+  simdField1=field;
+  simdField2=field;
+  simdField3=field;
+  
+  /// Takes note of starting moment
+  const Instant start=takeTime();
+  
+  for(int64_t i=0;i<nIters;i++)
+    unrolledSumProdAliasing(simdField1,simdField2,simdField3);
+  
+  /// Takes note of ending moment
+  const Instant end=takeTime();
+  
+  // Copy back
+  CpuSU3Field<StorLoc::ON_CPU,Fund> fieldRes(field.vol);
+  fieldRes=simdField1;
+  
+  /// Compute time
+  const double timeInSec=timeDiffInSec(end,start);
+  
+  /// Compute performances
+  const double gFlopsPerSec=gFlops/timeInSec;
+  LOGGER<<"alSIMD \t GFlops/s: "<<gFlopsPerSec<<"\t Check: "<<fieldRes(0,0,0,RE)<<" "<<fieldRes(0,0,0,IM)<<endl;
+}
+
+/// Issue the test on SIMD field
+template <typename Fund>
+void simdRestrictTest(CpuSU3Field<StorLoc::ON_CPU,Fund>& field,const int64_t nIters,const double gFlops)
+{
+  /// Allocate three fields, this could be short-circuited through cast operator
+  SimdSu3Field<Fund> simdField1(field.vol),simdField2(field.vol),simdField3(field.vol);
+  simdField1=field;
+  simdField2=field;
+  simdField3=field;
+  
+  /// Takes note of starting moment
+  const Instant start=takeTime();
+  
+  for(int64_t i=0;i<nIters;i++)
+    unrolledSumProdRestrict(simdField1,simdField2,simdField3);
+  
+  /// Takes note of ending moment
+  const Instant end=takeTime();
+  
+  // Copy back
+  CpuSU3Field<StorLoc::ON_CPU,Fund> fieldRes(field.vol);
+  fieldRes=simdField1;
+  
+  /// Compute time
+  const double timeInSec=timeDiffInSec(end,start);
+  
+  /// Compute performances
+  const double gFlopsPerSec=gFlops/timeInSec;
+  LOGGER<<"reSIMD \t GFlops/s: "<<gFlopsPerSec<<"\t Check: "<<fieldRes(0,0,0,RE)<<" "<<fieldRes(0,0,0,IM)<<endl;
+}
+
+// #ifdef USE_BLAZE
+
+// PROVIDE_ASM_DEBUG_HANDLE(Blaze,double)
+// PROVIDE_ASM_DEBUG_HANDLE(Blaze,float)
+
+// /// Test eigen
+// template <typename Fund>
+// void eigenTest(CpuSU3Field<StorLoc::ON_CPU,Fund>& field,const int64_t nIters,const double gFlops)
+// {
+//   /// Copy volume
+//   const int vol=field.vol;
+  
+//   /// Eigen equivalent of SU3
+//   using EQSU3=Eigen::Matrix<std::complex<Fund>,NCOL,NCOL>;
+  
+//   /// Allocate three fields through Eigen
+//   std::vector<EQSU3,Eigen::aligned_allocator<EQSU3>> a(vol),b(vol),c(vol);
+//   for(int iSite=0;iSite<vol;iSite++)
+//     for(int ic1=0;ic1<NCOL;ic1++)
+//       for(int ic2=0;ic2<NCOL;ic2++)
+// 	a[iSite](ic1,ic2)=
+// 	  b[iSite](ic1,ic2)=
+// 	  c[iSite](ic1,ic2)=
+// 	  {field(iSite,ic1,ic2,RE),field(iSite,ic1,ic2,IM)};
+  
+//   /// Starting instant
+//   const Instant start=takeTime();
+//   for(int64_t i=0;i<nIters;i++)
+//     {
+//       BOOKMARK_BEGIN_Eigen(Fund{});
+//       for(int iSite=0;iSite<vol;iSite++)
+// 	a[iSite]+=b[iSite]*c[iSite];
+//       BOOKMARK_END_Eigen(Fund{});
+//     }
+  
+//   /// Ending instant
+//   const Instant end=takeTime();
+  
+//   const double timeInSec=timeDiffInSec(end,start);
+//   const double gFlopsPerSec=gFlops/timeInSec;
+  
+//   LOGGER<<"Eigen\t GFlops/s: "<<gFlopsPerSec<<"\t Check: "<<a[0](0,0).real()<<" "<<a[0](0,0).imag()<<(std::is_same<float,Fund>::value?" (might differ by rounding)":"")<<endl;
+// }
+
+// #endif
+
 #ifdef USE_EIGEN
 
 PROVIDE_ASM_DEBUG_HANDLE(Eigen,double)
@@ -180,7 +379,7 @@ template <typename Fund>
 void test(const int vol)
 {
   /// Number of iterations
-  const int nIters=40000000/vol;
+  const int64_t nIters=400000000ULL/vol;
   
   /// Number of flops per site
   const double nFlopsPerSite=8.0*NCOL*NCOL*NCOL;
@@ -205,6 +404,10 @@ void test(const int vol)
 #endif
   
   simdTest(field,nIters,gFlops);
+  
+  simdAliasingTest(field,nIters,gFlops);
+  
+  simdRestrictTest(field,nIters,gFlops);
   
   /////////////////////////////////////////////////////////////////
   
