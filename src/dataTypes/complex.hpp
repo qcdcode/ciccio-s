@@ -4,6 +4,7 @@
 #include <array>
 
 #include "base/metaProgramming.hpp"
+#include "base/unroll.hpp"
 #include "dataTypes/SIMD.hpp"
 
 namespace ciccios
@@ -12,8 +13,11 @@ namespace ciccios
   
   /// Complex number
   template <typename T>
-  struct Complex : public std::array<T,2>
+  struct Complex
   {
+    T real;
+    T imag;
+    
     /// Product with another complex
     Complex operator*(const Complex& oth) const
     {
@@ -23,8 +27,8 @@ namespace ciccios
       /// Result
       Complex out;
       
-      out[RE]=t[RE]*oth[RE]-t[IM]*oth[IM];
-      out[IM]=t[RE]*oth[IM]+t[IM]*oth[RE];
+      out.real=t.real*oth.real-t.imag*oth.imag;
+      out.imag=t.real*oth.imag+t.imag*oth.real;
       
       return out;
     }
@@ -35,8 +39,8 @@ namespace ciccios
       /// Alias for this
       Complex& t=*this;
       
-      t[RE]+=oth[RE];
-      t[IM]+=oth[IM];
+      t.real+=oth.real;
+      t.imag+=oth.imag;
       
       return t;
     }
@@ -48,10 +52,10 @@ namespace ciccios
       Complex& t=*this;
       
       // Dumb compiler would not fuse this if we put together
-      t[RE]+=oth1[RE]*oth2[RE];
-      t[RE]-=oth1[IM]*oth2[IM];
-      t[IM]+=oth1[RE]*oth2[IM];
-      t[IM]+=oth1[IM]*oth2[RE];
+      t.real+=oth1.real*oth2.real;
+      t.real-=oth1.imag*oth2.imag;
+      t.imag+=oth1.real*oth2.imag;
+      t.imag+=oth1.imag*oth2.real;
       
       return t;
     }

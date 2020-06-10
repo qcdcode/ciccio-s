@@ -46,8 +46,17 @@ namespace ciccios
   /// A matrix
   template <typename T,
 	    int N>
-  struct ArithmeticMatrix : public std::array<std::array<T,N>,N>
+  struct ArithmeticMatrix
   {
+    T data[N][N];
+    
+    ALWAYS_INLINE const T& __restrict get(const int& i,const int& j) const
+    {
+      return data[i][j];
+    }
+    
+    PROVIDE_ALSO_NON_CONST_METHOD(get);
+    
     /// Multiply another matrix
     template <typename U,
 	      typename R=decltype(T()*U())>
