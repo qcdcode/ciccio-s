@@ -10,6 +10,8 @@
 #include <threads/mutex.hpp>
 #include <threads/tBarrier.hpp>
 
+#include <external/inplace_function.h>
+
 #ifndef EXTERN_POOL
  #define EXTERN_POOL extern
 #define INIT_POOL_TO(...)
@@ -40,7 +42,9 @@ namespace ciccios
     const pthread_t masterThreadTag{getThreadTag()};
     
     /// Type to encapsulate the work to be done
-    using Work=std::function<void(int)>;
+    using Work=
+      //std::function<void(int)>;
+      stdext::inplace_function<void(int),MAX_POOL_FUNCTION_SIZE>;
     
     /// Work to be done in the pool
     ///
@@ -96,7 +100,7 @@ namespace ciccios
       const int threadId=std::get<1>(pars);
       
       delete ptr;
-
+      
 #ifdef USE_THREADS_DEBUG
       LOGGER<<"entering the pool"<<endl;
 #endif
@@ -114,7 +118,8 @@ namespace ciccios
 	  
 #ifdef USE_THREADS_DEBUG
 	  LOGGER<<" keep swimming: "<<keepSwimming<<endl;
-#endif	  
+#endif
+	  
 	  if(keepSwimming)
 	    {
 	      pool.work(threadId);
@@ -284,7 +289,7 @@ namespace ciccios
       assertPoolOnly(threadId);
       
 #ifdef USE_THREADS_DEBUG
-      LOGGER<<"Telling that thread has been created and is ready to swim (tag: "<<threadHasBeenCreated()<<")"<<endl;
+      LOGGER<<"Telling that thread "<<threadId<<" has been created and is ready to swim (tag: "<<threadHasBeenCreated()<<")"<<endl;
 #endif
       
       // The thread signals to the master that has been created and ready to swim
@@ -297,7 +302,7 @@ namespace ciccios
       assertMasterOnly(threadId);
       
 #ifdef USE_THREADS_DEBUG
-      LOGGER<<"waiting for threads in the pool to be ready to ready to swim (tag: "<<threadHasBeenCreated()<<")"<<endl;
+      LOGGER<<"waiting for threads in the pool to be ready to swim (tag: "<<threadHasBeenCreated()<<")"<<endl;
 #endif
       
       // The master wait that the threads have been created by syncing with them
