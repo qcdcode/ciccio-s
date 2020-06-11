@@ -54,7 +54,7 @@ INLINE_FUNCTION void unrolledSumProd(SimdSu3Field<Fund>& simdField1,const SimdSu
 template <typename Fund>
 INLINE_FUNCTION void unrolledSumProdPool(SimdSu3Field<Fund>& simdField1,const SimdSu3Field<Fund>& simdField2,const SimdSu3Field<Fund>& simdField3)
 {
-  threadPool.loopSplit(0,simdField1.fusedVol,
+  threadPool->loopSplit(0,simdField1.fusedVol,
 		       [&](const int& threadId,const int& iFusedSite) INLINE_ATTRIBUTE
 		       {
 			 auto a=simdField1.simdSite(iFusedSite); // This copy gets compiled away, and no alias is induced
