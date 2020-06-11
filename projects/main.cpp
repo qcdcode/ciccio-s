@@ -24,7 +24,6 @@ INLINE_FUNCTION void unrolledSumProd(SimdSu3Field<Fund>& simdField1,const SimdSu
 {
   BOOKMARK_BEGIN_UnrolledSIMD(Fund{});
   
-  //#pragma omp for // To be done when thread pool exists
   const int it=omp_get_thread_num();
   const int nt=omp_get_num_threads();
   const int v=(simdField1.fusedVol+nt-1)/nt;
@@ -52,35 +51,9 @@ INLINE_FUNCTION void unrolledSumProd(SimdSu3Field<Fund>& simdField1,const SimdSu
 
 /// Unroll loops with metaprogramming, SIMD version
 template <typename Fund>
-INLINE_FUNCTION void unrolledSumProdPool(SimdSu3Field<Fund>& simdField1,const SimdSu3Field<Fund>& simdField2,const SimdSu3Field<Fund>& simdField3)
-{
-  threadPool->loopSplit(0,simdField1.fusedVol,
-		       [&](const int& threadId,const int& iFusedSite) INLINE_ATTRIBUTE
-		       {
-			 auto a=simdField1.simdSite(iFusedSite); // This copy gets compiled away, and no alias is induced
-			 const auto &b=simdField2.simdSite(iFusedSite);
-			 const auto &c=simdField3.simdSite(iFusedSite);
-			 
-			 UNROLLED_FOR(i,NCOL)
-			   UNROLLED_FOR(k,NCOL)
-			   UNROLLED_FOR(j,NCOL)
-			   a.get(i,j).sumProd(b.get(i,k),c.get(k,j));
-			 UNROLLED_FOR_END;
-			 UNROLLED_FOR_END;
-			 UNROLLED_FOR_END;
-			 
-			 simdField1.simdSite(iFusedSite)=a;
-		       }
-		       );
-}
-
-/////////////////////////////////////////////////////////////////
-
-/// Unroll loops with metaprogramming, SIMD version
-template <typename Fund>
 INLINE_FUNCTION void unrolledSumProdOMP(SimdSu3Field<Fund>& simdField1,const SimdSu3Field<Fund>& simdField2,const SimdSu3Field<Fund>& simdField3)
 {
-  #pragma omp for // To be done when thread pool exists
+#pragma omp parallel for // To be done when thread pool exists
   for(int iFusedSite=0;iFusedSite<simdField1.fusedVol;iFusedSite++)
     {
       auto a=simdField1.simdSite(iFusedSite); // This copy gets compiled away, and no alias is induced
@@ -97,6 +70,32 @@ INLINE_FUNCTION void unrolledSumProdOMP(SimdSu3Field<Fund>& simdField1,const Sim
       
       simdField1.simdSite(iFusedSite)=a;
     }
+}
+
+/////////////////////////////////////////////////////////////////
+
+/// Unroll loops with metaprogramming, SIMD version
+template <typename Fund>
+INLINE_FUNCTION void unrolledSumProdPool(SimdSu3Field<Fund>& simdField1,const SimdSu3Field<Fund>& simdField2,const SimdSu3Field<Fund>& simdField3)
+{
+  threadPool->loopSplit(0,simdField1.fusedVol,
+		       [&](const int& threadId,const int& iFusedSite) INLINE_ATTRIBUTE
+		       {
+			 auto a=simdField1.simdSite(iFusedSite); // This copy gets compiled away, and no alias is induced
+			 const auto &b=simdField2.simdSite(iFusedSite);
+			 const auto &c=simdField3.simdSite(iFusedSite);
+			 
+			 UNROLLED_FOR(i,NCOL)
+			   UNROLLED_FOR(k,NCOL)
+			     UNROLLED_FOR(j,NCOL)
+			       a.get(i,j).sumProd(b.get(i,k),c.get(k,j));
+			     UNROLLED_FOR_END;
+			   UNROLLED_FOR_END;
+			 UNROLLED_FOR_END;
+			 
+			 simdField1.simdSite(iFusedSite)=a;
+		       }
+			);
 }
 
 /////////////////////////////////////////////////////////////////

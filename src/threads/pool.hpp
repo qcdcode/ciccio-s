@@ -97,7 +97,7 @@ namespace ciccios
       
       delete ptr;
 
-#ifdef THREADS_DEBUG
+#ifdef USE_THREADS_DEBUG
       LOGGER<<"entering the pool"<<endl;
 #endif
       
@@ -112,7 +112,7 @@ namespace ciccios
 	  
 	  keepSwimming=pool.isFilled;
 	  
-#ifdef THREADS_DEBUG
+#ifdef USE_THREADS_DEBUG
 	  LOGGER<<" keep swimming: "<<keepSwimming<<endl;
 #endif	  
 	  if(keepSwimming)
@@ -123,7 +123,7 @@ namespace ciccios
 	    }
 	}
       
-#ifdef THREADS_DEBUG
+#ifdef USE_THREADS_DEBUG
       LOGGER<<"exiting the pool"<<endl;
 #endif
       
@@ -162,7 +162,7 @@ namespace ciccios
 	  if(pthread_join(pool[threadId],nullptr)!=0)
 	    CRASHER<<"joining threads"<<endl;
 	  
-#ifdef THREADS_DEBUG
+#ifdef USE_THREADS_DEBUG
 	  LOGGER<<"Thread of id "<<(int)threadId<<" destroyed"<<endl;
 #endif
 	}
@@ -261,7 +261,7 @@ namespace ciccios
     {
       assertMasterOnly(threadId);
       
-#ifdef THREADS_DEBUG
+#ifdef USE_THREADS_DEBUG
       LOGGER<<"Telling the pool that work has been assigned (tag: "<<workAssignmentTag()<<")"<<endl;
 #endif
       
@@ -283,7 +283,7 @@ namespace ciccios
     {
       assertPoolOnly(threadId);
       
-#ifdef THREADS_DEBUG
+#ifdef USE_THREADS_DEBUG
       LOGGER<<"Telling that thread has been created and is ready to swim (tag: "<<threadHasBeenCreated()<<")"<<endl;
 #endif
       
@@ -296,7 +296,7 @@ namespace ciccios
     {
       assertMasterOnly(threadId);
       
-#ifdef THREADS_DEBUG
+#ifdef USE_THREADS_DEBUG
       LOGGER<<"waiting for threads in the pool to be ready to ready to swim (tag: "<<threadHasBeenCreated()<<")"<<endl;
 #endif
       
@@ -325,7 +325,7 @@ namespace ciccios
       if(not isWaitingForWork)
 	CRASHER<<"We cannot stop a working pool"<<endl;
       
-#ifdef THREADS_DEBUG
+#ifdef USE_THREADS_DEBUG
       LOGGER<<"Telling the pool not to work any longer (tag: "<<workNoMoreTag()<<")"<<endl;
 #endif
       
@@ -349,7 +349,7 @@ namespace ciccios
     {
       assertPoolOnly(threadId);
       
-#ifdef THREADS_DEBUG
+#ifdef USE_THREADS_DEBUG
       LOGGER<<"finished working (tag: "<<workFinishedTag()<<")"<<endl;
 #endif
       
