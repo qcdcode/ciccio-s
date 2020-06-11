@@ -50,6 +50,57 @@ INLINE_FUNCTION void unrolledSumProd(SimdSu3Field<Fund>& simdField1,const SimdSu
 
 /////////////////////////////////////////////////////////////////
 
+/// Unroll loops with metaprogramming, SIMD version
+template <typename Fund>
+INLINE_FUNCTION void unrolledSumProdPool(SimdSu3Field<Fund>& simdField1,const SimdSu3Field<Fund>& simdField2,const SimdSu3Field<Fund>& simdField3)
+{
+  threadPool.loopSplit(0,simdField1.fusedVol,
+		       [&](const int& threadId,const int& iFusedSite) INLINE_ATTRIBUTE
+		       {
+			 auto a=simdField1.simdSite(iFusedSite); // This copy gets compiled away, and no alias is induced
+			 const auto &b=simdField2.simdSite(iFusedSite);
+			 const auto &c=simdField3.simdSite(iFusedSite);
+			 
+			 UNROLLED_FOR(i,NCOL)
+			   UNROLLED_FOR(k,NCOL)
+			   UNROLLED_FOR(j,NCOL)
+			   a.get(i,j).sumProd(b.get(i,k),c.get(k,j));
+			 UNROLLED_FOR_END;
+			 UNROLLED_FOR_END;
+			 UNROLLED_FOR_END;
+			 
+			 simdField1.simdSite(iFusedSite)=a;
+		       }
+		       );
+}
+
+/////////////////////////////////////////////////////////////////
+
+/// Unroll loops with metaprogramming, SIMD version
+template <typename Fund>
+INLINE_FUNCTION void unrolledSumProdOMP(SimdSu3Field<Fund>& simdField1,const SimdSu3Field<Fund>& simdField2,const SimdSu3Field<Fund>& simdField3)
+{
+  #pragma omp for // To be done when thread pool exists
+  for(int iFusedSite=0;iFusedSite<simdField1.fusedVol;iFusedSite++)
+    {
+      auto a=simdField1.simdSite(iFusedSite); // This copy gets compiled away, and no alias is induced
+      const auto &b=simdField2.simdSite(iFusedSite);
+      const auto &c=simdField3.simdSite(iFusedSite);
+      
+      UNROLLED_FOR(i,NCOL)
+	UNROLLED_FOR(k,NCOL)
+	  UNROLLED_FOR(j,NCOL)
+	   a.get(i,j).sumProd(b.get(i,k),c.get(k,j));
+          UNROLLED_FOR_END;
+        UNROLLED_FOR_END;
+      UNROLLED_FOR_END;
+      
+      simdField1.simdSite(iFusedSite)=a;
+    }
+}
+
+/////////////////////////////////////////////////////////////////
+
 PROVIDE_ASM_DEBUG_HANDLE(UnrolledSIMDAliasing,double)
 PROVIDE_ASM_DEBUG_HANDLE(UnrolledSIMDAliasing,float)
 
@@ -182,7 +233,8 @@ void cpuTest(CpuSU3Field<StorLoc::ON_CPU,Fund>& field,const int64_t nIters,const
 }
 
 /// Issue the test on SIMD field
-template <typename Fund>
+template <int way,
+	  typename Fund>
 void simdTest(CpuSU3Field<StorLoc::ON_CPU,Fund>& field,const int64_t nIters,const double gFlops)
 {
   /// Allocate three fields, this could be short-circuited through cast operator
@@ -194,9 +246,21 @@ void simdTest(CpuSU3Field<StorLoc::ON_CPU,Fund>& field,const int64_t nIters,cons
   /// Takes note of starting moment
   const Instant start=takeTime();
   
+  switch(way)
+    {
+    case 0:
   #pragma omp parallel
-  for(int64_t i=0;i<nIters;i++)
-    unrolledSumProd(simdField1,simdField2,simdField3);
+      for(int64_t i=0;i<nIters;i++)
+	unrolledSumProd(simdField1,simdField2,simdField3);
+      break;
+    case 1:
+      for(int64_t i=0;i<nIters;i++)
+	unrolledSumProdOMP(simdField1,simdField2,simdField3);
+      break;
+    case 2:
+      for(int64_t i=0;i<nIters;i++)
+	unrolledSumProdPool(simdField1,simdField2,simdField3);
+    }
   
   /// Takes note of ending moment
   const Instant end=takeTime();
@@ -210,7 +274,7 @@ void simdTest(CpuSU3Field<StorLoc::ON_CPU,Fund>& field,const int64_t nIters,cons
   
   /// Compute performances
   const double gFlopsPerSec=gFlops/timeInSec;
-  LOGGER<<"SIMD \t GFlops/s: "<<gFlopsPerSec<<"\t Check: "<<fieldRes(0,0,0,RE)<<" "<<fieldRes(0,0,0,IM)<<" time: "<<timeInSec<<endl;
+  LOGGER<<"SIMD"<<way<<" \t GFlops/s: "<<gFlopsPerSec<<"\t Check: "<<fieldRes(0,0,0,RE)<<" "<<fieldRes(0,0,0,IM)<<" time: "<<timeInSec<<endl;
 }
 
 /// Issue the test on SIMD field
@@ -344,7 +408,11 @@ void test(const int vol)
   
   LOGGER<<"Volume: "<<vol<<" dataset: "<<3*(double)vol*sizeof(SU3<Complex<Fund>>)/(1<<20)<<endl;
   
-  simdTest(field,nIters,gFlops);
+  simdTest<0>(field,nIters,gFlops);
+  
+  simdTest<1>(field,nIters,gFlops);
+  
+  simdTest<2>(field,nIters,gFlops);
   
   simdAliasingTest(field,nIters,gFlops);
   

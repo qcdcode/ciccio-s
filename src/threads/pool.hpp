@@ -453,7 +453,7 @@ namespace ciccios
   };
   
   /// Global thread pool
-  // EXTERN_POOL ThreadPool threadPool;
+  EXTERN_POOL ThreadPool threadPool;
 }
 
 #undef EXTERN_POOL
