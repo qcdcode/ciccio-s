@@ -105,6 +105,9 @@ fi
 #check openmp
 AX_OPENMP
 
+# Search for pthread
+AX_SUBPACKAGE(threads,pthread.h,pthread,pthread_getconcurrency,THREADS,autouse)
+
 #cuda
 AX_CHECK_CUDA
 AM_CONDITIONAL([USE_CUDA],[test "$CXX" == "nvcc"])

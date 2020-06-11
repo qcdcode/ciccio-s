@@ -5,8 +5,9 @@
  #include "config.hpp"
 #endif
 
-#include "base.hpp"
-#include "dataTypes.hpp"
+#include "Base.hpp"
+#include "DataTypes.hpp"
+#include "Threads.hpp"
 
 namespace ciccios
 {
@@ -34,6 +35,8 @@ namespace ciccios
     
     cpuMemoryManager=new CPUMemoryManager;
     cpuMemoryManager->disableCache();
+    
+    //threadPool.fill();
     
     inMain();
   }

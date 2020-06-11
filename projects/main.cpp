@@ -7,6 +7,7 @@
 #endif
 
 #include <chrono>
+#include <omp.h>
 
 #include "ciccio-s.hpp"
 
@@ -23,8 +24,11 @@ INLINE_FUNCTION void unrolledSumProd(SimdSu3Field<Fund>& simdField1,const SimdSu
 {
   BOOKMARK_BEGIN_UnrolledSIMD(Fund{});
   
-  //#pragma omp parallel for // To be done when thread pool exists
-  for(int iFusedSite=0;iFusedSite<simdField1.fusedVol;iFusedSite++)
+  //#pragma omp for // To be done when thread pool exists
+  const int it=omp_get_thread_num();
+  const int nt=omp_get_num_threads();
+  const int v=simdField1.fusedVol/nt;
+  for(int iFusedSite=v*it;iFusedSite<v*(it+1);iFusedSite++)
     {
       auto a=simdField1.simdSite(iFusedSite); // This copy gets compiled away, and no alias is induced
       const auto &b=simdField2.simdSite(iFusedSite);
@@ -190,6 +194,7 @@ void simdTest(CpuSU3Field<StorLoc::ON_CPU,Fund>& field,const int64_t nIters,cons
   /// Takes note of starting moment
   const Instant start=takeTime();
   
+  #pragma omp parallel
   for(int64_t i=0;i<nIters;i++)
     unrolledSumProd(simdField1,simdField2,simdField3);
   
