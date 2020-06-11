@@ -36,7 +36,26 @@ namespace ciccios
     cpuMemoryManager=new CPUMemoryManager;
     cpuMemoryManager->disableCache();
     
-    //threadPool.fill();
+    /// Tag to be used for setting nThreads
+    const char* numThreadsTag="CICCIOS_NUM_THREADS";
+    
+    /// Capture environment variable
+    const char* nThreadsStr=getenv(numThreadsTag);
+    
+    /// Try to convert from environment variable
+    const int nEnvThreads=(nThreadsStr!=nullptr)?atoi(nThreadsStr):-1;
+    
+    /// Get the hardware number of threads
+    const int nHwThreads=std::thread::hardware_concurrency();
+    
+    /// Decide whether to use hardware number of threads
+    const bool useEnvThreads=nEnvThreads>0 and nEnvThreads<nHwThreads;
+    
+    /// Set nThreads according to source
+    int nThreads=useEnvThreads?nEnvThreads:nHwThreads;
+    LOGGER<<"Using "<<(useEnvThreads?"environment ":"hardware ")<<"number of threads, "<<nThreads<<endl;
+    
+    threadPool=new ThreadPool(nThreads);
     
     inMain();
   }
@@ -44,6 +63,8 @@ namespace ciccios
   /// Finalizes
   void finalizeCiccios()
   {
+    delete threadPool;
+    
     delete cpuMemoryManager;
     
     LOGGER<<endl<<"Ariciao!"<<endl<<endl;

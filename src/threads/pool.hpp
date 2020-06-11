@@ -435,8 +435,7 @@ namespace ciccios
     }
     
     /// Constructor starting the thread pool with a given number of threads
-    ThreadPool(int nThreads=1// std::thread::hardware_concurrency()
-	       ) :
+    ThreadPool(int nThreads) :
       pool(1,getThreadTag()),
       nThreads(nThreads),
       barrier(nThreads)
@@ -453,7 +452,7 @@ namespace ciccios
   };
   
   /// Global thread pool
-  EXTERN_POOL ThreadPool threadPool;
+  EXTERN_POOL ThreadPool* threadPool;
 }
 
 #undef EXTERN_POOL
