@@ -74,10 +74,15 @@ INLINE_FUNCTION void unrolledSumProdOMP(SimdSu3Field<Fund>& simdField1,const Sim
 
 /////////////////////////////////////////////////////////////////
 
+PROVIDE_ASM_DEBUG_HANDLE(UnrolledSIMDpool,double)
+PROVIDE_ASM_DEBUG_HANDLE(UnrolledSIMDpool,float)
+
 /// Unroll loops with metaprogramming, SIMD version
 template <typename Fund>
 INLINE_FUNCTION void unrolledSumProdPool(SimdSu3Field<Fund>& simdField1,const SimdSu3Field<Fund>& simdField2,const SimdSu3Field<Fund>& simdField3)
 {
+  BOOKMARK_BEGIN_UnrolledSIMDpool(Fund{});
+  
   threadPool->loopSplit(0,simdField1.fusedVol,
 		       [&](const int& threadId,const int& iFusedSite) INLINE_ATTRIBUTE
 		       {
@@ -96,6 +101,7 @@ INLINE_FUNCTION void unrolledSumProdPool(SimdSu3Field<Fund>& simdField1,const Si
 			 simdField1.simdSite(iFusedSite)=a;
 		       }
 			);
+  BOOKMARK_END_UnrolledSIMDpool(Fund{});
 }
 
 /////////////////////////////////////////////////////////////////
