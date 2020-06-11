@@ -27,8 +27,8 @@ INLINE_FUNCTION void unrolledSumProd(SimdSu3Field<Fund>& simdField1,const SimdSu
   //#pragma omp for // To be done when thread pool exists
   const int it=omp_get_thread_num();
   const int nt=omp_get_num_threads();
-  const int v=simdField1.fusedVol/nt;
-  for(int iFusedSite=v*it;iFusedSite<v*(it+1);iFusedSite++)
+  const int v=(simdField1.fusedVol+nt-1)/nt;
+  for(int iFusedSite=v*it;iFusedSite<std::min(v*(it+1),simdField1.fusedVol);iFusedSite++)
     {
       auto a=simdField1.simdSite(iFusedSite); // This copy gets compiled away, and no alias is induced
       const auto &b=simdField2.simdSite(iFusedSite);
