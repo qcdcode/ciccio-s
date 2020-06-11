@@ -106,7 +106,7 @@ fi
 AX_OPENMP
 
 # Threads debug
-AC_ARG_ENABLE(THREADS-DEBUG,
+AC_ARG_ENABLE(threads-debug,
 	AS_HELP_STRING([--enable-threads-debug],[Enable threads debug]),
 	enable_threads_debug="${enableval}",
 	enable_threads_debug="no")
@@ -116,7 +116,7 @@ then
 fi
 AC_MSG_RESULT([enabling threads debug... $enable_threads_debug])
 SUMMARY_RESULT="$SUMMARY_RESULT
-Threads debug enabled         : $enable_threads_debug"
+threads debug       : $enable_threads_debug"
 
 # Search for pthread
 AX_SUBPACKAGE(threads,pthread.h,pthread,pthread_getconcurrency,THREADS,autouse)
