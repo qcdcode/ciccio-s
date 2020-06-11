@@ -259,6 +259,7 @@ void simdTest(CpuSU3Field<StorLoc::ON_CPU,Fund>& field,const int64_t nIters,cons
 	unrolledSumProd(simdField1,simdField2,simdField3);
       break;
     case 1:
+  #pragma omp parallel
       for(int64_t i=0;i<nIters;i++)
 	unrolledSumProdOMP(simdField1,simdField2,simdField3);
       break;

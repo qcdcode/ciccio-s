@@ -418,7 +418,7 @@ namespace ciccios
 	      typename F>              // Type for the work function
     void loopSplit(const Size& beg,  ///< Beginning of the loop
 		   const Size& end,  ///< End of the loop
-		   F f)              ///< Function to be called, accepting two integers: the first is the thread id, the second the loop argument
+		   const F& f)       ///< Function to be called, accepting two integers: the first is the thread id, the second the loop argument
     {
       workOn([beg,end,nPieces=this->nActiveThreads(),&f](const int& threadId) INLINE_ATTRIBUTE
 	     {
