@@ -5,6 +5,8 @@
  #include "config.hpp"
 #endif
 
+#include <thread>
+
 #include "Base.hpp"
 #include "DataTypes.hpp"
 #include "Threads.hpp"
@@ -22,8 +24,7 @@ namespace ciccios
   /// Initialize the library and jump to f
   ///
   /// \c f will be used to initialize thread pool
-  template <typename F>
-  void initCiccios(int& narg,char **&arg,const F& inMain)
+  inline void initCiccios(void(*replacementMain)(int narg,char **arg),int& narg,char **&arg)
   {
     initRanks(narg,arg);
     
@@ -36,35 +37,12 @@ namespace ciccios
     cpuMemoryManager=new CPUMemoryManager;
     cpuMemoryManager->disableCache();
     
-    /// Tag to be used for setting nThreads
-    const char* numThreadsTag="CICCIOS_NUM_THREADS";
-    
-    /// Capture environment variable
-    const char* nThreadsStr=getenv(numThreadsTag);
-    
-    /// Try to convert from environment variable
-    const int nEnvThreads=(nThreadsStr!=nullptr)?atoi(nThreadsStr):-1;
-    
-    /// Get the hardware number of threads
-    const int nHwThreads=std::thread::hardware_concurrency();
-    
-    /// Decide whether to use hardware number of threads
-    const bool useEnvThreads=nEnvThreads>0 and nEnvThreads<nHwThreads;
-    
-    /// Set nThreads according to source
-    int nThreads=useEnvThreads?nEnvThreads:nHwThreads;
-    LOGGER<<"Using "<<(useEnvThreads?"environment ":"hardware ")<<"number of threads, "<<nThreads<<endl;
-    
-    threadPool=new ThreadPool(nThreads);
-    
-    inMain();
+    ThreadPool::poolThread(replacementMain,narg,arg);
   }
   
   /// Finalizes
-  void finalizeCiccios()
+  inline void finalizeCiccios()
   {
-    delete threadPool;
-    
     delete cpuMemoryManager;
     
     LOGGER<<endl<<"Ariciao!"<<endl<<endl;

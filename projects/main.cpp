@@ -53,7 +53,7 @@ INLINE_FUNCTION void unrolledSumProd(SimdSu3Field<Fund>& simdField1,const SimdSu
 template <typename Fund>
 INLINE_FUNCTION void unrolledSumProdOMP(SimdSu3Field<Fund>& simdField1,const SimdSu3Field<Fund>& simdField2,const SimdSu3Field<Fund>& simdField3)
 {
-#pragma omp parallel for // To be done when thread pool exists
+#pragma omp parallel for
   for(int iFusedSite=0;iFusedSite<simdField1.fusedVol;iFusedSite++)
     {
       auto a=simdField1.simdSite(iFusedSite); // This copy gets compiled away, and no alias is induced
@@ -83,39 +83,9 @@ INLINE_FUNCTION void unrolledSumProdPool(SimdSu3Field<Fund>& simdField1,const Si
 {
   BOOKMARK_BEGIN_UnrolledSIMDpool(Fund{});
   
-  // first=&simdField1;
-  // second=(void*)(&simdField2);
-  // third=(void*)(&simdField3);
-  // using First=std::remove_reference_t<decltype(simdField1)>;
-  // using Second=std::remove_reference_t<decltype(simdField2)>;
-  // using Third=std::remove_reference_t<decltype(simdField3)>;
-  
-      // _beg=0;
-      // _end=simdField1.fusedVol;
-      // _nPieces=threadPool->nActiveThreads();
-      //_f=f;
-  
-  threadPool->//workOn([](const int& threadId) //INLINE_ATTRIBUTE
-	     // {
-	     //   /// Workload for each thread, taking into account the remainder
-	     //   const int threadLoad=
-	     // 	 (_end-_beg+_nPieces-1)/_nPieces;
-	       
-	     //   /// Beginning of the chunk
-	     //   const int threadBeg=
-	     // 	 threadLoad*threadId;
-	       
-	     //   /// End of the chunk
-	     //   const int threadEnd=
-	     // 	 std::min(_end,threadBeg+threadLoad);
-	     //   for(int iFusedSite=threadBeg;iFusedSite<threadEnd;iFusedSite++)
- loopSplit(0,simdField1.fusedVol,
-	   [&](const int& threadId,const int& iFusedSite) INLINE_ATTRIBUTE
-		       {
-			 // auto& simdField1=*(First*)first;
-			 // auto& simdField2=*(Second*)second;
-			 // auto& simdField3=*(Third*)third;
-			 
+  ThreadPool::loopSplit(0,simdField1.fusedVol,
+			[&](const int& threadId,const int& iFusedSite) INLINE_ATTRIBUTE
+			{
 			 auto a=simdField1.simdSite(iFusedSite); // This copy gets compiled away, and no alias is induced
 			 const auto &b=simdField2.simdSite(iFusedSite);
 			 const auto &c=simdField3.simdSite(iFusedSite);
@@ -130,7 +100,6 @@ INLINE_FUNCTION void unrolledSumProdPool(SimdSu3Field<Fund>& simdField1,const Si
 			 
 			 simdField1.simdSite(iFusedSite)=a;
 		       }
-	   //	     }
     );
   BOOKMARK_END_UnrolledSIMDpool(Fund{});
 }
@@ -480,7 +449,7 @@ void testType()
 }
 
 /// Internal main
-void inMain()
+void inMain(int narg,char **arg)
 {
   testType<float>();
   
@@ -489,7 +458,7 @@ void inMain()
 
 int main(int narg,char **arg)
 {
-  initCiccios(narg,arg,inMain);
+  initCiccios(inMain,narg,arg);
   
   finalizeCiccios();
   
