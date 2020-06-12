@@ -21,6 +21,9 @@
 
 namespace ciccios
 {
+  // EXTERN_POOL int _beg,_end,_nPieces;
+  // EXTERN_POOL void(*_f)(const int&,const int&);
+  
   /// Thread id of master thread
   [[ maybe_unused ]]
   constexpr int masterThreadId=
@@ -43,8 +46,9 @@ namespace ciccios
     
     /// Type to encapsulate the work to be done
     using Work=
+      // void(*)(const int&);
       //std::function<void(int)>;
-      stdext::inplace_function<void(int),MAX_POOL_FUNCTION_SIZE>;
+    stdext::inplace_function<void(int),MAX_POOL_FUNCTION_SIZE>;
     
     /// Work to be done in the pool
     ///
@@ -393,16 +397,19 @@ namespace ciccios
     ///
     /// The object \c f must be callable, returning void and getting
     /// an integer as a parameter, representing the thread id
+    //void workOn(Work&& f) ///< Function embedding the work
     template <typename F>
-    void workOn(F f) ///< Function embedding the work
+    void workOn(F&& f) ///< Function embedding the work
     {
       // Check that the pool is waiting for work
       // if(not isWaitingForWork)
       // 	CRASHER<<"Trying to give work to not-waiting pool!"<<endl;
       
       // Store the work
+      // asm("#pre");
       work=
-	f;
+	std::move(f);
+      // asm("#pre");
       
       // Set off the other threads
       tellThePoolWorkIsAssigned(masterThreadId);
@@ -415,15 +422,23 @@ namespace ciccios
     
     /// Split a loop into \c nTrheads chunks, giving each chunk as a work for a corresponding thread
     template <typename Size,           // Type for the range of the loop
-	      typename F>              // Type for the work function
+	      typename F>
     void loopSplit(const Size& beg,  ///< Beginning of the loop
 		   const Size& end,  ///< End of the loop
 		   const F& f)       ///< Function to be called, accepting two integers: the first is the thread id, the second the loop argument
+    //void(*f)(const int&,const int&))       ///< Function to be called, accepting two integers: the first is the thread id, the second the loop argument
     {
       workOn([beg,end,nPieces=this->nActiveThreads(),&f](const int& threadId) INLINE_ATTRIBUTE
+      // _beg=beg;
+      // _end=end;
+      // _nPieces=this->nActiveThreads();
+      // _f=f;
+      
+      //workOn([](const int& threadId) //INLINE_ATTRIBUTE
 	     {
 	       /// Workload for each thread, taking into account the remainder
 	       const Size threadLoad=
+		 //(_end-_beg+_nPieces-1)/_nPieces;
 		 (end-beg+nPieces-1)/nPieces;
 	       
 	       /// Beginning of the chunk
@@ -432,9 +447,11 @@ namespace ciccios
 	       
 	       /// End of the chunk
 	       const Size threadEnd=
+		 //std::min(_end,threadBeg+threadLoad);
 		 std::min(end,threadBeg+threadLoad);
 	       
 	       for(Size i=threadBeg;i<threadEnd;i++)
+		 // _f
 		 f(threadId,i);
 	     });
     }

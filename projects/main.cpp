@@ -76,16 +76,46 @@ INLINE_FUNCTION void unrolledSumProdOMP(SimdSu3Field<Fund>& simdField1,const Sim
 
 PROVIDE_ASM_DEBUG_HANDLE(UnrolledSIMDpool,double)
 PROVIDE_ASM_DEBUG_HANDLE(UnrolledSIMDpool,float)
-
+//void *first,*second,*third;
 /// Unroll loops with metaprogramming, SIMD version
 template <typename Fund>
 INLINE_FUNCTION void unrolledSumProdPool(SimdSu3Field<Fund>& simdField1,const SimdSu3Field<Fund>& simdField2,const SimdSu3Field<Fund>& simdField3)
 {
   BOOKMARK_BEGIN_UnrolledSIMDpool(Fund{});
   
-  threadPool->loopSplit(0,simdField1.fusedVol,
-		       [&](const int& threadId,const int& iFusedSite) INLINE_ATTRIBUTE
+  // first=&simdField1;
+  // second=(void*)(&simdField2);
+  // third=(void*)(&simdField3);
+  // using First=std::remove_reference_t<decltype(simdField1)>;
+  // using Second=std::remove_reference_t<decltype(simdField2)>;
+  // using Third=std::remove_reference_t<decltype(simdField3)>;
+  
+      // _beg=0;
+      // _end=simdField1.fusedVol;
+      // _nPieces=threadPool->nActiveThreads();
+      //_f=f;
+  
+  threadPool->//workOn([](const int& threadId) //INLINE_ATTRIBUTE
+	     // {
+	     //   /// Workload for each thread, taking into account the remainder
+	     //   const int threadLoad=
+	     // 	 (_end-_beg+_nPieces-1)/_nPieces;
+	       
+	     //   /// Beginning of the chunk
+	     //   const int threadBeg=
+	     // 	 threadLoad*threadId;
+	       
+	     //   /// End of the chunk
+	     //   const int threadEnd=
+	     // 	 std::min(_end,threadBeg+threadLoad);
+	     //   for(int iFusedSite=threadBeg;iFusedSite<threadEnd;iFusedSite++)
+ loopSplit(0,simdField1.fusedVol,
+	   [&](const int& threadId,const int& iFusedSite) INLINE_ATTRIBUTE
 		       {
+			 // auto& simdField1=*(First*)first;
+			 // auto& simdField2=*(Second*)second;
+			 // auto& simdField3=*(Third*)third;
+			 
 			 auto a=simdField1.simdSite(iFusedSite); // This copy gets compiled away, and no alias is induced
 			 const auto &b=simdField2.simdSite(iFusedSite);
 			 const auto &c=simdField3.simdSite(iFusedSite);
@@ -100,7 +130,8 @@ INLINE_FUNCTION void unrolledSumProdPool(SimdSu3Field<Fund>& simdField1,const Si
 			 
 			 simdField1.simdSite(iFusedSite)=a;
 		       }
-			);
+	   //	     }
+    );
   BOOKMARK_END_UnrolledSIMDpool(Fund{});
 }
 
@@ -259,7 +290,6 @@ void simdTest(CpuSU3Field<StorLoc::ON_CPU,Fund>& field,const int64_t nIters,cons
 	unrolledSumProd(simdField1,simdField2,simdField3);
       break;
     case 1:
-  #pragma omp parallel
       for(int64_t i=0;i<nIters;i++)
 	unrolledSumProdOMP(simdField1,simdField2,simdField3);
       break;
@@ -396,7 +426,7 @@ template <typename Fund>
 void test(const int vol)
 {
   /// Number of iterations
-  const int64_t nIters=400000000ULL/vol;
+  const int64_t nIters=40000000ULL/vol;
   
   /// Number of flops per site
   const double nFlopsPerSite=8.0*NCOL*NCOL*NCOL;
