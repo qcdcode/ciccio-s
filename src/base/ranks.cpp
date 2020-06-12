@@ -5,6 +5,8 @@
 #define EXTERN_RANK
  #include "base/ranks.hpp"
 
+#include <iostream>
+
 namespace ciccios
 {
   void initRanks(int& narg,char **&arg)
