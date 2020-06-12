@@ -33,8 +33,10 @@ namespace ciccios
     /// Maximal size of the stack used for thw work
     //static constexpr int MAX_POOL_FUNCTION_SIZE=128;
     
-    /// Number of threads waiting for job
-    EXTERN_POOL std::atomic<int> nThreadsWaitingForJob INIT_POOL_TO(0);
+    /// Number of threads waiting for work
+    EXTERN_POOL std::atomic<int> nThreadsWaitingForWork INIT_POOL_TO(0);
+    
+    EXTERN_POOL std::atomic<int> nWorksAssigned INIT_POOL_TO(0);
     
     /// States if the pool is started
     EXTERN_POOL bool poolIsStarted INIT_POOL_TO(false);
@@ -92,7 +94,8 @@ namespace ciccios
     
     inline void waitAllButMasterWaitForWork()
     {
-      while(nThreadsWaitingForJob!=nThreads-1);
+      while(nThreadsWaitingForWork!=nThreads-1) // printf("NWaiting: %d/%d\n",nThreadsWaitingForWork.load(),nThreads-1)
+						  ;
     }
     
     /// Gives to all threads some work to be done
@@ -104,10 +107,11 @@ namespace ciccios
     INLINE_FUNCTION void workOn(F&& f) ///< Function embedding the work
     {
       waitAllButMasterWaitForWork();
-      //printf("All jobs waiting\n");
+      //printf("All works waiting\n");
       work=std::move(f);
       
-      nThreadsWaitingForJob=0;
+      nThreadsWaitingForWork=0;
+      nWorksAssigned.store(nWorksAssigned+1,std::memory_order_release);
       
       work(masterThreadId);
     }

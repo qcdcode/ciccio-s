@@ -35,20 +35,30 @@ namespace ciccios
 	      
 	      poolIsStarted=false;
 	      
-	      work=[](const int&){};
-	      nThreadsWaitingForJob=0;
+	      workOn([](const int&){});
 	    }
 	  else
-	    do
-	      {
-		nThreadsWaitingForJob.fetch_add(1);
-		//printf("Waiting for assignemnt %d %d\n",threadId,nThreadsWaitingForJob.load());
-		while(nThreadsWaitingForJob!=0);
-		//printf("Work assigned %d\n",threadId);
-		work(threadId);
-		//printf("Work finished %d\n",threadId);
-	      }
-	    while(poolIsStarted);
+	    {
+	      do
+		{
+		  const int prevNWorkAssigned=nWorksAssigned;
+		  
+		  //int pre=
+		    nThreadsWaitingForWork.fetch_add(1);
+		  //printf("Waiting for assignemnt %d %d->%d\n",threadId,pre,nThreadsWaitingForWork.load());
+		  while(nWorksAssigned.load(std::memory_order_relaxed)==prevNWorkAssigned)
+		    //printf("Thread %d waiting for assignment (waiting: %d)\n",threadId,nThreadsWaitingForWork.load())
+		    ;
+		  std::atomic_thread_fence(std::memory_order_acquire);
+		  
+		  //printf("Work assigned %d\n",threadId);
+		  work(threadId);
+		  //printf("Work finished %d\n",threadId);
+		}
+	      while(poolIsStarted);
+	      
+	      printf("Exiting the pool, thread %d\n",poolIsStarted);
+	    }
 	}
     }
   }
