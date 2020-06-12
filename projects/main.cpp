@@ -263,8 +263,11 @@ void simdTest(CpuSU3Field<StorLoc::ON_CPU,Fund>& field,const int64_t nIters,cons
 	unrolledSumProdOMP(simdField1,simdField2,simdField3);
       break;
     case 2:
-      for(int64_t i=0;i<nIters;i++)
-	unrolledSumProdPool(simdField1,simdField2,simdField3);
+      {
+	for(int64_t i=0;i<nIters;i++)
+	  unrolledSumProdPool(simdField1,simdField2,simdField3);
+	ThreadPool::waitAllButMasterWaitForWork();
+      }
     }
   
   /// Takes note of ending moment
