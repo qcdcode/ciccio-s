@@ -27,6 +27,29 @@ namespace ciccios
   [[ maybe_unused ]]
   constexpr int masterThreadId=0;
   
+  namespace resources
+    {
+      /// Get the total number of threads
+      inline int getNThreads()
+      {
+	/// Output
+	int res;
+	
+#pragma omp parallel
+	res=omp_get_num_threads();
+	
+	return res;
+      }
+      
+      /// Number of threads
+      ///
+      /// Internal storage, not to be accessed
+      EXTERN_POOL int nThreads INIT_POOL_TO(resources::getNThreads());
+  }
+  
+  /// Number of threads
+  static const int& nThreads=resources::nThreads;
+  
   /// Contains a thread pool
   namespace ThreadPool
   {
@@ -52,9 +75,6 @@ namespace ciccios
     /// integer as an argument, corresponding to the thread
     EXTERN_POOL Work work;
     
-    /// Number of threads
-    EXTERN_POOL int nThreads;
-    
     /// Assert that only the pool is accessing
     inline void assertPoolOnly(const int& threadId) ///< Calling thread
     {
@@ -69,17 +89,6 @@ namespace ciccios
 	CRASHER<<"Only master thread is allowed, but thread "<<threadId<<" is trying to act"<<endl;
     }
     
-    /// Get the total number of threads
-    inline int getNThreads()
-    {
-      int res;
-      
-      #pragma omp parallel
-      res=omp_get_num_threads();
-      
-      return res;
-    }
-    
     /// Get the thread id of the current thread
     inline int getThreadId()
     {
@@ -92,28 +101,93 @@ namespace ciccios
       return (threadId==masterThreadId);
     }
     
-    inline void waitAllButMasterWaitForWork()
+    inline void waitThatAllButMasterWaitForWork()
     {
-      while(nThreadsWaitingForWork!=nThreads-1) // printf("NWaiting: %d/%d\n",nThreadsWaitingForWork.load(),nThreads-1)
+      while(poolIsStarted and nThreadsWaitingForWork!=nThreads-1) // printf("NWaiting: %d/%d\n",nThreadsWaitingForWork.load(),nThreads-1)
 						  ;
     }
     
-    /// Gives to all threads some work to be done
+    namespace resources
+    {
+      /// Starts a parallel section, if pool is started
+      template <typename F>
+      INLINE_FUNCTION void parallelPoolStarted(F&& f) ///< Function embedding the work
+      {
+	waitThatAllButMasterWaitForWork();
+	//printf("All works waiting\n");
+	work=std::move(f);
+	
+	nThreadsWaitingForWork=0;
+	nWorksAssigned.store(nWorksAssigned+1,std::memory_order_release);
+	
+	work(masterThreadId);
+      }
+    }
+    
+    /// Starts the pool thread taking a function and arguments as argument
+    template <typename F,
+	      typename...Args>
+    void poolThread(const F& f,
+		    Args&&...args)
+    {
+      // Checks that the pool is not filled, to avoid recursive call
+      if(poolIsStarted)
+	CRASHER<<"Cannot fill again the pool!"<<endl;
+      else
+	poolIsStarted=true;
+      
+      //LOGGER<<"Filling the thread pool with "<<nThreads<<" threads"<<endl;
+      
+#pragma omp parallel
+	{
+	  const int threadId=getThreadId();
+	  
+	  if(isMasterThread(threadId))
+	    {
+	      f(std::forward<Args>(args)...);
+	      
+	      waitThatAllButMasterWaitForWork();
+	      
+	      poolIsStarted=false;
+	      
+	      resources::parallelPoolStarted([](const int&){});
+	    }
+	  else
+	    {
+	      do
+		{
+		  const int prevNWorkAssigned=nWorksAssigned;
+		  
+		  //int pre=
+		    nThreadsWaitingForWork.fetch_add(1);
+		  //printf("Waiting for assignemnt %d %d->%d\n",threadId,pre,nThreadsWaitingForWork.load());
+		  while(nWorksAssigned.load(std::memory_order_relaxed)==prevNWorkAssigned)
+		    //printf("Thread %d waiting for assignment (waiting: %d)\n",threadId,nThreadsWaitingForWork.load())
+		    ;
+		  std::atomic_thread_fence(std::memory_order_acquire);
+		  
+		  //printf("Work assigned %d\n",threadId);
+		  work(threadId);
+		  //printf("Work finished %d\n",threadId);
+		}
+	      while(poolIsStarted);
+	      
+	      //printf("Exiting the pool, thread %d\n",poolIsStarted);
+	    }
+	}
+    }
+    
+    /// Starts a parallel section
     ///
     /// The object \c f must be callable, returning void and getting
     /// an integer as a parameter, representing the thread id
-    //void workOn(Work&& f) ///< Function embedding the work
     template <typename F>
-    INLINE_FUNCTION void workOn(F&& f) ///< Function embedding the work
+    INLINE_FUNCTION void parallel(F&& f) ///< Function embedding the work
     {
-      waitAllButMasterWaitForWork();
-      //printf("All works waiting\n");
-      work=std::move(f);
-      
-      nThreadsWaitingForWork=0;
-      nWorksAssigned.store(nWorksAssigned+1,std::memory_order_release);
-      
-      work(masterThreadId);
+      if(poolIsStarted)
+	resources::parallelPoolStarted(f);
+      else
+	poolThread(resources::parallelPoolStarted<F>,std::forward<F>(f));
     }
     
     /// Split a loop into \c nTrheads chunks, giving each chunk as a work for a corresponding thread
@@ -124,8 +198,7 @@ namespace ciccios
 		   const Size& end,  ///< End of the loop
 		   const F& f)       ///< Function to be called, accepting two integers: the first is the thread id, the second the loop argument
     {
-      asm("#sending workon");
-      workOn([beg,end,nPieces=nThreads,&f](const int& threadId) INLINE_ATTRIBUTE
+      parallel([beg,end,nPieces=nThreads,&f](const int& threadId) INLINE_ATTRIBUTE
 	     {
 	       /// Workload for each thread, taking into account the remainder
 	       const Size threadLoad=
@@ -142,10 +215,7 @@ namespace ciccios
 	       for(Size i=threadBeg;i<threadEnd;i++)
 		 f(threadId,i);
 	     });
-      asm("#sent workon");
     }
-    
-    void poolThread(void(*replacementMain)(int narg,char **arg),int narg,char **arg);
   }
 }
 

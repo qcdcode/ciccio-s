@@ -49,10 +49,15 @@ INLINE_FUNCTION void unrolledSumProd(SimdSu3Field<Fund>& simdField1,const SimdSu
 
 /////////////////////////////////////////////////////////////////
 
+PROVIDE_ASM_DEBUG_HANDLE(UnrolledSIMDomp,double)
+PROVIDE_ASM_DEBUG_HANDLE(UnrolledSIMDomp,float)
+
 /// Unroll loops with metaprogramming, SIMD version
 template <typename Fund>
 INLINE_FUNCTION void unrolledSumProdOMP(SimdSu3Field<Fund>& simdField1,const SimdSu3Field<Fund>& simdField2,const SimdSu3Field<Fund>& simdField3)
 {
+  BOOKMARK_BEGIN_UnrolledSIMDomp(Fund{});
+  
 #pragma omp parallel for
   for(int iFusedSite=0;iFusedSite<simdField1.fusedVol;iFusedSite++)
     {
@@ -70,13 +75,15 @@ INLINE_FUNCTION void unrolledSumProdOMP(SimdSu3Field<Fund>& simdField1,const Sim
       
       simdField1.simdSite(iFusedSite)=a;
     }
+  
+  BOOKMARK_END_UnrolledSIMDomp(Fund{});
 }
 
 /////////////////////////////////////////////////////////////////
 
 PROVIDE_ASM_DEBUG_HANDLE(UnrolledSIMDpool,double)
 PROVIDE_ASM_DEBUG_HANDLE(UnrolledSIMDpool,float)
-//void *first,*second,*third;
+
 /// Unroll loops with metaprogramming, SIMD version
 template <typename Fund>
 INLINE_FUNCTION void unrolledSumProdPool(SimdSu3Field<Fund>& simdField1,const SimdSu3Field<Fund>& simdField2,const SimdSu3Field<Fund>& simdField3)
@@ -266,7 +273,7 @@ void simdTest(CpuSU3Field<StorLoc::ON_CPU,Fund>& field,const int64_t nIters,cons
       {
 	for(int64_t i=0;i<nIters;i++)
 	  unrolledSumProdPool(simdField1,simdField2,simdField3);
-	ThreadPool::waitAllButMasterWaitForWork();
+	ThreadPool::waitThatAllButMasterWaitForWork();
       }
     }
   

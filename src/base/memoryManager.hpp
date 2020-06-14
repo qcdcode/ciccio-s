@@ -11,6 +11,7 @@
 #include "base/debug.hpp"
 #include "base/logger.hpp"
 #include "base/metaProgramming.hpp"
+#include "threads/pool.hpp"
 #include "utilities/valueWithExtreme.hpp"
 
 namespace ciccios
@@ -212,6 +213,8 @@ namespace ciccios
     template <typename T>
     void release(T* &ptr) ///< Pointer getting freed
     {
+      ThreadPool::waitThatAllButMasterWaitForWork();
+      
       if(useCache)
 	moveToCache(static_cast<void*>(ptr));
       else

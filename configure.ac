@@ -102,8 +102,12 @@ then
 	fi
 fi
 
-#check openmp
+#check and enable openmp
 AX_OPENMP
+THREADS_TYPE=OPENMP_THREADS
+CFLAGS="$CFLAGS $OPENMP_CFLAGS"
+CPPFLAGS="$CPPFLAGS $OPENMP_CPPFLAGS"
+CXXFLAGS="$CXXFLAGS $OPENMP_CXXFLAGS"
 
 # Threads debug
 AC_ARG_ENABLE(threads-debug,
