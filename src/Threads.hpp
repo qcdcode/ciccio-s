@@ -9,8 +9,6 @@
  #include "config.hpp"
 #endif
 
-#include <threads/tBarrier.hpp>
-#include <threads/mutex.hpp>
 #include <threads/pool.hpp>
 
 #endif

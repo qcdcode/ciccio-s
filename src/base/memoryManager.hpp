@@ -213,7 +213,7 @@ namespace ciccios
     template <typename T>
     void release(T* &ptr) ///< Pointer getting freed
     {
-      ThreadPool::waitThatAllButMasterWaitForWork();
+      ThreadPool::waitThatAllWorkersWaitForWork();
       
       if(useCache)
 	moveToCache(static_cast<void*>(ptr));

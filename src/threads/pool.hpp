@@ -1,6 +1,10 @@
 #ifndef _POOL_HPP
 #define _POOL_HPP
 
+#ifdef HAVE_CONFIG_H
+ #include "config.hpp"
+#endif
+
 #include <atomic>
 #include <functional>
 #include <omp.h>
@@ -83,38 +87,41 @@ namespace ciccios
     }
     
     /// Assert that only the master thread is accessing
-    inline void assertMasterOnly(const int& threadId) ///< Calling thread
+    INLINE_FUNCTION
+    void assertMasterOnly(const int& threadId) ///< Calling thread
     {
       if(threadId!=masterThreadId)
 	CRASHER<<"Only master thread is allowed, but thread "<<threadId<<" is trying to act"<<endl;
     }
     
     /// Get the thread id of the current thread
-    inline int getThreadId()
+    INLINE_FUNCTION
+    int getThreadId()
     {
       return omp_get_thread_num();
     }
     
     /// Compares the thread tag with the master one
-    inline bool isMasterThread(const int& threadId)
+    INLINE_FUNCTION
+    bool isMasterThread(const int& threadId)
     {
       return (threadId==masterThreadId);
     }
     
-    inline void waitThatAllButMasterWaitForWork()
+    /// Wait all workers are waiting for work
+    INLINE_FUNCTION
+    void waitThatAllWorkersWaitForWork()
     {
-      while(poolIsStarted and nThreadsWaitingForWork!=nThreads-1) // printf("NWaiting: %d/%d\n",nThreadsWaitingForWork.load(),nThreads-1)
-						  ;
+      while(poolIsStarted and nThreadsWaitingForWork!=nThreads-1);
     }
     
     namespace resources
     {
       /// Starts a parallel section, if pool is started
       template <typename F>
-      INLINE_FUNCTION void parallelPoolStarted(F&& f) ///< Function embedding the work
+      INLINE_FUNCTION void parallelWhenPoolStarted(F&& f) ///< Function embedding the work
       {
-	waitThatAllButMasterWaitForWork();
-	//printf("All works waiting\n");
+	waitThatAllWorkersWaitForWork();
 	work=std::move(f);
 	
 	nThreadsWaitingForWork=0;
@@ -122,13 +129,67 @@ namespace ciccios
 	
 	work(masterThreadId);
       }
+      
+      /// Main thread part of the pool
+      template <typename F,
+		typename...Args>
+      INLINE_FUNCTION
+      void poolMaster(const F& f,
+		      Args&&...args)
+      {
+	f(std::forward<Args>(args)...);
+	
+	waitThatAllWorkersWaitForWork();
+	
+	poolIsStarted=false;
+	
+	parallelWhenPoolStarted([](const int&){});
+      }
+      
+      /// Wait that the count of the number of work has been increased
+      INLINE_FUNCTION
+      void waitThatMasterSignalsNewWork(const int prevNWorkAssigned)
+      {
+	// The work will be assigned only when the master sees all workers waiting
+	while(nWorksAssigned.load(std::memory_order_relaxed)==prevNWorkAssigned);
+      }
+      
+      /// Wait for the work to come
+      INLINE_FUNCTION
+      void waitForWork()
+      {
+	/// Previous numebr fo work assigned
+	const int prevNWorkAssigned=nWorksAssigned;
+	
+	// Increase the number of threads waiting for work
+	nThreadsWaitingForWork.fetch_add(1);
+	
+	/// Wait that the master gives signal that work has been assigned
+	waitThatMasterSignalsNewWork(prevNWorkAssigned);
+	
+	// Cache synchronization, possibly useless
+	std::atomic_thread_fence(std::memory_order_acquire);
+      }
+      
+      /// Other thread part of the pool
+      INLINE_FUNCTION
+      void poolWorkerLoop(const int& threadId)
+      {
+	do
+	  {
+	    waitForWork();
+	    
+	    work(threadId);
+	  }
+	while(poolIsStarted);
+      }
     }
     
     /// Starts the pool thread taking a function and arguments as argument
     template <typename F,
 	      typename...Args>
-    void poolThread(const F& f,
-		    Args&&...args)
+    void poolLoop(F&& f,
+		  Args&&...args)
     {
       // Checks that the pool is not filled, to avoid recursive call
       if(poolIsStarted)
@@ -136,44 +197,15 @@ namespace ciccios
       else
 	poolIsStarted=true;
       
-      //LOGGER<<"Filling the thread pool with "<<nThreads<<" threads"<<endl;
-      
 #pragma omp parallel
 	{
+	  /// Gets the thread id
 	  const int threadId=getThreadId();
 	  
 	  if(isMasterThread(threadId))
-	    {
-	      f(std::forward<Args>(args)...);
-	      
-	      waitThatAllButMasterWaitForWork();
-	      
-	      poolIsStarted=false;
-	      
-	      resources::parallelPoolStarted([](const int&){});
-	    }
+	    resources::poolMaster(std::forward<F>(f),std::forward<Args>(args)...);
 	  else
-	    {
-	      do
-		{
-		  const int prevNWorkAssigned=nWorksAssigned;
-		  
-		  //int pre=
-		    nThreadsWaitingForWork.fetch_add(1);
-		  //printf("Waiting for assignemnt %d %d->%d\n",threadId,pre,nThreadsWaitingForWork.load());
-		  while(nWorksAssigned.load(std::memory_order_relaxed)==prevNWorkAssigned)
-		    //printf("Thread %d waiting for assignment (waiting: %d)\n",threadId,nThreadsWaitingForWork.load())
-		    ;
-		  std::atomic_thread_fence(std::memory_order_acquire);
-		  
-		  //printf("Work assigned %d\n",threadId);
-		  work(threadId);
-		  //printf("Work finished %d\n",threadId);
-		}
-	      while(poolIsStarted);
-	      
-	      //printf("Exiting the pool, thread %d\n",poolIsStarted);
-	    }
+	    resources::poolWorkerLoop(threadId);
 	}
     }
     
@@ -185,9 +217,9 @@ namespace ciccios
     INLINE_FUNCTION void parallel(F&& f) ///< Function embedding the work
     {
       if(poolIsStarted)
-	resources::parallelPoolStarted(f);
+	resources::parallelWhenPoolStarted(f);
       else
-	poolThread(resources::parallelPoolStarted<F>,std::forward<F>(f));
+	poolLoop(resources::parallelWhenPoolStarted<F>,std::forward<F>(f));
     }
     
     /// Split a loop into \c nTrheads chunks, giving each chunk as a work for a corresponding thread

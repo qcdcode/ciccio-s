@@ -35,10 +35,7 @@ namespace ciccios
     cpuMemoryManager=new CPUMemoryManager;
     cpuMemoryManager->disableCache();
     
-    // if(0)
-      ThreadPool::poolThread(replacementMain,narg,arg);
-    // else
-    //   replacementMain(narg,arg);
+    ThreadPool::poolLoop(replacementMain,narg,arg);
   }
   
   /// Finalizes
