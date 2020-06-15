@@ -122,7 +122,7 @@ namespace ciccios
     {
       /// Wait that the count of the number of work has been increased
       INLINE_FUNCTION
-      void waitThatMasterSignalsNewWork(const int prevNWorkAssigned)
+      void waitThatMasterSignalsNewWork(const int& prevNWorkAssigned)
       {
 	// The work will be assigned only when the master sees all workers waiting
 	while(nWorksAssigned.load(std::memory_order_relaxed)==prevNWorkAssigned);
@@ -177,9 +177,9 @@ namespace ciccios
     INLINE_FUNCTION
     void loopSplit(const Size& beg,  ///< Beginning of the loop
 		   const Size& end,  ///< End of the loop
-		   const F& f)       ///< Function to be called, accepting two integers: the first is the thread id, the second the loop argument
+		   F&& f)            ///< Function to be called, accepting two integers: the first is the thread id, the second the loop argument
     {
-      parallel([beg,end,nPieces=nThreads,&f](const int& threadId) INLINE_ATTRIBUTE
+      parallel([beg,end,nPieces=nThreads,f](const int& threadId) mutable
 	       {
 		 /// Workload for each thread, taking into account the remainder
 		 const Size threadLoad=

@@ -33,7 +33,7 @@ namespace ciccios
     possiblyWaitToAttachDebugger();
     
     cpuMemoryManager=new CPUMemoryManager;
-    cpuMemoryManager->disableCache();
+    //cpuMemoryManager->disableCache();
     
     ThreadPool::poolStart();
   }
