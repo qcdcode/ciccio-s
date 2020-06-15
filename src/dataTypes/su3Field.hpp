@@ -20,6 +20,9 @@ namespace ciccios
     /// Volume
     const int vol;
     
+    /// Store wether this is a reference
+    const bool isRef;
+    
     /// Internal data
     Fund* data;
     
@@ -48,7 +51,7 @@ namespace ciccios
     PROVIDE_ALSO_NON_CONST_METHOD(site);
     
     /// Create knowning volume
-    CpuSU3Field(const int vol) : vol(vol)
+    CpuSU3Field(const int vol) : vol(vol),isRef(false)
     {
       /// Compute size
       const int size=index(vol,0,0,0);
@@ -59,7 +62,8 @@ namespace ciccios
     /// Destroy
     ~CpuSU3Field()
     {
-      memoryManager<SL>()->release(data);
+      if(not isRef)
+	memoryManager<SL>()->release(data);
     }
     
     /// Sum the product of the two passed fields
@@ -80,7 +84,7 @@ namespace ciccios
     }
     
     /// Assign from a non-simd version
-    CpuSU3Field& operator=(const CpuSU3Field<StorLoc::ON_CPU,Fund>& oth)
+    CpuSU3Field& deepCopy(const CpuSU3Field<StorLoc::ON_CPU,Fund>& oth)
     {
       for(int iSite=0;iSite<vol;iSite++)
 	{
@@ -94,7 +98,7 @@ namespace ciccios
     }
     
     /// Assign from a SIMD version
-    CpuSU3Field& operator=(const SimdSu3Field<Fund>& oth);
+    CpuSU3Field& deepCopy(const SimdSu3Field<Fund>& oth);
   };
   
   /////////////////////////////////////////////////////////////////
@@ -106,49 +110,55 @@ namespace ciccios
     /// Volume
     const int fusedVol;
     
+    /// Store wether this is a reference
+    const bool isRef;
+    
     /// Internal data
     Simd<Fund>* data;
     
     /// Index to internal data
-    int index(const int iFusedSite,const int icol1,const int icol2,const int reim) const
+    int index(const int& iFusedSite,const int& icol1,const int& icol2,const int& reim) const
     {
       return reim+2*(icol2+NCOL*(icol1+NCOL*iFusedSite));
     }
     
     /// Access to data
-    const Simd<Fund>& operator()(const int iFusedSite,const int icol1,const int icol2,const int reim) const
+    const Simd<Fund>& operator()(const int& iFusedSite,const int& icol1,const int& icol2,const int& reim) const
     {
       return data[index(iFusedSite,icol1,icol2,reim)];
     }
     
     PROVIDE_ALSO_NON_CONST_METHOD(operator());
     
-    /// Access to the fused site
-    const SimdSU3<Fund>& simdSite(const int iFusedSite) const
+    /// Access to data as a complex quantity
+    const Complex<Simd<Fund>>& operator()(const int& iFusedSite,const int& icol1,const int& icol2) const
     {
-      const Simd<Fund>& ref=(*this)(iFusedSite,0,0,0);
-      
-      return *reinterpret_cast<const SimdSU3<Fund>*>(&ref);
+      return *reinterpret_cast<const Complex<Simd<Fund>>*>(&data[index(iFusedSite,icol1,icol2,0)]);
     }
     
-    PROVIDE_ALSO_NON_CONST_METHOD(simdSite);
-    
     /// Creates starting from the physical volume
-    SimdSu3Field(int vol) : fusedVol(vol/simdLength<Fund>)
+    SimdSu3Field(int vol) : fusedVol(vol/simdLength<Fund>),isRef(false)
     {
+      /// Compute the size
       int size=index(fusedVol,0,0,0);
       
       data=cpuMemoryManager->template provide<Simd<Fund>>(size);
     }
     
+    /// Creates starting from the physical volume
+    SimdSu3Field(const SimdSu3Field& oth) : fusedVol(oth.fusedVol),isRef(true),data(oth.data)
+    {
+    }
+    
     /// Destroy
     ~SimdSu3Field()
     {
-      cpuMemoryManager->release(data);
+      if(not isRef)
+	cpuMemoryManager->release(data);
     }
     
     /// Assign from a non-simd version
-    SimdSu3Field& operator=(const CpuSU3Field<StorLoc::ON_CPU,Fund>& oth)
+    SimdSu3Field& deepCopy(const CpuSU3Field<StorLoc::ON_CPU,Fund>& oth)
     {
       for(int iSite=0;iSite<fusedVol*simdLength<Fund>;iSite++)
 	{
@@ -184,7 +194,7 @@ namespace ciccios
   /// Assign from SIMD version
   template <StorLoc SL,
 	    typename Fund>
-  CpuSU3Field<SL,Fund>& CpuSU3Field<SL,Fund>::operator=(const SimdSu3Field<Fund>& oth)
+  CpuSU3Field<SL,Fund>& CpuSU3Field<SL,Fund>::deepCopy(const SimdSu3Field<Fund>& oth)
   {
     for(int iFusedSite=0;iFusedSite<oth.fusedVol;iFusedSite++)
       
