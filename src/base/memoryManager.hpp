@@ -282,7 +282,7 @@ namespace ciccios
     /// Print to a stream
     void printStatistics()
     {
-      LOGGER<<"Maximal memory cached: "<<cachedSize.extreme()<<" bytes, currently used: "<<(Size)cachedSize<<" bytes, number of reused: "<<nCachedReused<<endl;
+      LOGGER<<"Maximal memory used: "<<usedSize.extreme()<<" bytes, currently used: "<<(Size)usedSize<<" bytes, maxcached: "<<cachedSize.extreme()<<" bytes, currently cached: "<<(Size)cachedSize<<" bytes, number of reused: "<<nCachedReused<<endl;
     }
     
     /// Create the memory manager

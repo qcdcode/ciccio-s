@@ -7,88 +7,64 @@
 
 #include <immintrin.h>
 
+#include <dataTypes/arithmeticTensor.hpp>
+
 // \todo Rename Simd into something more appropriate
 
 namespace ciccios
 {
-#if 1
-  
-  enum InstSet{AVX,MMX,AVX512};
+  /// Kinds of instruction set
+  enum InstSet{MMX,AVX,AVX512};
   
   namespace resources
   {
+    /// SIMD type for a given instruction set and fundamental
+    ///
+    /// Forward definition
     template <InstSet IS,
 	      typename Fund>
     struct Simd;
     
-    template <>
-    struct Simd<AVX,double>
-    {
-      using Type=__m256d;
-    };
+    /// Provides the proper datatype for the given fundamental and instruction set
+#define PROVIDE_SIMD(INST_SET,FUND,TYPE)		\
+    /*! SIMD FUND for instruction set INST_SET */	\
+    template <>						\
+    struct Simd<INST_SET,FUND>				\
+    {							\
+      /*! Provide the type*/				\
+      using Type=TYPE;					\
+    }
     
-    template <>
-    struct Simd<AVX,float>
-    {
-      using Type=__m256;
-    };
+    PROVIDE_SIMD(AVX,float,__m256);
+    PROVIDE_SIMD(AVX,double,__m256d);
     
-    template <>
-    struct Simd<MMX,double>
-    {
-      using Type=__m128d;
-    };
+    PROVIDE_SIMD(MMX,float,__m128);
+    PROVIDE_SIMD(MMX,double,__m128d);
     
-    template <>
-    struct Simd<MMX,float>
-    {
-      using Type=__m128;
-    };
+    PROVIDE_SIMD(AVX512,float,__m512);
+    PROVIDE_SIMD(AVX512,double,__m512d);
     
-    template <>
-    struct Simd<AVX512,double>
-    {
-      using Type=__m512d;
-    };
+#undef PROVIDE_SIMD
     
-    template <>
-    struct Simd<AVX512,float>
-    {
-      using Type=__m512;
-    };
+    /// Actual intinsic to be used
+    template <typename Fund>
+    using ActualSimd=typename resources::Simd<SIMD_INST_SET,Fund>::Type;
   }
-  
-  template <typename Fund>
-  using Simd=typename resources::Simd<SIMD_INST_SET,Fund>::Type;
-  
-#else
-  
-  using Simd=std::array<double,1>;
-  
-  /// Summassign two simple SIMD
-  inline Simd operator+=(Simd& a,const Simd& b)
-  {
-    a[0]+=b[0];
-    
-    return a;
-  }
-  
-  /// Multiply two simple SIMD
-  inline Simd operator*(const Simd&a,const Simd& b)
-  {
-    /// Result
-    Simd c;
-    
-    c[0]=a[0]*b[0];
-    
-    return c;
-  }
-  
-#endif
   
   /// Length of a SIMD vector
   template <typename Fund>
-  constexpr int simdLength=sizeof(Simd<Fund>)/sizeof(Fund);
+  constexpr int simdLength=
+    sizeof(resources::ActualSimd<Fund>)/sizeof(Fund);
+  
+  /// Simd datatype
+  template <typename Fund>
+  using Simd=
+#ifndef __CUDA_ARCH__
+    resources::ActualSimd<Fund>
+#else
+    ArithmeticArray<Fund,simdLength<Fund>>
+#endif
+    ;
 }
 
 #endif

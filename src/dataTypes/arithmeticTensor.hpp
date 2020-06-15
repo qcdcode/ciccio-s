@@ -41,6 +41,16 @@ namespace ciccios
       
       return *this;
     }
+    
+    /// Subtassign another array
+    template <typename U>
+    auto operator-=(const ArithmeticArray<U,N>& oth)
+    {
+      for(int i=0;i<N;i++)
+	(*this)[i]-=oth[i];
+      
+      return *this;
+    }
   };
   
   /// A matrix
@@ -50,7 +60,7 @@ namespace ciccios
   {
     T data[N][N];
     
-    INLINE_FUNCTION const T& get(const int& i,const int& j) const
+    INLINE_FUNCTION const T& get(const int i,const int j) const
     {
       return data[i][j];
     }

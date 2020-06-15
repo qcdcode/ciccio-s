@@ -27,6 +27,7 @@ namespace ciccios
     /// Wired out logger
     EXTERN_LOGGER std::ofstream dummyLogger INIT_LOGGER_TO("/dev/null");
     
+    /// Level of verbosity to be used for logging
     EXTERN_LOGGER int verbosityLv INIT_LOGGER_TO(1);
   }
   

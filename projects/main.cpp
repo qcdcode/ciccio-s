@@ -105,8 +105,6 @@ void cpuTest(CpuSU3Field<StorLoc::ON_CPU,Fund>& field,const int64_t nIters,const
 template <typename Fund>
 void simdTest(CpuSU3Field<StorLoc::ON_CPU,Fund>& field,const int64_t nIters,const double gFlops)
 {
-#ifndef      __CUDA_ARCH__
-
   /// Allocate three fields, this could be short-circuited through cast operator
   SimdSu3Field<Fund> simdField1(field.vol),simdField2(field.vol),simdField3(field.vol);
   simdField1.deepCopy(field);
@@ -133,7 +131,6 @@ void simdTest(CpuSU3Field<StorLoc::ON_CPU,Fund>& field,const int64_t nIters,cons
   /// Compute performances
   const double gFlopsPerSec=gFlops/timeInSec;
   LOGGER<<"SIMD"<<" \t GFlops/s: "<<gFlopsPerSec<<"\t Check: "<<fieldRes(0,0,0,RE)<<" "<<fieldRes(0,0,0,IM)<<" time: "<<timeInSec<<endl;
-#endif
 }
 
 #ifdef USE_EIGEN
