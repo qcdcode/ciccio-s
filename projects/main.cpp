@@ -24,25 +24,18 @@ template <typename Fund>
 INLINE_FUNCTION void unrolledSumProdPool(SimdSu3Field<Fund>& simdField1,const SimdSu3Field<Fund>& simdField2,const SimdSu3Field<Fund>& simdField3)
 {
   ThreadPool::loopSplit(0,simdField1.fusedVol,
-			[&](const int& threadId,const int& iFusedSite) INLINE_ATTRIBUTE
+			[=](const int threadId,const int iFusedSite) mutable
 			{
 			  BOOKMARK_BEGIN_UnrolledSIMDpool(Fund{});
 			  
-			  auto &a=simdField1.simdSite(iFusedSite); // This copy gets compiled away, and no alias is induced
-			  const auto &b=simdField2.simdSite(iFusedSite);
-			  const auto &c=simdField3.simdSite(iFusedSite);
-			  
-a.sumProd(b,c);
- // UNROLLED_FOR(i,NCOL)
- // 			    UNROLLED_FOR(k,NCOL)
- // 			      UNROLLED_FOR(j,NCOL)
- // 			        a.get(i,j).sumProd(b.get(i,k),c.get(k,j));
- // 			      UNROLLED_FOR_END;
- // 			    UNROLLED_FOR_END;
- // 			  UNROLLED_FOR_END;
+			  UNROLLED_FOR(i,NCOL)
+ 			    UNROLLED_FOR(k,NCOL)
+ 			      UNROLLED_FOR(j,NCOL)
+                                simdField1(iFusedSite,i,j).sumProd(simdField2(iFusedSite,i,k),simdField3(iFusedSite,k,j));
+ 			      UNROLLED_FOR_END;
+ 			    UNROLLED_FOR_END;
+ 			  UNROLLED_FOR_END;
 			 
- //simdField1.simdSite(iFusedSite)=a;
-			  
 			  BOOKMARK_END_UnrolledSIMDpool(Fund{});
 			}
     );
@@ -87,9 +80,9 @@ void cpuTest(CpuSU3Field<StorLoc::ON_CPU,Fund>& field,const int64_t nIters,const
 {
   /// Allocate three fields, and copy inside
   CpuSU3Field<StorLoc::ON_CPU,Fund> field1(field.vol),field2(field.vol),field3(field.vol);
-  field1=field;
-  field2=field;
-  field3=field;
+  field1.deepCopy(field);
+  field2.deepCopy(field);
+  field3.deepCopy(field);
   
   /// Takes note of starting moment
   const Instant start=takeTime();
@@ -112,11 +105,13 @@ void cpuTest(CpuSU3Field<StorLoc::ON_CPU,Fund>& field,const int64_t nIters,const
 template <typename Fund>
 void simdTest(CpuSU3Field<StorLoc::ON_CPU,Fund>& field,const int64_t nIters,const double gFlops)
 {
+#ifndef      __CUDA_ARCH__
+
   /// Allocate three fields, this could be short-circuited through cast operator
   SimdSu3Field<Fund> simdField1(field.vol),simdField2(field.vol),simdField3(field.vol);
-  simdField1=field;
-  simdField2=field;
-  simdField3=field;
+  simdField1.deepCopy(field);
+  simdField2.deepCopy(field);
+  simdField3.deepCopy(field);
   
   /// Takes note of starting moment
   const Instant start=takeTime();
@@ -130,7 +125,7 @@ void simdTest(CpuSU3Field<StorLoc::ON_CPU,Fund>& field,const int64_t nIters,cons
   
   // Copy back
   CpuSU3Field<StorLoc::ON_CPU,Fund> fieldRes(field.vol);
-  fieldRes=simdField1;
+  fieldRes.deepCopy(simdField1);
   
   /// Compute time
   const double timeInSec=timeDiffInSec(end,start);
@@ -138,6 +133,7 @@ void simdTest(CpuSU3Field<StorLoc::ON_CPU,Fund>& field,const int64_t nIters,cons
   /// Compute performances
   const double gFlopsPerSec=gFlops/timeInSec;
   LOGGER<<"SIMD"<<" \t GFlops/s: "<<gFlopsPerSec<<"\t Check: "<<fieldRes(0,0,0,RE)<<" "<<fieldRes(0,0,0,IM)<<" time: "<<timeInSec<<endl;
+#endif
 }
 
 #ifdef USE_EIGEN

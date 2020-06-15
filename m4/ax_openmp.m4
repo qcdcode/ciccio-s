@@ -20,5 +20,5 @@ AC_DEFUN([AX_OPENMP], [
 		      CFLAGS="$SAVE_CFLAGS"
 		      CPPFLAGS="$SAVE_CPPFLAGS"
 		      CXXFLAGS="$SAVE_CXXFLAGS"
-		      
+
 		      AC_MSG_RESULT([checking for OpenMP... ${have_openmp}])])

@@ -33,6 +33,10 @@ SUMMARY_RESULT="---"
 
 AX_ASSEMBLY_REPORT
 
+#cuda
+AX_CHECK_CUDA
+AM_CONDITIONAL([USE_CUDA],[test "$CXX" == "nvcc"])
+
 #check if we enable fortran
 AC_ARG_ENABLE(fortran,
 	AS_HELP_STRING([--enable-fortran],[Enable fortran support]),
@@ -104,7 +108,6 @@ fi
 
 #check and enable openmp
 AX_OPENMP
-THREADS_TYPE=OPENMP_THREADS
 CFLAGS="$CFLAGS $OPENMP_CFLAGS"
 CPPFLAGS="$CPPFLAGS $OPENMP_CPPFLAGS"
 CXXFLAGS="$CXXFLAGS $OPENMP_CXXFLAGS"
@@ -125,18 +128,6 @@ threads debug       : $enable_threads_debug"
 # Search for pthread
 AX_SUBPACKAGE(threads,pthread.h,pthread,pthread_getconcurrency,THREADS,autouse)
 
-#cuda
-AX_CHECK_CUDA
-AM_CONDITIONAL([USE_CUDA],[test "$CXX" == "nvcc"])
-if test "$CXX" == "nvcc"
-then
-	AC_DEFINE([USE_CUDA],1,"Using CUDA")
-fi
-if test "$with_threads_type" = "cuda"
-then
-	CPPFLAGS="-dc --expt-relaxed-constexpr --expt-extended-lambda -x cu $CPPFLAGS"
-fi
-
 #AX_CXXFLAGS_WARN_ALL
 AC_MSG_CHECKING(whether compiler understands -Wall)
 OLD_CXXFLAGS="$CXXFLAGS"
@@ -150,21 +141,38 @@ AX_SUBPACKAGE(eigen,Eigen/Dense,,,EIGEN,".",".")
 
 #simd set to be used
 AC_ARG_WITH(simd-inst-set,
-	AS_HELP_STRING([--with-simd-inst-set=set],[Select the set of SIMD instruction (avx [default] or avx512)]),
+	AS_HELP_STRING([--with-simd-inst-set=set],[Select the set of SIMD instruction (avx [default], mmx or avx512)]),
 	with_simd_inst_set="${withval}",
 	with_simd_inst_set=avx)
 case "$with_simd_inst_set" in
+     mmx) CPPFLAGS_SIMD="-mmmx"
+     	  SIMD_INST_SET=MMX;;
      avx) CPPFLAGS_SIMD="-mavx"
      	  SIMD_INST_SET=AVX;;
      avx512) CPPFLAGS_SIMD="-mavx512f"
      	     SIMD_INST_SET=AVX512;;
       *) AC_MSG_ERROR(["Unkwnown SIMD instruction set ${withval}"])
 esac
-CPPFLAGS="$CPPFLAGS_SIMD -mfma $CPPFLAGS"
+
+#maybe we make a function for this
+if test "$CXX" == "nvcc"
+then
+	CPPFLAGS="-Xcompiler $CPPFLAGS_SIMD -Xcompiler -mfma $CPPFLAGS"
+else
+	CPPFLAGS="$CPPFLAGS_SIMD -mfma $CPPFLAGS"
+fi
+
 SUMMARY_RESULT="$SUMMARY_RESULT
 Simd Inst set      : $with_simd_inst_set"
 AC_MSG_RESULT(with SIMD insttruction set ... ${with_simd_inst_set})
 AC_DEFINE_UNQUOTED([SIMD_INST_SET],[$SIMD_INST_SET],[Instruction set to be used])
+
+#add some flags which we will have to check again
+if test "$CXX" == "nvcc"
+then
+	AC_DEFINE([USE_CUDA],1,"Using CUDA")
+	CPPFLAGS="-dc --expt-relaxed-constexpr --expt-extended-lambda -x cu $CPPFLAGS"
+fi
 
 #result of conf to screen
 AC_MSG_RESULT([
