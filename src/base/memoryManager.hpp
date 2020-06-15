@@ -23,6 +23,7 @@ namespace ciccios
  #define INIT_MEMORY_MANAGER_TO(...) (__VA_ARGS__)
 #endif
   
+  /// Type of memory
   enum class MemoryType{CPU ///< Memory allocated on CPU side
 #ifdef USE_CUDA
 			,GPU ///< Memory allocated on GPU side

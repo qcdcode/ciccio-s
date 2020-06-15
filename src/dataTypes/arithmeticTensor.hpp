@@ -61,6 +61,7 @@ namespace ciccios
     /// Internal data
     T data[N][N];
     
+    /// Access to internal data
     INLINE_FUNCTION const T& get(const int i,const int j) const
     {
       return data[i][j];

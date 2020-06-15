@@ -64,7 +64,7 @@ namespace ciccios
   /// Verbose logger or not, capital worded for homogeneity
 #define VERB_LOGGER(LV) verbLogger(LV)
   
-  //print the banner
+  /// Prints the banner
   void printBanner();
 }
 

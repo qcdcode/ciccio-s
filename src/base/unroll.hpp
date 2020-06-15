@@ -1,6 +1,11 @@
 #ifndef _UNROLL_HPP
 #define _UNROLL_HPP
 
+/// \file unroll.hpp
+///
+/// \brief Provides functions to unroll loops
+///
+
 #include <utility>
 
 namespace ciccios
