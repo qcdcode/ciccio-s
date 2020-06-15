@@ -58,6 +58,7 @@ namespace ciccios
 	    int N>
   struct ArithmeticMatrix
   {
+    /// Internal data
     T data[N][N];
     
     INLINE_FUNCTION const T& get(const int i,const int j) const

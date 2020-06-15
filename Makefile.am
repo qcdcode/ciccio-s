@@ -1,6 +1,9 @@
 #include m4 dir
 ACLOCAL_AMFLAGS=-I m4
 
+#Doxygen rules
+@DX_RULES@
+
 #init to empty
 include_HEADERS=
 bin_PROGRAMS=
@@ -21,3 +24,6 @@ BUILT_SOURCES+=$(assembly_reports)
 CLEANFILES+=$(assembly_reports)
 endif
 
+#Clean also Doxygen files
+MOSTLYCLEANFILES= \
+        ${DX_CLEANFILES}

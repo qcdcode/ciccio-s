@@ -174,6 +174,14 @@ then
 	CPPFLAGS="-dc --expt-relaxed-constexpr --expt-extended-lambda -x cu $CPPFLAGS"
 fi
 
+# Configure doxygen
+DX_INIT_DOXYGEN($PACKAGE_NAME,[config/Doxyfile],[docs])
+DX_PDF_FEATURE(OFF)
+DX_PS_FEATURE(OFF)
+DX_MAN_FEATURE(ON)
+DX_HTML_FEATURE(ON)
+AC_SUBST([DOXYGEN_OUTPUT_DIR],[docs])
+
 #result of conf to screen
 AC_MSG_RESULT([
 --------------------------------------------------
@@ -195,8 +203,9 @@ Configuration OK
 --------------------------------------------------
 ])
 
-#create config.hpp
+#files to configure
 AC_CONFIG_FILES(
-	Makefile)
+	Makefile
+	config/Doxyfile)
 
 AC_OUTPUT
