@@ -13,7 +13,7 @@ namespace ciccios
 {
 #if 1
   
-  enum InstSet{AVX,AVX512};
+  enum InstSet{AVX,MMX,AVX512};
   
   namespace resources
   {
@@ -31,6 +31,18 @@ namespace ciccios
     struct Simd<AVX,float>
     {
       using Type=__m256;
+    };
+    
+    template <>
+    struct Simd<MMX,double>
+    {
+      using Type=__m128d;
+    };
+    
+    template <>
+    struct Simd<MMX,float>
+    {
+      using Type=__m128;
     };
     
     template <>
