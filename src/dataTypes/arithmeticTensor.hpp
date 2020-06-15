@@ -50,7 +50,7 @@ namespace ciccios
   {
     T data[N][N];
     
-    INLINE_FUNCTION const T& __restrict get(const int& i,const int& j) const
+    INLINE_FUNCTION const T& get(const int& i,const int& j) const
     {
       return data[i][j];
     }
@@ -65,8 +65,6 @@ namespace ciccios
       /// Result
       ArithmeticMatrix<R,N> out={};
       
-      ASM_BOOKMARK("Matrix multiplication begin");
-      
       UNROLLED_FOR(ir,N)
 	UNROLLED_FOR(i,N)
 	  UNROLLED_FOR(ic,N)
@@ -74,8 +72,6 @@ namespace ciccios
           UNROLLED_FOR_END;
         UNROLLED_FOR_END;
       UNROLLED_FOR_END;
-      
-      ASM_BOOKMARK("Matrix multiplication end");
       
       return out;
     }
@@ -97,27 +93,29 @@ namespace ciccios
       return *this;
     }
     
+    PROVIDE_ASM_DEBUG_HANDLE(sumProdMethod,double)
+    PROVIDE_ASM_DEBUG_HANDLE(sumProdMethod,float)
+    
     /// Sum the product between two another matrices
     template <typename U1,
 	      typename U2,
 	      typename R=decltype(T()+=U1()*U2())>
     INLINE_FUNCTION auto& sumProd(const ArithmeticMatrix<U1,N>& oth1,const ArithmeticMatrix<U2,N>& oth2)
     {
-      ASM_BOOKMARK_BEGIN("sumProdMethod");
+      /// To get assembly report for float and double separately
+      using Fund=std::remove_reference_t<decltype(this->get(0,0).real[0])>;
       
-      auto o=(*this);
+      BOOKMARK_BEGIN_sumProdMethod(Fund{});
       
       UNROLLED_FOR(ir,N)
 	UNROLLED_FOR(i,N)
 	  UNROLLED_FOR(ic,N)
-	    o.get(ir,ic).sumProd(oth1.get(ir,i),oth2.get(i,ic));
+	    this->get(ir,ic).sumProd(oth1.get(ir,i),oth2.get(i,ic));
           UNROLLED_FOR_END;
         UNROLLED_FOR_END;
       UNROLLED_FOR_END;
       
-      (*this)=o;
-      
-      ASM_BOOKMARK_END("sumProdMethod");
+      BOOKMARK_END_sumProdMethod(Fund{});
       
       return *this;
     }

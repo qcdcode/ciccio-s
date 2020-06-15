@@ -11,9 +11,6 @@
 #include <tuple>
 #include <vector>
 
-//#include <threads/mutex.hpp>
-//#include <threads/tBarrier.hpp>
-
 #include <base/debug.hpp>
 
 //#include <external/inplace_function.h>
@@ -57,6 +54,12 @@ namespace ciccios
   /// Contains a thread pool
   namespace ThreadPool
   {
+    namespace resources
+    {
+      /// Incapsulate the threads
+      EXTERN_POOL std::vector<pthread_t> pool;
+    }
+    
     /// Maximal size of the stack used for thw work
     //static constexpr int MAX_POOL_FUNCTION_SIZE=128;
     
@@ -117,35 +120,6 @@ namespace ciccios
     
     namespace resources
     {
-      /// Starts a parallel section, if pool is started
-      template <typename F>
-      INLINE_FUNCTION void parallelWhenPoolStarted(F&& f) ///< Function embedding the work
-      {
-	waitThatAllWorkersWaitForWork();
-	work=std::move(f);
-	
-	nThreadsWaitingForWork=0;
-	nWorksAssigned.store(nWorksAssigned+1,std::memory_order_release);
-	
-	work(masterThreadId);
-      }
-      
-      /// Main thread part of the pool
-      template <typename F,
-		typename...Args>
-      INLINE_FUNCTION
-      void poolMaster(const F& f,
-		      Args&&...args)
-      {
-	f(std::forward<Args>(args)...);
-	
-	waitThatAllWorkersWaitForWork();
-	
-	poolIsStarted=false;
-	
-	parallelWhenPoolStarted([](const int&){});
-      }
-      
       /// Wait that the count of the number of work has been increased
       INLINE_FUNCTION
       void waitThatMasterSignalsNewWork(const int prevNWorkAssigned)
@@ -170,44 +144,13 @@ namespace ciccios
 	// Cache synchronization, possibly useless
 	std::atomic_thread_fence(std::memory_order_acquire);
       }
-      
-      /// Other thread part of the pool
-      INLINE_FUNCTION
-      void poolWorkerLoop(const int& threadId)
-      {
-	do
-	  {
-	    waitForWork();
-	    
-	    work(threadId);
-	  }
-	while(poolIsStarted);
-      }
     }
     
-    /// Starts the pool thread taking a function and arguments as argument
-    template <typename F,
-	      typename...Args>
-    void poolLoop(F&& f,
-		  Args&&...args)
-    {
-      // Checks that the pool is not filled, to avoid recursive call
-      if(poolIsStarted)
-	CRASHER<<"Cannot fill again the pool!"<<endl;
-      else
-	poolIsStarted=true;
-      
-#pragma omp parallel
-	{
-	  /// Gets the thread id
-	  const int threadId=getThreadId();
-	  
-	  if(isMasterThread(threadId))
-	    resources::poolMaster(std::forward<F>(f),std::forward<Args>(args)...);
-	  else
-	    resources::poolWorkerLoop(threadId);
-	}
-    }
+    /// Starts the pool
+    void poolStart();
+    
+    /// Stops the pool
+    void poolStop();
     
     /// Starts a parallel section
     ///
@@ -216,10 +159,16 @@ namespace ciccios
     template <typename F>
     INLINE_FUNCTION void parallel(F&& f) ///< Function embedding the work
     {
-      if(poolIsStarted)
-	resources::parallelWhenPoolStarted(f);
-      else
-	poolLoop(resources::parallelWhenPoolStarted<F>,std::forward<F>(f));
+      if(not poolIsStarted)
+	poolStart();
+	
+      waitThatAllWorkersWaitForWork();
+      work=std::move(f);
+      
+      nThreadsWaitingForWork=0;
+      nWorksAssigned.store(nWorksAssigned+1,std::memory_order_release);
+      
+      work(masterThreadId);
     }
     
     /// Split a loop into \c nTrheads chunks, giving each chunk as a work for a corresponding thread
@@ -231,22 +180,22 @@ namespace ciccios
 		   const F& f)       ///< Function to be called, accepting two integers: the first is the thread id, the second the loop argument
     {
       parallel([beg,end,nPieces=nThreads,&f](const int& threadId) INLINE_ATTRIBUTE
-	     {
-	       /// Workload for each thread, taking into account the remainder
-	       const Size threadLoad=
-		 (end-beg+nPieces-1)/nPieces;
-	       
-	       /// Beginning of the chunk
-	       const Size threadBeg=
-		 threadLoad*threadId;
-	       
-	       /// End of the chunk
-	       const Size threadEnd=
-		 std::min(end,threadBeg+threadLoad);
-	       
-	       for(Size i=threadBeg;i<threadEnd;i++)
-		 f(threadId,i);
-	     });
+	       {
+		 /// Workload for each thread, taking into account the remainder
+		 const Size threadLoad=
+		   (end-beg+nPieces-1)/nPieces;
+		 
+		 /// Beginning of the chunk
+		 const Size threadBeg=
+		   threadLoad*threadId;
+		 
+		 /// End of the chunk
+		 const Size threadEnd=
+		   std::min(end,threadBeg+threadLoad);
+		 
+		 for(Size i=threadBeg;i<threadEnd;i++)
+		   f(threadId,i);
+	       });
     }
   }
 }

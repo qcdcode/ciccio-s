@@ -21,8 +21,8 @@ namespace ciccios
     char PROG_COMPILE_DATE[]=__DATE__;
   }
   
-  /// Initialize the library and jump to replacementMain
-  inline void initCiccios(void(*replacementMain)(int narg,char **arg),int& narg,char **&arg)
+  /// Initialize the library
+  inline void initCiccios(int& narg,char **&arg)
   {
     initRanks(narg,arg);
     
@@ -35,12 +35,14 @@ namespace ciccios
     cpuMemoryManager=new CPUMemoryManager;
     cpuMemoryManager->disableCache();
     
-    ThreadPool::poolLoop(replacementMain,narg,arg);
+    ThreadPool::poolStart();
   }
   
   /// Finalizes
   inline void finalizeCiccios()
   {
+    ThreadPool::poolStop();
+    
     delete cpuMemoryManager;
     
     LOGGER<<endl<<"Ariciao!"<<endl<<endl;
