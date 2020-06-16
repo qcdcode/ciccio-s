@@ -42,11 +42,11 @@ INLINE_FUNCTION void unrolledSumProdPool(SU3Field<F>& _field1,const SU3Field<F>&
 			     auto& f1r=field1(iFusedSite,i,j,RE);
 			     auto& f1i=field1(iFusedSite,i,j,IM);
 			     
-			     const auto& f2r=field2(iFusedSite,i,k,RE);
-			     const auto& f2i=field2(iFusedSite,i,k,IM);
+			     const auto f2r=field2(iFusedSite,i,k,RE);
+			     const auto f2i=field2(iFusedSite,i,k,IM);
 			     
-			     const auto& f3r=field3(iFusedSite,k,j,RE);
-			     const auto& f3i=field3(iFusedSite,k,j,IM);
+			     const auto f3r=field3(iFusedSite,k,j,RE);
+			     const auto f3i=field3(iFusedSite,k,j,IM);
 			     
 			     f1r+=f2r*f3r;
 			     f1r-=f2i*f3i;

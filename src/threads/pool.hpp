@@ -46,6 +46,9 @@ namespace ciccios
       ///
       /// Internal storage, not to be accessed
       EXTERN_POOL int nThreads INIT_POOL_TO(resources::getNThreads());
+      
+      /// Store whether the number of threads have been printed
+      EXTERN_POOL bool nThreadsPrinted INIT_POOL_TO(false);
   }
   
   /// Number of threads

@@ -40,6 +40,12 @@ namespace ciccios
       if(poolIsStarted)
 	CRASHER<<"Cannot fill again the pool!"<<endl;
       
+      if(not ciccios::resources::nThreadsPrinted)
+	{
+	  LOGGER<<"NThreads: "<<nThreads<<endl;
+	  ciccios::resources::nThreadsPrinted=true;
+	}
+      
       poolIsStarted=true;
       resources::pool.resize(nThreads);
       
