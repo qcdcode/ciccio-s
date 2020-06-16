@@ -398,6 +398,7 @@ namespace ciccios
   template <>
   struct MemoryManageWrapper<StorLoc::ON_CPU>
   {
+    /// Returns the cpu memory manager
     static auto& get()
     {
       return cpuMemoryManager;
@@ -412,6 +413,7 @@ namespace ciccios
   template <>
   struct MemoryManageWrapper<StorLoc::ON_GPU>
   {
+    /// Returns the gpu memory manager
     static auto& get()
     {
       return gpuMemoryManager;
@@ -426,7 +428,6 @@ namespace ciccios
   {
     return MemoryManageWrapper<SL>::get();
   }
-  
 }
 
 #undef EXTERN_MEMORY_MANAGER

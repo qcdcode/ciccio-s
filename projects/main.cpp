@@ -13,7 +13,6 @@
 
 using namespace ciccios;
 
-
 /////////////////////////////////////////////////////////////////
 
 PROVIDE_ASM_DEBUG_HANDLE(UnrolledSIMDpool,double)
@@ -21,7 +20,7 @@ PROVIDE_ASM_DEBUG_HANDLE(UnrolledSIMDpool,float)
 
 /// Unroll loops with metaprogramming, SIMD version
 template <typename Fund>
-INLINE_FUNCTION void unrolledSumProdPool(SimdSu3Field<Fund>& simdField1,const SimdSu3Field<Fund>& simdField2,const SimdSu3Field<Fund>& simdField3)
+INLINE_FUNCTION void unrolledSumProdPool(SimdSU3Field<Fund>& simdField1,const SimdSU3Field<Fund>& simdField2,const SimdSU3Field<Fund>& simdField3)
 {
   ThreadPool::loopSplit(0,simdField1.fusedVol,
 			[=](const int threadId,const int iFusedSite) mutable
@@ -106,7 +105,7 @@ template <typename Fund>
 void simdTest(CpuSU3Field<StorLoc::ON_CPU,Fund>& field,const int64_t nIters,const double gFlops)
 {
   /// Allocate three fields, this could be short-circuited through cast operator
-  SimdSu3Field<Fund> simdField1(field.vol),simdField2(field.vol),simdField3(field.vol);
+  SimdSU3Field<Fund> simdField1(field.vol),simdField2(field.vol),simdField3(field.vol);
   simdField1.deepCopy(field);
   simdField2.deepCopy(field);
   simdField3.deepCopy(field);
@@ -132,6 +131,47 @@ void simdTest(CpuSU3Field<StorLoc::ON_CPU,Fund>& field,const int64_t nIters,cons
   const double gFlopsPerSec=gFlops/timeInSec;
   LOGGER<<"SIMD"<<" \t GFlops/s: "<<gFlopsPerSec<<"\t Check: "<<fieldRes(0,0,0,RE)<<" "<<fieldRes(0,0,0,IM)<<" time: "<<timeInSec<<endl;
 }
+
+/////////////////////////////////////////////////////////////////
+
+#ifdef USE_CUDA
+
+/// Issue the test on SIMD field
+template <typename Fund>
+void gpuTest(CpuSU3Field<StorLoc::ON_CPU,Fund>& field,const int64_t nIters,const double gFlops)
+{
+  using F=GpuSU3Field<StorLoc::ON_GPU,Fund>;
+  
+  /// Allocate three fields, this could be short-circuited through cast operator
+  F field1(field.vol),field2(field.vol),field3(field.vol);
+  field1.deepCopy(field);
+  field2.deepCopy(field);
+  field3.deepCopy(field);
+  
+  /// Takes note of starting moment
+  const Instant start=takeTime();
+  
+  for(int64_t i=0;i<nIters;i++)
+    unrolledSumProdPool(field1,field2,field3);
+  
+  /// Takes note of ending moment
+  const Instant end=takeTime();
+  
+  // Copy back
+  CpuSU3Field<StorLoc::ON_CPU,Fund> fieldRes(field.vol);
+  fieldRes.deepCopy(field1);
+  
+  /// Compute time
+  const double timeInSec=timeDiffInSec(end,start);
+  
+  /// Compute performances
+  const double gFlopsPerSec=gFlops/timeInSec;
+  LOGGER<<"GPU"<<" \t GFlops/s: "<<gFlopsPerSec<<"\t Check: "<<fieldRes(0,0,0,RE)<<" "<<fieldRes(0,0,0,IM)<<" time: "<<timeInSec<<endl;
+}
+
+#endif
+
+/////////////////////////////////////////////////////////////////
 
 #ifdef USE_EIGEN
 
@@ -205,6 +245,10 @@ void test(const int vol)
   simdTest(field,nIters,gFlops);
   
   cpuTest(field,nIters,gFlops);
+  
+#ifdef USE_CUDA
+  gpuTest(field,nIters,gFlops);
+#endif
   
 #ifdef USE_EIGEN
   eigenTest(field,nIters,gFlops);
