@@ -6,17 +6,49 @@
 
 namespace ciccios
 {
+  /// Base type for SU3Field, needed to obtain static polymorphism
+  template <typename T>
+  struct SU3Field : public Crtp<T>
+  {
+    /// Copy from oth, using the correct deep copier
+    template <typename O>
+    auto& deepCopy(const O& oth);
+  };
+  
+  /////////////////////////////////////////////////////////////////
+  
   /// SIMD su3 field
   ///
   /// Forward definition
-  template <typename Fund>
+  template <typename Fund,
+	    StorLoc SL>
   struct SimdSU3Field;
   
   /// Trivial su3 field
-  template <StorLoc SL,
-	    typename Fund>
-  struct CpuSU3Field
+  ///
+  /// Forward definition
+  template <typename Fund,
+	    StorLoc SL>
+  struct CpuSU3Field;
+  
+  /// GPU version of  su3 field
+  ///
+  /// Forward definition
+  template <typename Fund,
+	    StorLoc SL>
+  struct GpuSU3Field;
+  
+  /////////////////////////////////////////////////////////////////
+  
+  /// Trivial su3 field
+  template <typename Fund,
+	    StorLoc SL>
+  struct CpuSU3Field : public SU3Field<CpuSU3Field<Fund,SL>>
   {
+    /// Base type
+    using BaseType=
+      Fund;
+    
     /// Volume
     const int vol;
     
@@ -82,31 +114,19 @@ namespace ciccios
       
       return *this;
     }
-    
-    /// Assign from a non-simd version
-    CpuSU3Field& deepCopy(const CpuSU3Field<StorLoc::ON_CPU,Fund>& oth)
-    {
-      for(int iSite=0;iSite<vol;iSite++)
-	{
-	  for(int ic1=0;ic1<NCOL;ic1++)
-	    for(int ic2=0;ic2<NCOL;ic2++)
-	      for(int ri=0;ri<2;ri++)
-		(*this)(iSite,ic1,ic2,ri)=oth(iSite,ic1,ic2,ri);
-	}
-      
-      return *this;
-    }
-    
-    /// Assign from a SIMD version
-    CpuSU3Field& deepCopy(const SimdSU3Field<Fund>& oth);
   };
   
   /////////////////////////////////////////////////////////////////
   
   /// SIMD version of the field
-  template <typename Fund>
-  struct SimdSU3Field
+  template <typename Fund,
+	    StorLoc SL>
+  struct SimdSU3Field : public SU3Field<SimdSU3Field<Fund,SL>>
   {
+    /// Base type
+    using BaseType=
+      Fund;
+    
     /// Volume
     const int fusedVol;
     
@@ -157,26 +177,6 @@ namespace ciccios
 	cpuMemoryManager->release(data);
     }
     
-    /// Assign from a non-simd version
-    SimdSU3Field& deepCopy(const CpuSU3Field<StorLoc::ON_CPU,Fund>& oth)
-    {
-      for(int iSite=0;iSite<fusedVol*simdLength<Fund>;iSite++)
-	{
-	  /// Index of the simd fused sites
-	  const int iFusedSite=iSite/simdLength<Fund>;
-	  
-	  /// Index of the simd component
-	  const int iSimdComp=iSite%simdLength<Fund>;
-	  
-	  for(int ic1=0;ic1<NCOL;ic1++)
-	    for(int ic2=0;ic2<NCOL;ic2++)
-	      for(int ri=0;ri<2;ri++)
-		(*this)(iFusedSite,ic1,ic2,ri)[iSimdComp]=oth(iSite,ic1,ic2,ri);
-	}
-      
-      return *this;
-    }
-    
     /// Sum the product of the two passed fields
     INLINE_FUNCTION SimdSU3Field& sumProd(const SimdSU3Field& oth1,const SimdSU3Field& oth2)
     {
@@ -189,83 +189,26 @@ namespace ciccios
       
       return *this;
     }
-  };
-  
-  /// Assign from SIMD version
-  template <StorLoc SL,
-	    typename Fund>
-  CpuSU3Field<SL,Fund>& CpuSU3Field<SL,Fund>::deepCopy(const SimdSU3Field<Fund>& oth)
-  {
-    for(int iFusedSite=0;iFusedSite<oth.fusedVol;iFusedSite++)
-      
-      for(int ic1=0;ic1<NCOL;ic1++)
-	for(int ic2=0;ic2<NCOL;ic2++)
-	  for(int ri=0;ri<2;ri++)
-	    for(int iSimdComp=0;iSimdComp<simdLength<Fund>;iSimdComp++)
-	      {
-		const int iSite=iSimdComp+simdLength<Fund>*iFusedSite;
-		
-		(*this)(iSite,ic1,ic2,ri)=oth(iFusedSite,ic1,ic2,ri)[iSimdComp];
-	      }
     
-    return *this;
-  }
+    /// Loop over all sites
+    template <typename F>
+    void sitesLoop(F&& f)
+    {
+      ThreadPool::loopSplit(0,fusedVol,std::forward<F>(f));
+    }
+  };
   
   /////////////////////////////////////////////////////////////////
   
-#ifdef USE_CUDA
-  
   /// GPU version of  su3 field
-  ///
-  /// Forward definition
-  template <StorLoc SL,
-	    typename Fund>
-  struct GpuSU3Field;
-
-  namespace resources
+  template <typename Fund,
+	    StorLoc SL>
+  struct GpuSU3Field : public SU3Field<GpuSU3Field<Fund,SL>>
   {
-    // Partial specialization of method is forbidden when partially
-    // specializing also the class itself so we put the copy in this
-    // convenient class
+    /// Base type
+    using BaseType=
+      Fund;
     
-    /// Class implementing deep copy operator
-    ///
-    /// Forward definition
-    template <typename F,
-	      typename S>
-    struct DeepCopier;
-    
-    /// Copy a SU3 field on GPU, with possible different types
-    template <typename F,
-	      typename OF>
-    struct DeepCopier<GpuSU3Field<StorLoc::ON_GPU,F>,GpuSU3Field<StorLoc::ON_GPU,OF>>
-    {
-      /// Copy oth into res
-      static GpuSU3Field<StorLoc::ON_GPU,F>& deepCopy(GpuSU3Field<StorLoc::ON_GPU,F>& res,const GpuSU3Field<StorLoc::ON_GPU,OF>& oth)
-      {
-	CRASHER<<"Must be done with kernel"<<endl;
-	return *this;
-      }
-    };
-    
-    /// Copy a SU3 field with GPU layout, from CPU to GPU storage, with the same type
-    template <typename F>
-    struct DeepCopier<GpuSU3Field<StorLoc::ON_GPU,F>,GpuSU3Field<StorLoc::ON_CPU,F>>
-    {
-      /// Copy oth into res
-      static GpuSU3Field<StorLoc::ON_GPU,F>& deepCopy(const GpuSU3Field<StorLoc::ON_CPU,F>& oth)
-      {
-	CRASHER<<"To be fixed"<<endl;
-	return *this;
-      }
-    };
-  }
-  
-  /// GPU version of  su3 field
-  template <StorLoc SL,
-	    typename Fund>
-  struct GpuSU3Field
-  {
     /// Volume
     const int vol;
     
@@ -324,15 +267,124 @@ namespace ciccios
       return *this;
     }
     
-    /// Copy from oth, using the correct deep copier
-    template <typename O>
-    GpuSU3Field& deepCopy(const O& oth)
+    /// Loop over all sites
+    template <typename F>
+    void sitesLoop(F&& f)
     {
-      return
-	resources::DeepCopier<decltype(*this),O>::deepCopy(*this,oth);
+      CRASHER<<"Need kernel launcher"<<endl;
+      //ThreadPool::loopSplit(0,fusedVol,std::forward<F>(f));
     }
   };
   
+  namespace resources
+  {
+    /// Assign from a non-simd version
+    template <typename F,
+	      typename OF>
+    auto& deepCopy(SimdSU3Field<F,StorLoc::ON_CPU>& res,const CpuSU3Field<OF,StorLoc::ON_CPU>& oth)
+    {
+      for(int iSite=0;iSite<res.fusedVol*simdLength<F>;iSite++)
+    	{
+    	  /// Index of the simd fused sites
+    	  const int iFusedSite=iSite/simdLength<F>;
+	  
+    	  /// Index of the simd component
+    	  const int iSimdComp=iSite%simdLength<F>;
+	  
+    	  for(int ic1=0;ic1<NCOL;ic1++)
+    	    for(int ic2=0;ic2<NCOL;ic2++)
+    	      for(int ri=0;ri<2;ri++)
+    		res(iFusedSite,ic1,ic2,ri)[iSimdComp]=oth(iSite,ic1,ic2,ri);
+    	}
+      
+      return res;
+    }
+    
+    /// Assign from a non-simd version
+    template <typename F,
+	      typename OF>
+    auto& deepCopy(CpuSU3Field<F,StorLoc::ON_CPU>& res,const CpuSU3Field<OF,StorLoc::ON_CPU>& oth)
+    {
+      for(int iSite=0;iSite<res.vol;iSite++)
+    	{
+    	  for(int ic1=0;ic1<NCOL;ic1++)
+    	    for(int ic2=0;ic2<NCOL;ic2++)
+    	      for(int ri=0;ri<2;ri++)
+    		res(iSite,ic1,ic2,ri)=oth(iSite,ic1,ic2,ri);
+    	}
+      
+      return res;
+    }
+    
+    /// Assign from SIMD version, with possible different type
+    template <typename F,
+	      typename OF>
+    auto& deepCopy(CpuSU3Field<F,StorLoc::ON_CPU>& res,const SimdSU3Field<OF,StorLoc::ON_CPU>& oth)
+    {
+      for(int iFusedSite=0;iFusedSite<oth.fusedVol;iFusedSite++)
+	
+	for(int ic1=0;ic1<NCOL;ic1++)
+	  for(int ic2=0;ic2<NCOL;ic2++)
+	    for(int ri=0;ri<2;ri++)
+	      for(int iSimdComp=0;iSimdComp<simdLength<OF>;iSimdComp++)
+		{
+		  const int iSite=iSimdComp+simdLength<OF>*iFusedSite;
+		
+		  res(iSite,ic1,ic2,ri)=oth(iFusedSite,ic1,ic2,ri)[iSimdComp];
+  	      }
+      
+      return res;
+    }
+    
+    /// Copy an SU3 field within GPU, with GPU layout, and possible different types
+    template <typename F,
+	      typename OF>
+    auto& deepCopy(GpuSU3Field<F,StorLoc::ON_GPU>& res,const GpuSU3Field<OF,StorLoc::ON_GPU>& oth)
+      {
+	CRASHER<<"Must be done with kernel"<<endl;
+	return res;
+      }
+    
+    /// Copy an SU3 field from CPU with GPU layout to GPU with GPU layout, with the same type
+    template <typename F>
+    auto& deepCopy(GpuSU3Field<F,StorLoc::ON_GPU>& res,const GpuSU3Field<F,StorLoc::ON_CPU>& oth)
+      {
+	CRASHER<<"To be fixed"<<endl;
+	return res;
+      }
+    
+    /// Copy an SU3 field from CPU with CPU layout to GPU with GPU layout, with the same type
+    template <typename F>
+    auto& deepCopy(GpuSU3Field<F,StorLoc::ON_GPU>& res,const CpuSU3Field<F,StorLoc::ON_CPU>& oth)
+    {
+      CRASHER<<"To be fixed"<<endl;
+      return res;
+    }
+    
+    /// Copy an SU3 field from GPU with GPU layout to CPU with CPU layout, with the same type
+    template <typename F>
+    auto& deepCopy(CpuSU3Field<F,StorLoc::ON_CPU>& res,const GpuSU3Field<F,StorLoc::ON_GPU>& oth)
+    {
+      CRASHER<<"To be fixed"<<endl;
+      return res;
+    }
+    
+  // /// Copy a SU3 field, from CPU with CPU layout to GPU with GPU layout, with the same type
+    // template <typename F>
+    // auto& deepCopy(GpuSU3Field<F,StorLoc::ON_GPU>& res,const CpuSU3Field<F,StorLoc::ON_CPU>& oth)
+    //   {
+    // 	CRASHER<<"To be fixed"<<endl;
+    // 	return res;
+    //   }
+    
+    /// Copy a SU3 field, from GPU with GPU layout to CPU with CPU layout, with the same type
+    // template <typename F>
+    // auto& deepCopy(CpuSU3Field<F,StorLoc::ON_CPU>& res,const CpuSU3Field<F,StorLoc::ON_GPU>& oth)
+    //   {
+    // 	CRASHER<<"To be fixed"<<endl;
+    // 	return res;
+    //   }
+    
   // /// Assign from a different (or not) version, on the gpu
   // template <typename F,
   // 	    typename OF>
@@ -363,26 +415,38 @@ namespace ciccios
   //     return *this;
   //   }
   
-#endif
+    
+  }
+  
+  /// Dispatch the correct copier
+  template <typename T>
+  template <typename O>
+  auto& SU3Field<T>::deepCopy(const O& oth)
+  {
+    return
+      resources::deepCopy(this->crtp(),oth);
+  }
+  
+  /////////////////////////////////////////////////////////////////
   
   /// Serializable version
   template <typename Fund>
   using IoSU3Field=
-    CpuSU3Field<StorLoc::ON_CPU,Fund>;
+	       CpuSU3Field<Fund,StorLoc::ON_CPU>;
   
 #ifdef USE_CUDA
   
   /// USe GPU version of the field
   template <typename Fund>
   using OptSU3Field=
-    GpuSU3Field<StorLoc::ON_GPU,Fund>;
+	       GpuSU3Field<Fund,StorLoc::ON_GPU>;
   
 #else
   
   /// USe SIMD version of the field
   template <typename Fund>
   using OptSU3Field=
-    SimdSU3Field<Fund>;
+	       SimdSU3Field<Fund,StorLoc::ON_CPU>;
   
 #endif
 }

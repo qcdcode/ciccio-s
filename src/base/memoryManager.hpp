@@ -25,9 +25,7 @@ namespace ciccios
   
   /// Type of memory
   enum class MemoryType{CPU ///< Memory allocated on CPU side
-#ifdef USE_CUDA
 			,GPU ///< Memory allocated on GPU side
-#endif
   };
   
   /// Type used for size
@@ -380,11 +378,7 @@ namespace ciccios
   /////////////////////////////////////////////////////////////////
   
   /// Position where to store the data: device or host
-  enum class StorLoc{ON_CPU
-#ifdef USE_CUDA
-		     ,ON_GPU
-#endif
-  };
+  enum class StorLoc{ON_CPU,ON_GPU};
   
   /// Wraps the memory manager
   ///
@@ -405,8 +399,6 @@ namespace ciccios
     }
   };
   
-#ifdef USE_CUDA
-  
   /// Use memory manager
   ///
   /// GPU case
@@ -416,11 +408,15 @@ namespace ciccios
     /// Returns the gpu memory manager
     static auto& get()
     {
-      return gpuMemoryManager;
+      return
+#ifdef USE_CUDA
+	gpuMemoryManager
+#else
+	cpuMemoryManager
+#endif
+  ;
     }
   };
-  
-#endif
   
   /// Gets the appropriate memory manager
   template <StorLoc SL>

@@ -18,25 +18,48 @@ using namespace ciccios;
 PROVIDE_ASM_DEBUG_HANDLE(UnrolledSIMDpool,double)
 PROVIDE_ASM_DEBUG_HANDLE(UnrolledSIMDpool,float)
 
+
+
 /// Unroll loops with metaprogramming, SIMD version
-template <typename Fund>
-INLINE_FUNCTION void unrolledSumProdPool(SimdSU3Field<Fund>& simdField1,const SimdSU3Field<Fund>& simdField2,const SimdSU3Field<Fund>& simdField3)
+template <typename F>
+INLINE_FUNCTION void unrolledSumProdPool(SU3Field<F>& _field1,const SU3Field<F>& _field2,const SU3Field<F>& _field3)
 {
-  ThreadPool::loopSplit(0,simdField1.fusedVol,
-			[=](const int threadId,const int iFusedSite) mutable
-			{
-			  BOOKMARK_BEGIN_UnrolledSIMDpool(Fund{});
-			  
-			  UNROLLED_FOR(i,NCOL)
- 			    UNROLLED_FOR(k,NCOL)
- 			      UNROLLED_FOR(j,NCOL)
-                                simdField1(iFusedSite,i,j).sumProd(simdField2(iFusedSite,i,k),simdField3(iFusedSite,k,j));
- 			      UNROLLED_FOR_END;
- 			    UNROLLED_FOR_END;
- 			  UNROLLED_FOR_END;
-			 
-			  BOOKMARK_END_UnrolledSIMDpool(Fund{});
-			}
+  auto& field1=_field1.crtp();
+  const auto& field2=_field2.crtp();
+  const auto& field3=_field3.crtp();
+  
+  /// Fundamental type
+  using Fund=typename F::BaseType;
+  
+  field1.sitesLoop([=](const int threadId,const int iFusedSite) mutable
+		   {
+		     BOOKMARK_BEGIN_UnrolledSIMDpool(Fund{});
+		     
+		     UNROLLED_FOR(i,NCOL)
+		       UNROLLED_FOR(k,NCOL)
+		         UNROLLED_FOR(j,NCOL)
+		           {
+			     auto& f1r=field1(iFusedSite,i,j,RE);
+			     auto& f1i=field1(iFusedSite,i,j,IM);
+			     
+			     const auto& f2r=field2(iFusedSite,i,k,RE);
+			     const auto& f2i=field2(iFusedSite,i,k,IM);
+			     
+			     const auto& f3r=field3(iFusedSite,k,j,RE);
+			     const auto& f3i=field3(iFusedSite,k,j,IM);
+			     
+			     f1r+=f2r*f3r;
+			     f1r-=f2i*f3i;
+			     
+			     f1i+=f2r*f3i;
+			     f1i+=f2i*f3r;
+			   }
+		         UNROLLED_FOR_END;
+		       UNROLLED_FOR_END;
+		     UNROLLED_FOR_END;
+		     
+		     BOOKMARK_END_UnrolledSIMDpool(Fund{});
+		   }
     );
 }
 
@@ -48,7 +71,7 @@ PROVIDE_ASM_DEBUG_HANDLE(UnrolledCPU,float)
 /// Unroll loops with metaprogramming, scalar version
 template <typename Fund,
 	  StorLoc SL=StorLoc::ON_CPU>
-void unrolledSumProd(CpuSU3Field<SL,Fund>& field1,const CpuSU3Field<SL,Fund>& field2,const CpuSU3Field<SL,Fund>& field3)
+void unrolledSumProd(CpuSU3Field<Fund,SL>& field1,const CpuSU3Field<Fund,SL>& field2,const CpuSU3Field<Fund,SL>& field3)
 {
   BOOKMARK_BEGIN_UnrolledCPU(Fund{});
   
@@ -75,10 +98,10 @@ void unrolledSumProd(CpuSU3Field<SL,Fund>& field1,const CpuSU3Field<SL,Fund>& fi
 
 /// Perform the non-simd CPU version of a+=b*c
 template <typename Fund>
-void cpuTest(CpuSU3Field<StorLoc::ON_CPU,Fund>& field,const int64_t nIters,const double gFlops)
+void cpuTest(CpuSU3Field<Fund,StorLoc::ON_CPU>& field,const int64_t nIters,const double gFlops)
 {
   /// Allocate three fields, and copy inside
-  CpuSU3Field<StorLoc::ON_CPU,Fund> field1(field.vol),field2(field.vol),field3(field.vol);
+  CpuSU3Field<Fund,StorLoc::ON_CPU> field1(field.vol),field2(field.vol),field3(field.vol);
   field1.deepCopy(field);
   field2.deepCopy(field);
   field3.deepCopy(field);
@@ -102,10 +125,10 @@ void cpuTest(CpuSU3Field<StorLoc::ON_CPU,Fund>& field,const int64_t nIters,const
 
 /// Issue the test on SIMD field
 template <typename Fund>
-void simdTest(CpuSU3Field<StorLoc::ON_CPU,Fund>& field,const int64_t nIters,const double gFlops)
+void simdTest(CpuSU3Field<Fund,StorLoc::ON_CPU>& field,const int64_t nIters,const double gFlops)
 {
   /// Allocate three fields, this could be short-circuited through cast operator
-  SimdSU3Field<Fund> simdField1(field.vol),simdField2(field.vol),simdField3(field.vol);
+  SimdSU3Field<Fund,StorLoc::ON_CPU> simdField1(field.vol),simdField2(field.vol),simdField3(field.vol);
   simdField1.deepCopy(field);
   simdField2.deepCopy(field);
   simdField3.deepCopy(field);
@@ -121,7 +144,7 @@ void simdTest(CpuSU3Field<StorLoc::ON_CPU,Fund>& field,const int64_t nIters,cons
   const Instant end=takeTime();
   
   // Copy back
-  CpuSU3Field<StorLoc::ON_CPU,Fund> fieldRes(field.vol);
+  CpuSU3Field<Fund,StorLoc::ON_CPU> fieldRes(field.vol);
   fieldRes.deepCopy(simdField1);
   
   /// Compute time
@@ -134,16 +157,12 @@ void simdTest(CpuSU3Field<StorLoc::ON_CPU,Fund>& field,const int64_t nIters,cons
 
 /////////////////////////////////////////////////////////////////
 
-#ifdef USE_CUDA
-
 /// Issue the test on SIMD field
 template <typename Fund>
-void gpuTest(CpuSU3Field<StorLoc::ON_CPU,Fund>& field,const int64_t nIters,const double gFlops)
+void gpuTest(CpuSU3Field<Fund,StorLoc::ON_CPU>& field,const int64_t nIters,const double gFlops)
 {
-  using F=GpuSU3Field<StorLoc::ON_GPU,Fund>;
-  
   /// Allocate three fields, this could be short-circuited through cast operator
-  F field1(field.vol),field2(field.vol),field3(field.vol);
+  GpuSU3Field<Fund,StorLoc::ON_GPU> field1(field.vol),field2(field.vol),field3(field.vol);
   field1.deepCopy(field);
   field2.deepCopy(field);
   field3.deepCopy(field);
@@ -158,7 +177,7 @@ void gpuTest(CpuSU3Field<StorLoc::ON_CPU,Fund>& field,const int64_t nIters,const
   const Instant end=takeTime();
   
   // Copy back
-  CpuSU3Field<StorLoc::ON_CPU,Fund> fieldRes(field.vol);
+  CpuSU3Field<Fund,StorLoc::ON_CPU> fieldRes(field.vol);
   fieldRes.deepCopy(field1);
   
   /// Compute time
@@ -169,8 +188,6 @@ void gpuTest(CpuSU3Field<StorLoc::ON_CPU,Fund>& field,const int64_t nIters,const
   LOGGER<<"GPU"<<" \t GFlops/s: "<<gFlopsPerSec<<"\t Check: "<<fieldRes(0,0,0,RE)<<" "<<fieldRes(0,0,0,IM)<<" time: "<<timeInSec<<endl;
 }
 
-#endif
-
 /////////////////////////////////////////////////////////////////
 
 #ifdef USE_EIGEN
@@ -180,7 +197,7 @@ PROVIDE_ASM_DEBUG_HANDLE(Eigen,float)
 
 /// Test eigen
 template <typename Fund>
-void eigenTest(CpuSU3Field<StorLoc::ON_CPU,Fund>& field,const int64_t nIters,const double gFlops)
+void eigenTest(CpuSU3Field<Fund,StorLoc::ON_CPU>& field,const int64_t nIters,const double gFlops)
 {
   /// Copy volume
   const int vol=field.vol;
@@ -233,7 +250,7 @@ void test(const int vol)
   const double gFlops=nFlopsPerSite*nIters*vol/(1<<30);
   
   /// Prepare the fieldiguration in the CPU format
-  CpuSU3Field<StorLoc::ON_CPU,Fund> field(vol);
+  CpuSU3Field<Fund,StorLoc::ON_CPU> field(vol);
   for(int iSite=0;iSite<vol;iSite++)
     for(int ic1=0;ic1<NCOL;ic1++)
       for(int ic2=0;ic2<NCOL;ic2++)
@@ -246,9 +263,7 @@ void test(const int vol)
   
   cpuTest(field,nIters,gFlops);
   
-#ifdef USE_CUDA
   gpuTest(field,nIters,gFlops);
-#endif
   
 #ifdef USE_EIGEN
   eigenTest(field,nIters,gFlops);
