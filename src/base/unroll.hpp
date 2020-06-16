@@ -43,7 +43,7 @@ namespace ciccios
     /// Actual implementation
     template <int...Is,
 	      typename F>
-    INLINE_FUNCTION void unrolledFor(std::integer_sequence<int,Is...>,F f)
+    INLINE_FUNCTION void unrolledForInternal(std::integer_sequence<int,Is...>,F f)
     {
       /// Dummy initialized list, discarded at compile time
       ///
@@ -57,7 +57,7 @@ namespace ciccios
 	    typename F>
   INLINE_FUNCTION void unrolledFor(const F& f)
   {
-    resources::unrolledFor(std::make_integer_sequence<int, N>{},f);
+    resources::unrolledForInternal(std::make_integer_sequence<int, N>{},f);
   }
   
   /// Create an unrolled for
