@@ -141,10 +141,12 @@ AX_SUBPACKAGE(eigen,Eigen/Dense,,,EIGEN,".",".")
 
 #simd set to be used
 AC_ARG_WITH(simd-inst-set,
-	AS_HELP_STRING([--with-simd-inst-set=set],[Select the set of SIMD instruction (avx [default], mmx or avx512)]),
+	AS_HELP_STRING([--with-simd-inst-set=set],[Select the set of SIMD instruction (avx [default], none, mmx or avx512)]),
 	with_simd_inst_set="${withval}",
 	with_simd_inst_set=avx)
 case "$with_simd_inst_set" in
+     none) CPPFLAGS_SIMD=""
+     	  SIMD_INST_SET=NONE;;
      mmx) CPPFLAGS_SIMD="-mmmx"
      	  SIMD_INST_SET=MMX;;
      avx) CPPFLAGS_SIMD="-mavx"
@@ -155,11 +157,14 @@ case "$with_simd_inst_set" in
 esac
 
 #maybe we make a function for this
-if test "$CXX" == "nvcc"
+if test "$CPP_FLAGS" != ""
 then
-	CPPFLAGS="-Xcompiler $CPPFLAGS_SIMD -Xcompiler -mfma $CPPFLAGS"
-else
-	CPPFLAGS="$CPPFLAGS_SIMD -mfma $CPPFLAGS"
+	if test "$CXX" == "nvcc"
+	then
+		CPPFLAGS="-Xcompiler $CPPFLAGS_SIMD -Xcompiler -mfma $CPPFLAGS"
+	else
+		CPPFLAGS="$CPPFLAGS_SIMD -mfma $CPPFLAGS"
+	fi
 fi
 
 SUMMARY_RESULT="$SUMMARY_RESULT

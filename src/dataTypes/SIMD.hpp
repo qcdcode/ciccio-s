@@ -14,7 +14,7 @@
 namespace ciccios
 {
   /// Kinds of instruction set
-  enum InstSet{MMX,AVX,AVX512};
+  enum InstSet{NONE,MMX,AVX,AVX512};
   
   namespace resources
   {
@@ -26,7 +26,7 @@ namespace ciccios
     struct Simd;
     
     /// Provides the proper datatype for the given fundamental and instruction set
-#define PROVIDE_SIMD(INST_SET,FUND,TYPE)		\
+#define PROVIDE_SIMD(INST_SET,FUND,TYPE...)		\
     /*! SIMD FUND for instruction set INST_SET */	\
     template <>						\
     struct Simd<INST_SET,FUND>				\
@@ -34,6 +34,9 @@ namespace ciccios
       /*! Provide the type*/				\
       using Type=TYPE;					\
     }
+    
+    PROVIDE_SIMD(NONE,float,ArithmeticArray<float,1>);
+    PROVIDE_SIMD(NONE,double,ArithmeticArray<double,1>);
     
     PROVIDE_SIMD(AVX,float,__m256);
     PROVIDE_SIMD(AVX,double,__m256d);
