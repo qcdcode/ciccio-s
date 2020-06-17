@@ -5,6 +5,8 @@
 #define EXTERN_CUDA
  #include <gpu/cuda.hpp>
 
+#include <base/debug.hpp>
+
 namespace ciccios
 {
   void initCuda()
@@ -24,8 +26,8 @@ namespace ciccios
     //assumes that if we are seeing multiple gpus, there are nDevices ranks to attach to each of it
     if(nDevices!=1)
       {
-	iCudaDevice=rank%nDevices;
-	decript_cuda_error(cudaSetDevice(iCudaDevice),"Unable to set device %d",iCudaDevice);
+	const int iCudaDevice=rank()%nDevices;
+	DECRYPT_CUDA_ERROR(cudaSetDevice(iCudaDevice),"Unable to set device %d",iCudaDevice);
       }
 #endif
   }
