@@ -7,9 +7,10 @@
 
 #include <chrono>
 
-#include "preprocessor.hpp"
-#include "logger.hpp"
-#include "unroll.hpp"
+#include <base/preprocessor.hpp>
+#include <base/logger.hpp>
+#include <base/unroll.hpp>
+#include <gpu/cuda.hpp>
 
 namespace ciccios
 {
@@ -61,10 +62,16 @@ namespace ciccios
   };
   
 #define CRASHER Crasher(__LINE__,__FILE__,__FUNCTION__)
+
+#ifdef COMPILING_FOR_DEVICE
+ #define _ASM_BOOKMARK_SYMBOL "//"
+#else
+ #define _ASM_BOOKMARK_SYMBOL "#"
+#endif
   
 /// Include a comment in the assembler, recognizable in the compilation
 #define ASM_BOOKMARK(COMMENT)					\
-  asm("#Bookmark file: \"" __FILE__ "\", line: " LINE_AS_STRING  ", " COMMENT)
+  asm(_ASM_BOOKMARK_SYMBOL "Bookmark file: \"" __FILE__ "\", line: " LINE_AS_STRING  ", " COMMENT)
   
   /// Put a BEGIN for asm bookmark section
 #define ASM_BOOKMARK_BEGIN(COMMENT)					\
@@ -81,7 +88,8 @@ namespace ciccios
 /// Internal implementation
 #define PROVIDE_ASM_DEBUG_HANDLE_BEGIN_OR_END(BE,NAME,ARGS...)		\
   /*! Put in the assembly a bookmark named composing name and the arguments */ \
-  INLINE_FUNCTION void BOOKMARK_ ## BE ## _ ## NAME (ARGS)		\
+  INLINE_FUNCTION HOST DEVICE						\
+  void BOOKMARK_ ## BE ## _ ## NAME (ARGS)				\
   {									\
     ASM_BOOKMARK_ ## BE(#NAME #ARGS);					\
   }

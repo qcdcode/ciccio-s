@@ -18,8 +18,6 @@ using namespace ciccios;
 PROVIDE_ASM_DEBUG_HANDLE(UnrolledSIMDpool,double)
 PROVIDE_ASM_DEBUG_HANDLE(UnrolledSIMDpool,float)
 
-
-
 /// Unroll loops with metaprogramming, SIMD version
 template <typename F>
 INLINE_FUNCTION void unrolledSumProdPool(SU3Field<F>& _field1,const SU3Field<F>& _field2,const SU3Field<F>& _field3)
@@ -31,7 +29,7 @@ INLINE_FUNCTION void unrolledSumProdPool(SU3Field<F>& _field1,const SU3Field<F>&
   /// Fundamental type
   using Fund=typename F::BaseType;
   
-  field1.sitesLoop([=](const int threadId,const int iFusedSite) mutable
+  field1.sitesLoop([=] HOST DEVICE (const int iSite) mutable
 		   {
 		     BOOKMARK_BEGIN_UnrolledSIMDpool(Fund{});
 		     
@@ -39,14 +37,14 @@ INLINE_FUNCTION void unrolledSumProdPool(SU3Field<F>& _field1,const SU3Field<F>&
 		       UNROLLED_FOR(k,NCOL)
 		         UNROLLED_FOR(j,NCOL)
 		           {
-			     auto& f1r=field1(iFusedSite,i,j,RE);
-			     auto& f1i=field1(iFusedSite,i,j,IM);
+			     auto& f1r=field1(iSite,i,j,RE);
+			     auto& f1i=field1(iSite,i,j,IM);
 			     
-			     const auto f2r=field2(iFusedSite,i,k,RE);
-			     const auto f2i=field2(iFusedSite,i,k,IM);
+			     const auto f2r=field2(iSite,i,k,RE);
+			     const auto f2i=field2(iSite,i,k,IM);
 			     
-			     const auto f3r=field3(iFusedSite,k,j,RE);
-			     const auto f3i=field3(iFusedSite,k,j,IM);
+			     const auto f3r=field3(iSite,k,j,RE);
+			     const auto f3i=field3(iSite,k,j,IM);
 			     
 			     f1r+=f2r*f3r;
 			     f1r-=f2i*f3i;

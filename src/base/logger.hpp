@@ -10,7 +10,7 @@
 
 #include <fstream>
 
-#include "base/ranks.hpp"
+#include <base/ranks.hpp>
 
 namespace ciccios
 {

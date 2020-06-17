@@ -97,10 +97,13 @@ namespace ciccios
     }
     
     /// Destroy
+    HOST DEVICE
     ~CpuSU3Field()
     {
+#ifndef COMPILING_FOR_DEVICE
       if(not isRef)
 	memoryManager<SL>()->release(data);
+#endif
     }
     
     /// Sum the product of the two passed fields
@@ -183,10 +186,13 @@ namespace ciccios
     }
     
     /// Destroy
+    HOST DEVICE
     ~SimdSU3Field()
     {
+#ifndef COMPILING_FOR_DEVICE
       if(not isRef)
 	cpuMemoryManager->release(data);
+#endif
     }
     
     /// Sum the product of the two passed fields
@@ -231,20 +237,22 @@ namespace ciccios
     Fund* data;
     
     /// Index function
+    HOST DEVICE
     int index(const int& iSite,const int& icol1,const int& icol2,const int& reim) const
     {
       return reim+2*(iSite+vol*(icol2+NCOL*icol1));
     }
     
     /// Access to data
+    HOST DEVICE
     const Fund& operator()(const int& iSite,const int& icol1,const int& icol2,const int& reim) const
     {
       return data[index(iSite,icol1,icol2,reim)];
     }
     
-    PROVIDE_ALSO_NON_CONST_METHOD(operator());
+    PROVIDE_ALSO_NON_CONST_METHOD_GPU(operator());
     
-    PROVIDE_ALSO_NON_CONST_METHOD(site);
+    PROVIDE_ALSO_NON_CONST_METHOD_GPU(site);
     
     /// Create knowning volume
     GpuSU3Field(const int& vol) : vol(vol),isRef(false)
@@ -256,40 +264,49 @@ namespace ciccios
     }
     
     /// Copy constructor
+    HOST DEVICE
     GpuSU3Field(const GpuSU3Field& oth) : vol(oth.vol),isRef(true),data(oth.data)
     {
     }
     
     /// Destroy
+    HOST DEVICE
     ~GpuSU3Field()
     {
+#ifndef COMPILING_FOR_DEVICE
       if(not isRef)
 	memoryManager<SL>()->release(data);
+#endif
     }
     
-    /// Sum the product of the two passed fields
-    INLINE_FUNCTION GpuSU3Field& sumProd(const GpuSU3Field& oth1,const GpuSU3Field& oth2)
-    {
-      ASM_BOOKMARK_BEGIN("UnrolledGPUmethod");
-      for(int iSite=0;iSite<this->vol;iSite++)
-      	{
-      	  auto& a=this->GPUSite(iSite);
-      	  const auto& b=oth1.GPUSite(iSite);
-      	  const auto& c=oth2.GPUSite(iSite);
+    // /// Sum the product of the two passed fields
+    // INLINE_FUNCTION HOST DEVICE
+    // GpuSU3Field& sumProd(const GpuSU3Field& oth1,const GpuSU3Field& oth2)
+    // {
+    //   ASM_BOOKMARK_BEGIN("UnrolledGPUmethod");
+    //   for(int iSite=0;iSite<this->vol;iSite++)
+    //   	{
+    //   	  auto& a=this->GPUSite(iSite);
+    //   	  const auto& b=oth1.GPUSite(iSite);
+    //   	  const auto& c=oth2.GPUSite(iSite);
 	  
-	  a.sumProd(b,c);
-	}
-      ASM_BOOKMARK_END("UnrolledGPUmethod");
+    // 	  a.sumProd(b,c);
+    // 	}
+    //   ASM_BOOKMARK_END("UnrolledGPUmethod");
       
-      return *this;
-    }
+    //   return *this;
+    // }
     
     /// Loop over all sites
     template <typename F>
     void sitesLoop(F&& f)
     {
-      CRASHER<<"Need kernel launcher"<<endl;
-      //ThreadPool::loopSplit(0,fusedVol,std::forward<F>(f));
+      if(SL==StorLoc::ON_GPU)
+#ifdef USE_CUDA
+	Gpu::cudaParallel(0,vol,std::forward<F>(f));
+      else
+#endif
+	ThreadPool::loopSplit(0,vol,std::forward<F>(f));
     }
   };
   
@@ -339,7 +356,6 @@ namespace ciccios
     auto& deepCopy(CpuSU3Field<F,StorLoc::ON_CPU>& res,const SimdSU3Field<OF,StorLoc::ON_CPU>& oth)
     {
       for(int iFusedSite=0;iFusedSite<oth.fusedVol;iFusedSite++)
-	
 	for(int ic1=0;ic1<NCOL;ic1++)
 	  for(int ic2=0;ic2<NCOL;ic2++)
 	    for(int ri=0;ri<2;ri++)
@@ -404,7 +420,7 @@ namespace ciccios
 	      typename OF>
     GpuSU3Field<F,StorLoc::ON_CPU>& deepCopy(GpuSU3Field<F,StorLoc::ON_CPU>& res,const CpuSU3Field<OF,StorLoc::ON_CPU>& oth)
     {
-      oth.sitesLoop([=](const int& threadId,const int& iSite) mutable
+      oth.sitesLoop([=](const int& iSite) mutable
 		    {
 		      UNROLLED_FOR(ic1,NCOL)
 			UNROLLED_FOR(ic2,NCOL)

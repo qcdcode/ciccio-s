@@ -59,7 +59,7 @@ namespace ciccios
   /// Simd datatype
   template <typename Fund>
   using Simd=
-#ifndef __CUDA_ARCH__
+#ifndef COMPILING_FOR_DEVICE
     resources::ActualSimd<Fund>
 #else
     ArithmeticArray<Fund,simdLength<Fund>>

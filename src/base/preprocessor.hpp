@@ -4,6 +4,10 @@
 /// Double macro to force symbol expansion
 #define TO_STRING_INTERNAL(x) #x
 
+/// Put a pragma
+#define PRAGMA(s)				\
+  _Pragma(#s)
+
 /// Convert to a string
 #define TO_STRING(x) TO_STRING_INTERNAL(x)
 

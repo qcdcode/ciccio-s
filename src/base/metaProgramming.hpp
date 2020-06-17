@@ -4,6 +4,8 @@
 #include <type_traits>
 #include <utility>
 
+#include <gpu/cuda.hpp>
+
 namespace ciccios
 {
   /// Returns the argument as a constant
@@ -32,6 +34,7 @@ namespace ciccios
   
   /// Returns the type without "const" attribute if it is a reference
   template <typename T>
+  HOST DEVICE
   decltype(auto) remove_const_if_ref(T&& t)
   {
     using Tv=std::remove_const_t<std::remove_reference_t<T>>;
@@ -42,6 +45,18 @@ namespace ciccios
   /// If the type is an l-value reference, provide the type T&, otherwise wih T
   template <typename T>
   using ref_or_val_t=std::conditional_t<std::is_lvalue_reference<T>::value,T&,T>;
+  
+  /// First part of the non-const method provider
+#define _PROVIDE_ALSO_NON_CONST_METHOD_BEGIN				\
+  /*! Overload the \c NAME const method passing all args             */ \
+  template <typename...Ts> /* Type of all arguments                  */
+  
+  /// Body OF non-const method provider
+#define _PROVIDE_ALSO_NON_CONST_METHOD_BODY(NAME)			\
+  decltype(auto) NAME(Ts&&...ts) /*!< Arguments                      */ \
+  {									\
+    return remove_const_if_ref(asConst(*this).NAME(std::forward<Ts>(ts)...)); \
+  }
   
   /// Provides also a non-const version of the method \c NAME
   ///
@@ -68,12 +83,13 @@ namespace ciccios
   /// };
   /// \endcode
 #define PROVIDE_ALSO_NON_CONST_METHOD(NAME)				\
-  /*! Overload the \c NAME const method passing all args             */ \
-  template <typename...Ts> /* Type of all arguments                  */	\
-  decltype(auto) NAME(Ts&&...ts) /*!< Arguments                      */ \
-  {									\
-    return remove_const_if_ref(asConst(*this).NAME(std::forward<Ts>(ts)...)); \
-  }
+  _PROVIDE_ALSO_NON_CONST_METHOD_BEGIN					\
+  _PROVIDE_ALSO_NON_CONST_METHOD_BODY(NAME)
+  
+#define PROVIDE_ALSO_NON_CONST_METHOD_GPU(NAME)				\
+  _PROVIDE_ALSO_NON_CONST_METHOD_BEGIN					\
+  HOST DEVICE								\
+  _PROVIDE_ALSO_NON_CONST_METHOD_BODY(NAME)
   
   /// Implements the CRTP pattern
   template <typename T>

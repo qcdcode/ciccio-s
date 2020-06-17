@@ -5,11 +5,10 @@
  #include "config.hpp"
 #endif
 
-#include <thread>
-
-#include "Base.hpp"
-#include "DataTypes.hpp"
-#include "Threads.hpp"
+#include <Base.hpp>
+#include <Gpu.hpp>
+#include <DataTypes.hpp>
+#include <Threads.hpp>
 
 namespace ciccios
 {

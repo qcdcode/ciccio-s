@@ -180,7 +180,7 @@ namespace ciccios
     INLINE_FUNCTION
     void loopSplit(const Size& beg,  ///< Beginning of the loop
 		   const Size& end,  ///< End of the loop
-		   F&& f)            ///< Function to be called, accepting two integers: the first is the thread id, the second the loop argument
+		   F&& f)            ///< Function to be called
     {
       parallel([beg,end,nPieces=nThreads,f](const int& threadId) mutable
 	       {
@@ -197,7 +197,7 @@ namespace ciccios
 		   std::min(end,threadBeg+threadLoad);
 		 
 		 for(Size i=threadBeg;i<threadEnd;i++)
-		   f(threadId,i);
+		   f(i);
 	       });
     }
   }

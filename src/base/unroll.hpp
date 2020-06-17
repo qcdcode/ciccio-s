@@ -8,21 +8,10 @@
 
 #include <utility>
 
+#include <gpu/cuda.hpp>
+
 namespace ciccios
 {
-  /// Force the compiler to inline
-  ///
-  /// \todo This is not very portable, let us investigate about other
-  /// compilers
-#define INLINE_ATTRIBUTE                           \
-  __attribute__((always_inline))
-  
-  /// Force the compiler to inline a function
-#define INLINE_FUNCTION				\
-  INLINE_ATTRIBUTE inline
-  
-  /////////////////////////////////////////////////////////////////
-  
   namespace resources
   {
     /// Wraps the function to be called
@@ -31,7 +20,8 @@ namespace ciccios
     /// unrolling without any recursion
     template <typename F,
 	      typename...Args>
-    INLINE_FUNCTION int call(F&& f,Args&&...args)
+    INLINE_FUNCTION HOST DEVICE
+    int call(F&& f,Args&&...args)
     {
       f(std::forward<Args>(args)...);
       
@@ -43,7 +33,8 @@ namespace ciccios
     /// Actual implementation
     template <int...Is,
 	      typename F>
-    INLINE_FUNCTION void unrolledForInternal(std::integer_sequence<int,Is...>,F f)
+    INLINE_FUNCTION HOST DEVICE
+    void unrolledForInternal(std::integer_sequence<int,Is...>,F f)
     {
       /// Dummy initialized list, discarded at compile time
       ///
@@ -55,19 +46,37 @@ namespace ciccios
   /// Unroll a loop, wrapping the actual implementation
   template <int N,
 	    typename F>
-  INLINE_FUNCTION void unrolledFor(const F& f)
+  INLINE_FUNCTION
+  void unrolledFor(const F& f)
   {
-    resources::unrolledForInternal(std::make_integer_sequence<int, N>{},f);
+    resources::unrolledForInternal(std::make_integer_sequence<int,N>{},f);
   }
+  
+#ifdef COMPILING_FOR_DEVICE
+  
+  /// Uses nvcc builtin
+  ///
+  /// \todo move it to a dedicated macro to call the proper bultin
+ #define UNROLLED_FOR(I,N)			\
+  PRAGMA(unroll N)		\
+  for(int I=0;I<N;I++)				\
+    {
+  
+ #define UNROLLED_FOR_END			\
+  }
+
+#else
   
   /// Create an unrolled for
   ///
   /// Hides the complexity
-#define UNROLLED_FOR(I,N)			\
+ #define UNROLLED_FOR(I,N)			\
   unrolledFor<N>([&](const auto& I) INLINE_ATTRIBUTE {
   
   /// Finish an unrolled for
-#define UNROLLED_FOR_END })
+ #define UNROLLED_FOR_END })
+  
+#endif
 }
 
 #endif

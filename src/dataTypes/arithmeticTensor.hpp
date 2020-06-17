@@ -1,11 +1,9 @@
 #ifndef _ARITHMETIC_TENSOR_HPP
 #define _ARITHMETIC_TENSOR_HPP
 
-#include <array>
-
-#include "base/debug.hpp"
-#include "base/metaProgramming.hpp"
-#include "base/preprocessor.hpp"
+#include <base/debug.hpp>
+#include <base/metaProgramming.hpp>
+#include <base/preprocessor.hpp>
 
 /// Simple implementation of array and matrix
 ///
@@ -16,11 +14,24 @@ namespace ciccios
   /// An array
   template <typename T,
 	    int N>
-  struct ArithmeticArray : public std::array<T,N>
+  struct ArithmeticArray
   {
+    /// Internal data
+    T data[N];
+    
+    /// Access to internal data
+    INLINE_FUNCTION HOST DEVICE
+    const T& operator[](const int i) const
+    {
+      return data[i];
+    }
+    
+    PROVIDE_ALSO_NON_CONST_METHOD_GPU(operator[]);
+    
     /// Multiply another array
     template <typename U,
 	      typename R=decltype(T()*U())>
+    HOST DEVICE
     auto operator*(const ArithmeticArray<U,N>& oth) const
     {
       /// Result
@@ -34,6 +45,7 @@ namespace ciccios
     
     /// Summassign another array
     template <typename U>
+    HOST DEVICE
     auto operator+=(const ArithmeticArray<U,N>& oth)
     {
       for(int i=0;i<N;i++)
@@ -44,6 +56,7 @@ namespace ciccios
     
     /// Subtassign another array
     template <typename U>
+    HOST DEVICE
     auto operator-=(const ArithmeticArray<U,N>& oth)
     {
       for(int i=0;i<N;i++)
@@ -135,4 +148,3 @@ namespace ciccios
 }
 
 #endif
-
