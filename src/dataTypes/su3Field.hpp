@@ -59,18 +59,20 @@ namespace ciccios
     Fund* data;
     
     /// Index function
+    HOST DEVICE
     int index(const int& iSite,const int& icol1,const int& icol2,const int& reim) const
     {
       return reim+2*(icol2+NCOL*(icol1+NCOL*iSite));
     }
     
     /// Access to data
+    HOST DEVICE
     const Fund& operator()(const int& iSite,const int& icol1,const int& icol2,const int& reim) const
     {
       return data[index(iSite,icol1,icol2,reim)];
     }
     
-    PROVIDE_ALSO_NON_CONST_METHOD(operator());
+    PROVIDE_ALSO_NON_CONST_METHOD_GPU(operator());
     
     /// Access to the site
     const SU3<Complex<Fund>>& site(const int& iSite) const
@@ -152,18 +154,20 @@ namespace ciccios
     Simd<Fund>* data;
     
     /// Index to internal data
+    HOST DEVICE
     int index(const int& iFusedSite,const int& icol1,const int& icol2,const int& reim) const
     {
       return reim+2*(icol2+NCOL*(icol1+NCOL*iFusedSite));
     }
     
     /// Access to data
+    HOST DEVICE
     const Simd<Fund>& operator()(const int& iFusedSite,const int& icol1,const int& icol2,const int& reim) const
     {
       return data[index(iFusedSite,icol1,icol2,reim)];
     }
     
-    PROVIDE_ALSO_NON_CONST_METHOD(operator());
+    PROVIDE_ALSO_NON_CONST_METHOD_GPU(operator());
     
     /// Access to data as a complex quantity
     const Complex<Simd<Fund>>& operator()(const int& iFusedSite,const int& icol1,const int& icol2) const
@@ -181,6 +185,7 @@ namespace ciccios
     }
     
     /// Copy constructor
+    HOST DEVICE
     SimdSU3Field(const SimdSU3Field& oth) : fusedVol(oth.fusedVol),isRef(true),data(oth.data)
     {
     }
