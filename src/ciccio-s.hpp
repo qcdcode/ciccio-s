@@ -37,6 +37,10 @@ namespace ciccios
     ThreadPool::poolStart();
     
     initCuda();
+    
+#ifdef USE_CUDA
+    gpuMemoryManager=new GPUMemoryManager;
+#endif
   }
   
   /// Finalizes
@@ -46,6 +50,10 @@ namespace ciccios
     
     delete cpuMemoryManager;
     
+#ifdef USE_CUDA
+    delete gpuMemoryManager;
+#endif
+
     LOGGER<<endl<<"Ariciao!"<<endl<<endl;
     
     finalizeRanks();
