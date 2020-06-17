@@ -250,7 +250,7 @@ namespace ciccios
     GpuSU3Field(const int& vol) : vol(vol),isRef(false)
     {
       /// Compute size
-      const int size=index(vol,0,0,0);
+      const int size=index(0,NCOL,0,0);
       
       data=(Fund*)memoryManager<SL>()->template provide<Fund>(size);
     }
@@ -309,8 +309,8 @@ namespace ciccios
     	  const int iSimdComp=iSite%simdLength<F>;
 	  
     	  for(int ic1=0;ic1<NCOL;ic1++)
-    	    for(int ic2=0;ic2<NCOL;ic2++) 
-   	      for(int ri=0;ri<2;ri++) 
+    	    for(int ic2=0;ic2<NCOL;ic2++)
+   	      for(int ri=0;ri<2;ri++)
    		res(iFusedSite,ic1,ic2,ri)[iSimdComp]=oth(iSite,ic1,ic2,ri);
     	}
       
@@ -366,7 +366,15 @@ namespace ciccios
     template <typename F>
     GpuSU3Field<F,StorLoc::ON_GPU>& deepCopy(GpuSU3Field<F,StorLoc::ON_GPU>& res,const GpuSU3Field<F,StorLoc::ON_CPU>& oth)
       {
-	CRASHER<<"To be fixed"<<endl;
+	/// Size to be copied \todo please move somewhere more meaningful
+	const int64_t size=oth.vol*sizeof(F)*NCOL*NCOL*2;
+	
+#ifdef USE_CUDA
+	DECRYPT_CUDA_ERROR(cudaMemcpy(res.data,oth.data,size,cudaMemcpyHostToDevice),"Copying %ld bytes from cpu to gpu",size);
+#else
+	memcpy(res.data,oth.data,size);
+#endif
+	
 	return res;
       }
     

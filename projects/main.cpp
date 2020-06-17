@@ -241,7 +241,7 @@ template <typename Fund>
 void test(const int vol)
 {
   /// Number of iterations
-  const int64_t nIters=40000000ULL/vol;
+  const int64_t nIters=40000ULL/vol;
   
   /// Number of flops per site
   const double nFlopsPerSite=8.0*NCOL*NCOL*NCOL;
