@@ -4,6 +4,7 @@
 
 #include <execinfo.h>
 #include <unistd.h>
+#include <cstdarg>
 
 #ifdef USE_CUDA
  #include <cuda_runtime.h>

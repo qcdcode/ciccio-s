@@ -5,7 +5,11 @@
  #include "config.hpp"
 #endif
 
-#include <immintrin.h>
+#if SIMD_INST_SET != NONE
+ #include <immintrin.h>
+#endif
+
+#include <cstring>
 
 #include <dataTypes/arithmeticTensor.hpp>
 
@@ -38,6 +42,8 @@ namespace ciccios
     PROVIDE_SIMD(NONE,float,ArithmeticArray<float,1>);
     PROVIDE_SIMD(NONE,double,ArithmeticArray<double,1>);
     
+#if SIMD_INST_SET != NONE
+    
     PROVIDE_SIMD(AVX,float,__m256);
     PROVIDE_SIMD(AVX,double,__m256d);
     
@@ -46,7 +52,9 @@ namespace ciccios
     
     PROVIDE_SIMD(AVX512,float,__m512);
     PROVIDE_SIMD(AVX512,double,__m512d);
-    
+
+#endif
+
 #undef PROVIDE_SIMD
     
     /// Actual intinsic to be used
