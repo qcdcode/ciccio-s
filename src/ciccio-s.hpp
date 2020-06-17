@@ -35,6 +35,8 @@ namespace ciccios
     //cpuMemoryManager->disableCache();
     
     ThreadPool::poolStart();
+    
+    initCuda();
   }
   
   /// Finalizes

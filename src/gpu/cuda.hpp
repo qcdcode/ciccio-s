@@ -81,6 +81,8 @@ namespace ciccios
     }
   }
 #endif
+  
+  void initCuda();
 }
 
 #endif

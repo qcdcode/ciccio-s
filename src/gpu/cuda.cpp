@@ -7,4 +7,26 @@
 
 namespace ciccios
 {
+  void initCuda()
+  {
+#ifdef USE_CUDA
+    int nDevices;
+    if(cudaGetDeviceCount(&nDevices)!=cudaSuccess)
+      CRASHER<<"no CUDA enabled device"<<endl;
+    
+    LOGGER<<"Number of CUDA enabled devices: "<<nDevices<<endl;
+    for(int i=0;i<nDevices;i++)
+      {
+	cudaDeviceProp deviceProp;
+	cudaGetDeviceProperties(&deviceProp,i);
+	LOGGER<<" CUDA Enabled device "<<i<<"/"<<nDevices<<": "<<deviceProp.major<<"."<<deviceProp.minor<<endl;
+      }
+    //assumes that if we are seeing multiple gpus, there are nDevices ranks to attach to each of it
+    if(nDevices!=1)
+      {
+	iCudaDevice=rank%nDevices;
+	decript_cuda_error(cudaSetDevice(iCudaDevice),"Unable to set device %d",iCudaDevice);
+      }
+#endif
+  }
 }
