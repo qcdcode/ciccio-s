@@ -139,9 +139,12 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([],[])],
 
 AX_SUBPACKAGE(eigen,Eigen/Dense,,,EIGEN,".",".")
 
+#check immintrin.h
+AC_CHECK_HEADER(immintrin.h,simd_inst_set_default=avx,simd_inst_set_default=none)
+
 #simd set to be used
 AC_ARG_WITH(simd-inst-set,
-	AS_HELP_STRING([--with-simd-inst-set=set],[Select the set of SIMD instruction (avx [default], none, mmx or avx512)]),
+	AS_HELP_STRING([--with-simd-inst-set=set],[Select the set of SIMD instruction (avx [default if possible], none [otherwise], mmx or avx512)]),
 	with_simd_inst_set="${withval}",
 	with_simd_inst_set=avx)
 case "$with_simd_inst_set" in
@@ -155,6 +158,12 @@ case "$with_simd_inst_set" in
      	     SIMD_INST_SET=AVX512;;
       *) AC_MSG_ERROR(["Unkwnown SIMD instruction set ${withval}"])
 esac
+
+#check that we asked simd type only if available
+if test SIMD_INST_SET != NONE && test "$ac_cv_header_immintrin_h" == ""
+then
+	AC_MSG_ERROR(["Cannot use simd type if immintrin.h is not found"])
+fi
 
 #maybe we make a function for this
 if test "$CPP_FLAGS" != ""
