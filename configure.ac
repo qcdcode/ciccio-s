@@ -140,7 +140,10 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([],[])],
 AX_SUBPACKAGE(eigen,Eigen/Dense,,,EIGEN,".",".")
 
 #check immintrin.h
-AC_CHECK_HEADER(immintrin.h,simd_inst_set_default=avx,simd_inst_set_default=none)
+AC_CHECK_HEADER(immintrin.h,
+	simd_inst_set_default=avx,
+	simd_inst_set_default=none
+	AC_DEFINE_UNQUOTED([DISABLE_X86_INTRINSICS],1,[Disable intriniscs]))
 
 #simd set to be used
 AC_ARG_WITH(simd-inst-set,

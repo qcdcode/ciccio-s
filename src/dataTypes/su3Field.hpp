@@ -394,9 +394,10 @@ namespace ciccios
 	return res;
       }
     
-    /// Copy an SU3 field from CPU with CPU layout to GPU with GPU layout, with the same type
-    template <typename F>
-    GpuSU3Field<F,StorLoc::ON_GPU>& deepCopy(GpuSU3Field<F,StorLoc::ON_GPU>& res,const CpuSU3Field<F,StorLoc::ON_CPU>& oth)
+    /// Copy an SU3 field from CPU with CPU layout to GPU with GPU layout
+    template <typename F,
+	      typename OF>
+    GpuSU3Field<F,StorLoc::ON_GPU>& deepCopy(GpuSU3Field<F,StorLoc::ON_GPU>& res,const CpuSU3Field<OF,StorLoc::ON_CPU>& oth)
     {
       /// Temporary storage
       GpuSU3Field<F,StorLoc::ON_CPU> tmp(res.vol);
@@ -407,11 +408,17 @@ namespace ciccios
       return res;
     }
     
-    /// Copy an SU3 field from GPU with GPU layout to CPU with CPU layout, with the same type
-    template <typename F>
-    CpuSU3Field<F,StorLoc::ON_CPU>& deepCopy(CpuSU3Field<F,StorLoc::ON_CPU>& res,const GpuSU3Field<F,StorLoc::ON_GPU>& oth)
+    /// Copy an SU3 field from GPU with GPU layout to CPU with CPU layout
+    template <typename F,
+	      typename OF>
+    CpuSU3Field<F,StorLoc::ON_CPU>& deepCopy(CpuSU3Field<F,StorLoc::ON_CPU>& res,const GpuSU3Field<OF,StorLoc::ON_GPU>& oth)
     {
-      CRASHER<<"To be fixed"<<endl;
+      /// Temporary storage
+      GpuSU3Field<OF,StorLoc::ON_CPU> tmp(res.vol);
+      
+      tmp.deepCopy(oth);
+      res.deepCopy(tmp);
+      
       return res;
     }
     
