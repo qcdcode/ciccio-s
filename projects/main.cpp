@@ -101,7 +101,7 @@ void test(const CpuSU3Field<Fund,StorLoc::ON_CPU>& field,const int64_t nIters)
   LOGGER<<NAME_OF_TYPE(Field)<<" \t GFlops/s: "<<gFlopsPerSec<<"\t Check: "<<fieldRes(0,0,0,0)<<" "<<fieldRes(0,0,0,1)<<" time: "<<timeInSec<<endl;
 }
 
-/// Perform the tests
+/// Perform the tests on the given type (double/floatf
 template <typename Fund>
 void test(const int vol,         ///< Volume to simulate
 	  const int workReducer) ///< Reduce worksize to make a quick test
@@ -137,9 +137,6 @@ void test(const int vol,         ///< Volume to simulate
   LOGGER<<endl;
 }
 
-// template <typename Fund>
-// void testType
-
 int main(int narg,char **arg)
 {
   initCiccios(narg,arg);
@@ -165,9 +162,6 @@ int main(int narg,char **arg)
 		       test<Fund>(vol,workReducer);
 		     }
 		 });
-  // testType<float>(workReducer);
-  
-  // testType<double>(workReducer);
   
   finalizeCiccios();
   
