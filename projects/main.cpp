@@ -146,7 +146,10 @@ int main(int narg,char **arg)
   
   int workReducer=1;
   if(narg>=2)
-    workReducer=atoi(arg[1]);
+    {
+      workReducer=atoi(arg[1]);
+      LOGGER<<"WorkReducer: "<<workReducer<<endl;
+    }
   
   forEachInTuple(std::tuple<float,double>{},
 		 [&](auto t)
