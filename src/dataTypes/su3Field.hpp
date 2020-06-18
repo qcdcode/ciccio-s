@@ -304,7 +304,7 @@ namespace ciccios
     
     /// Loop over all sites
     template <typename F>
-    void sitesLoop(F&& f)
+    void sitesLoop(F&& f) const
     {
       if(SL==StorLoc::ON_GPU)
 #ifdef USE_CUDA
@@ -374,6 +374,8 @@ namespace ciccios
       return res;
     }
     
+    /////////////////////////////////////////////////////////////////
+    
     /// Copy an SU3 field within GPU, with GPU layout, and possible different types
     template <typename F,
 	      typename OF>
@@ -383,6 +385,22 @@ namespace ciccios
 	return res;
       }
     
+    /// Copy an SU3 field from CPU with CPU layout to GPU with GPU layout, with the same type
+    template <typename F>
+    GpuSU3Field<F,StorLoc::ON_CPU>&deepCopy(GpuSU3Field<F,StorLoc::ON_CPU>& res,const GpuSU3Field<F,StorLoc::ON_GPU>& oth)
+    {
+      /// Size to be copied \todo please move somewhere more meaningful
+      const int64_t size=oth.vol*sizeof(F)*NCOL*NCOL*2;
+      
+#ifdef USE_CUDA
+      DECRYPT_CUDA_ERROR(cudaMemcpy(res.data,oth.data,size,cudaMemcpyDeviceToHost),"Copying %ld bytes from gpu to cpu",size);
+#else
+      memcpy(res.data,oth.data,size);
+#endif
+      
+      return res;
+    }
+
     /// Copy an SU3 field from CPU with GPU layout to GPU with GPU layout, with the same type
     template <typename F>
     GpuSU3Field<F,StorLoc::ON_GPU>& deepCopy(GpuSU3Field<F,StorLoc::ON_GPU>& res,const GpuSU3Field<F,StorLoc::ON_CPU>& oth)
@@ -427,7 +445,27 @@ namespace ciccios
       return res;
     }
     
+    /// Copy an SU3 field from CPU with GPU layout to CPU with CPU layout, possibly with different types
+    template <typename F,
+	      typename OF>
+    CpuSU3Field<F,StorLoc::ON_CPU>& deepCopy(CpuSU3Field<F,StorLoc::ON_CPU>& res,const GpuSU3Field<OF,StorLoc::ON_CPU>& oth)
+    {
+      oth.sitesLoop([=](const int& iSite) mutable
+		    {
+		      UNROLLED_FOR(ic1,NCOL)
+			UNROLLED_FOR(ic2,NCOL)
+			  UNROLLED_FOR(ri,2)
+			    res(iSite,ic1,ic2,ri)=oth(iSite,ic1,ic2,ri);
+		          UNROLLED_FOR_END;
+		        UNROLLED_FOR_END;
+		      UNROLLED_FOR_END;
+		    });
+      return res;
+    }
+    
     /// Copy an SU3 field from CPU with CPU layout to CPU with GPU layout, possibly with different type
+    ///
+    /// \todo this of course is the same, so should be templated
     template <typename F,
 	      typename OF>
     GpuSU3Field<F,StorLoc::ON_CPU>& deepCopy(GpuSU3Field<F,StorLoc::ON_CPU>& res,const CpuSU3Field<OF,StorLoc::ON_CPU>& oth)
