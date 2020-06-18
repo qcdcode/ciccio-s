@@ -15,13 +15,14 @@ using namespace ciccios;
 
 /////////////////////////////////////////////////////////////////
 
-PROVIDE_ASM_DEBUG_HANDLE(UnrolledSIMDpool,double)
-PROVIDE_ASM_DEBUG_HANDLE(UnrolledSIMDpool,float)
+PROVIDE_ASM_DEBUG_HANDLE(SU3FieldsSumProd,double)
+PROVIDE_ASM_DEBUG_HANDLE(SU3FieldsSumProd,float)
 
-/// Unroll loops with metaprogramming, SIMD version
+/// Compute a+=b*c
 template <typename F>
-INLINE_FUNCTION void unrolledSumProdPool(SU3Field<F>& _field1,const SU3Field<F>& _field2,const SU3Field<F>& _field3)
+INLINE_FUNCTION void su3FieldsSumProd(SU3Field<F>& _field1,const SU3Field<F>& _field2,const SU3Field<F>& _field3)
 {
+  /// Cast to actual type, to be moved inside operator()
   auto& field1=_field1.crtp();
   const auto& field2=_field2.crtp();
   const auto& field3=_field3.crtp();
@@ -31,7 +32,7 @@ INLINE_FUNCTION void unrolledSumProdPool(SU3Field<F>& _field1,const SU3Field<F>&
   
   field1.sitesLoop([=] HOST DEVICE (const int iSite) mutable
 		   {
-		     BOOKMARK_BEGIN_UnrolledSIMDpool(Fund{});
+		     BOOKMARK_BEGIN_SU3FieldsSumProd(Fund{});
 		     
 		     UNROLLED_FOR(i,NCOL)
 		       UNROLLED_FOR(k,NCOL)
@@ -56,43 +57,43 @@ INLINE_FUNCTION void unrolledSumProdPool(SU3Field<F>& _field1,const SU3Field<F>&
 		       UNROLLED_FOR_END;
 		     UNROLLED_FOR_END;
 		     
-		     BOOKMARK_END_UnrolledSIMDpool(Fund{});
+		     BOOKMARK_END_SU3FieldsSumProd(Fund{});
 		   }
     );
 }
 
-/////////////////////////////////////////////////////////////////
+// /////////////////////////////////////////////////////////////////
 
-PROVIDE_ASM_DEBUG_HANDLE(UnrolledCPU,double)
-PROVIDE_ASM_DEBUG_HANDLE(UnrolledCPU,float)
+// PROVIDE_ASM_DEBUG_HANDLE(UnrolledCPU,double)
+// PROVIDE_ASM_DEBUG_HANDLE(UnrolledCPU,float)
 
-/// Unroll loops with metaprogramming, scalar version
-template <typename Fund,
-	  StorLoc SL=StorLoc::ON_CPU>
-void unrolledSumProd(CpuSU3Field<Fund,SL>& field1,const CpuSU3Field<Fund,SL>& field2,const CpuSU3Field<Fund,SL>& field3)
-{
-  BOOKMARK_BEGIN_UnrolledCPU(Fund{});
+// /// Unroll loops with metaprogramming, scalar version
+// template <typename Fund,
+// 	  StorLoc SL=StorLoc::ON_CPU>
+// void unrolledSumProd(CpuSU3Field<Fund,SL>& field1,const CpuSU3Field<Fund,SL>& field2,const CpuSU3Field<Fund,SL>& field3)
+// {
+//   BOOKMARK_BEGIN_UnrolledCPU(Fund{});
   
-  //#pragma omp parallel for
-  for(int iSite=0;iSite<field1.vol;iSite++)
-    {
-      auto a=field1.site(iSite); // Same as above
-      const auto& b=field2.site(iSite);
-      const auto& c=field3.site(iSite);
+//   //#pragma omp parallel for
+//   for(int iSite=0;iSite<field1.vol;iSite++)
+//     {
+//       auto a=field1.site(iSite); // Same as above
+//       const auto& b=field2.site(iSite);
+//       const auto& c=field3.site(iSite);
       
-      UNROLLED_FOR(i,NCOL)
-	UNROLLED_FOR(k,NCOL)
-	  UNROLLED_FOR(j,NCOL)
-	    a.get(i,j).sumProd(b.get(i,k),c.get(k,j));
-          UNROLLED_FOR_END;
-        UNROLLED_FOR_END;
-      UNROLLED_FOR_END;
+//       UNROLLED_FOR(i,NCOL)
+// 	UNROLLED_FOR(k,NCOL)
+// 	  UNROLLED_FOR(j,NCOL)
+// 	    a.get(i,j).sumProd(b.get(i,k),c.get(k,j));
+//           UNROLLED_FOR_END;
+//         UNROLLED_FOR_END;
+//       UNROLLED_FOR_END;
       
-      field1.site(iSite)=a;
-    }
+//       field1.site(iSite)=a;
+//     }
   
-  BOOKMARK_END_UnrolledCPU(Fund{});
-}
+//   BOOKMARK_END_UnrolledCPU(Fund{});
+// }
 
 /// Perform the non-simd CPU version of a+=b*c
 template <typename Fund>
@@ -108,7 +109,7 @@ void cpuTest(CpuSU3Field<Fund,StorLoc::ON_CPU>& field,const int64_t nIters,const
   const Instant start=takeTime();
   
   for(int64_t i=0;i<nIters;i++)
-    unrolledSumProd(field1,field2,field3);
+    su3FieldsSumProd(field1,field2,field3);
   
   /// Takes note of ending moment
   const Instant end=takeTime();
@@ -135,7 +136,7 @@ void simdTest(CpuSU3Field<Fund,StorLoc::ON_CPU>& field,const int64_t nIters,cons
   const Instant start=takeTime();
   
   for(int64_t i=0;i<nIters;i++)
-    unrolledSumProdPool(simdField1,simdField2,simdField3);
+    su3FieldsSumProd(simdField1,simdField2,simdField3);
   ThreadPool::waitThatAllWorkersWaitForWork();
   
   /// Takes note of ending moment
@@ -169,7 +170,7 @@ void gpuTest(CpuSU3Field<Fund,StorLoc::ON_CPU>& field,const int64_t nIters,const
   const Instant start=takeTime();
   
   for(int64_t i=0;i<nIters;i++)
-    unrolledSumProdPool(field1,field2,field3);
+    su3FieldsSumProd(field1,field2,field3);
   
   /// Takes note of ending moment
   const Instant end=takeTime();
@@ -236,10 +237,11 @@ void eigenTest(CpuSU3Field<Fund,StorLoc::ON_CPU>& field,const int64_t nIters,con
 
 /// Perform the tests
 template <typename Fund>
-void test(const int vol)
+void test(const int vol,         ///< Volume to simulate
+	  const int workReducer) ///< Reduce worksize to make a quick test
 {
   /// Number of iterations
-  const int64_t nIters=40000ULL/vol;
+  const int64_t nIters=400000000LL/vol/workReducer;
   
   /// Number of flops per site
   const double nFlopsPerSite=8.0*NCOL*NCOL*NCOL;
@@ -247,7 +249,7 @@ void test(const int vol)
   /// Number of GFlops in total
   const double gFlops=nFlopsPerSite*nIters*vol/(1<<30);
   
-  /// Prepare the fieldiguration in the CPU format
+  /// Prepare the field configuration in the CPU format
   CpuSU3Field<Fund,StorLoc::ON_CPU> field(vol);
   for(int iSite=0;iSite<vol;iSite++)
     for(int ic1=0;ic1<NCOL;ic1++)
@@ -273,7 +275,7 @@ void test(const int vol)
 }
 
 template <typename Fund>
-void testType()
+void testType(const int workReducer)
 {
   LOGGER<<"/////////////////////////////////////////////////////////////////"<<endl;
   LOGGER<<"                      "<<nameOfType(Fund{})<<" version"<<endl;
@@ -282,7 +284,7 @@ void testType()
   for(int volLog2=4;volLog2<20;volLog2++)
     {
       const int vol=1<<volLog2;
-      test<Fund>(vol);
+      test<Fund>(vol,workReducer);
     }
 }
 
@@ -290,9 +292,13 @@ int main(int narg,char **arg)
 {
   initCiccios(narg,arg);
   
-  testType<float>();
+  int workReducer=1;
+  if(narg<2)
+    workReducer=atoi(arg[1]);
   
-  testType<double>();
+  testType<float>(workReducer);
+  
+  testType<double>(workReducer);
   
   finalizeCiccios();
   
