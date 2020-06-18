@@ -20,7 +20,7 @@ PROVIDE_ASM_DEBUG_HANDLE(SU3FieldsSumProd,float)
 
 /// Compute a+=b*c
 template <typename F>
-INLINE_FUNCTION void su3FieldsSumProd(SU3Field<F>& field1,const SU3Field<F>& field2,const SU3Field<F>& field3)
+INLINE_FUNCTION void su3FieldsSumProd(F& field1,const F& field2,const F& field3)
 {
   /// Fundamental type
   using Fund=

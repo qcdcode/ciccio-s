@@ -99,12 +99,13 @@ namespace ciccios
     /// Cast to the base type
     ///
     /// This is customarily done by ~ operator, but I don't like it
+    HOST DEVICE
     const T& crtp() const
     {
       return *static_cast<const T*>(this);
     }
     
-    PROVIDE_ALSO_NON_CONST_METHOD(crtp);
+    PROVIDE_ALSO_NON_CONST_METHOD_GPU(crtp);
   };
   
   /// Import method from CRTP base class
