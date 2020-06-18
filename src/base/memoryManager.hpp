@@ -380,6 +380,24 @@ namespace ciccios
   /// Position where to store the data: device or host
   enum class StorLoc{ON_CPU,ON_GPU};
   
+  /// Tag do distinguish CPU or GPU storage
+  ///
+  /// Forward definition
+  template <StorLoc SL>
+  constexpr const char* StorLocTag="";
+  
+  /// Tag do distinguish CPU or GPU storage
+  ///
+  /// CPU case
+  template <>
+  constexpr const char* StorLocTag<StorLoc::ON_CPU> ="CPU";
+  
+  /// Tag do distinguish CPU or GPU storage
+  ///
+  /// GPU case
+  template <>
+  constexpr const char* StorLocTag<StorLoc::ON_GPU> ="GPU";
+  
   /// Wraps the memory manager
   ///
   /// Forward definition

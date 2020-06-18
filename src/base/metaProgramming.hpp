@@ -4,7 +4,7 @@
 #include <type_traits>
 #include <utility>
 
-#include <gpu/cuda.hpp>
+#include <gpu/cudaMacros.hpp>
 
 namespace ciccios
 {

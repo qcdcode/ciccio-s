@@ -45,6 +45,12 @@ namespace ciccios
 	    StorLoc SL>
   struct CpuSU3Field : public SU3Field<CpuSU3Field<Fund,SL>>
   {
+    /// Returns the name of the type
+    static std::string nameOfType()
+    {
+      return std::string("CpuSU3Field<")+NAME_OF_TYPE(Fund)+","+StorLocTag<SL>+">";
+    }
+    
     /// Base type
     using BaseType=
       Fund;
@@ -140,6 +146,12 @@ namespace ciccios
 	    StorLoc SL>
   struct SimdSU3Field : public SU3Field<SimdSU3Field<Fund,SL>>
   {
+    /// Returns the name of the type
+    static std::string nameOfType()
+    {
+      return std::string("SimdSU3Field<")+NAME_OF_TYPE(Fund)+","+StorLocTag<SL>+">";
+    }
+    
     /// Base type
     using BaseType=
       Fund;
@@ -269,6 +281,12 @@ namespace ciccios
 	    StorLoc SL>
   struct GpuSU3Field : public SU3Field<GpuSU3Field<Fund,SL>>
   {
+    /// Returns the name of the type
+    static std::string nameOfType()
+    {
+      return std::string("GpuSU3Field<")+NAME_OF_TYPE(Fund)+","+StorLocTag<SL>+">";
+    }
+    
     /// Base type
     using BaseType=
       Fund;

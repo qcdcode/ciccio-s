@@ -9,8 +9,8 @@
 
 #include <base/preprocessor.hpp>
 #include <base/logger.hpp>
+#include <base/metaProgramming.hpp>
 #include <base/unroll.hpp>
-#include <gpu/cuda.hpp>
 
 namespace ciccios
 {
@@ -132,20 +132,31 @@ namespace ciccios
   
   /////////////////////////////////////////////////////////////////
   
+  /// Generic call to related method for a class type
+  template <typename T,
+	    SFINAE_ON_TEMPLATE_ARG(std::is_class<T>::value)>
+  std::string nameOfType(T*)
+  {
+    return T::nameOfType();
+  }
   
   /// Return "double"
   ///
   /// \todo All type traits into a struct
-  INLINE_FUNCTION const char* nameOfType(double)
+  INLINE_FUNCTION const char* nameOfType(double*)
   {
     return "double";
   }
   
   /// Return "float"
-  INLINE_FUNCTION const char* nameOfType(float)
+  INLINE_FUNCTION const char* nameOfType(float*)
   {
     return "float";
   }
+  
+  /// Returns the name of a type
+#define NAME_OF_TYPE(A) \
+  ciccios::nameOfType((A*){nullptr})
 }
 
 #endif

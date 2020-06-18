@@ -34,12 +34,14 @@ namespace ciccios
     template <int...Is,
 	      typename F>
     INLINE_FUNCTION HOST DEVICE
-    void unrolledForInternal(std::integer_sequence<int,Is...>,F f)
+    void unrolledForInternal(std::integer_sequence<int,Is...>,F&& f)
     {
       /// Dummy initialized list, discarded at compile time
       ///
       /// The attribute avoids compiler warning.
-      [[ maybe_unused ]]auto list={call(f,Is)...};
+      [[ maybe_unused ]]
+	auto list=
+	{call(std::forward<F>(f),Is)...};
     }
   }
   
@@ -47,9 +49,39 @@ namespace ciccios
   template <int N,
 	    typename F>
   INLINE_FUNCTION
-  void unrolledFor(const F& f)
+  void unrolledFor(F&& f)
   {
-    resources::unrolledForInternal(std::make_integer_sequence<int,N>{},f);
+    resources::unrolledForInternal(std::make_integer_sequence<int,N>{},std::forward<F>(f));
+  }
+  
+  namespace resources
+  {
+    /// Loop on tuple arguments
+    ///
+    /// Actual implementation
+    template <int...Is,
+	      typename Tp,
+	      typename F>
+    INLINE_FUNCTION
+    void forEachInTupleInternal(std::integer_sequence<int,Is...>,Tp&& tp,F&& f)
+    {
+      /// Dummy initialized list, discarded at compile time
+      ///
+      /// The attribute avoids compiler warning.
+      [[ maybe_unused ]]
+	auto list=
+	{call(std::forward<F>(f),std::get<Is>(tp))...};
+    }
+  }
+  
+  /// Loop on tuple arguments
+  template <typename Tp,
+	    typename F>
+  INLINE_FUNCTION
+  void forEachInTuple(Tp&& tp,F&& f)
+  {
+    resources::forEachInTupleInternal(std::make_integer_sequence<int,std::tuple_size<Tp>::value>{},
+				      std::forward<Tp>(tp),std::forward<F>(f));
   }
   
 #ifdef COMPILING_FOR_DEVICE
@@ -57,14 +89,14 @@ namespace ciccios
   /// Uses nvcc builtin
   ///
   /// \todo move it to a dedicated macro to call the proper bultin
- #define UNROLLED_FOR(I,N)			\
-  PRAGMA(unroll N)		\
+#define UNROLLED_FOR(I,N)	\
+  PRAGMA(unroll N)				\
   for(int I=0;I<N;I++)				\
     {
   
  #define UNROLLED_FOR_END			\
   }
-
+  
 #else
   
   /// Create an unrolled for

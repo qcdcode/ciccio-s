@@ -15,22 +15,10 @@
 #include <base/inliner.hpp>
 #include <base/logger.hpp>
 
+#include <gpu/cudaMacros.hpp>
+
 namespace ciccios
 {
-#ifdef USE_CUDA
- #define DEVICE __device__
- #define GLOBAL __global__
- #define HOST __host__
-#else
- #define DEVICE
- #define HOST
- #define GLOBAL
-#endif
-  
-#ifdef __CUDA_ARCH__
-  #define COMPILING_FOR_DEVICE
-#endif
-  
 #ifdef USE_CUDA
   namespace Gpu
   {
