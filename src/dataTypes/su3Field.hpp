@@ -223,6 +223,47 @@ namespace ciccios
   
   /////////////////////////////////////////////////////////////////
   
+  namespace resources
+  {
+    /// Instantiate the proper loop splitter
+    ///
+    /// Forward definition
+    template <StorLoc SL>
+    struct GpuSitesLooper;
+    
+    /// Instantiate the proper loop splitter
+    ///
+    /// CPU case
+    template <>
+    struct GpuSitesLooper<StorLoc::ON_CPU>
+    {
+      /// Execute the loop
+      template <typename F>
+      static void exec(const int min,const int max,F&& f)
+      {
+	ThreadPool::loopSplit(min,max,std::forward<F>(f));
+      }
+    };
+    
+    /// Instantiate the proper loop splitter
+    ///
+    /// GPU case
+    template <>
+    struct GpuSitesLooper<StorLoc::ON_GPU>
+    {
+      /// If compiling with cuda exec the loop via threads, divert to cpu case otherwise
+      template <typename F>
+      static void exec(const int min,const int max,F&& f)
+      {
+#ifdef USE_CUDA
+	Gpu::cudaParallel(min,max,std::forward<F>(f));
+#else
+	GpuSitesLooper<StorLoc::ON_CPU>::exec(min,max,std::forward<F>(f));
+#endif
+      }
+    };
+  }
+  
   /// GPU version of  su3 field
   template <typename Fund,
 	    StorLoc SL>
@@ -306,12 +347,7 @@ namespace ciccios
     template <typename F>
     void sitesLoop(F&& f) const
     {
-      if(SL==StorLoc::ON_GPU)
-#ifdef USE_CUDA
-	Gpu::cudaParallel(0,vol,std::forward<F>(f));
-      else
-#endif
-	ThreadPool::loopSplit(0,vol,std::forward<F>(f));
+      resources::GpuSitesLooper<SL>::exec(0,vol,std::forward<F>(f));
     }
   };
   
