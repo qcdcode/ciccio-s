@@ -23,19 +23,20 @@ namespace ciccios
   namespace Gpu
   {
     /// Number of threads for cuda, to be generalized
-    EXTERN_CUDA int nCudaThreads INIT_CUDA_TO(128);
+    EXTERN_CUDA int nCudaThreads INIT_CUDA_TO(64);
     
     /// Body of a generic kernel which runs the passed function
     template <typename IMin,
 	      typename IMax,
 	      typename F>
     GLOBAL
-    INLINE_FUNCTION
     void cudaGenericKernel(const IMin min,
 			   const IMax max,
 			   F f)
     {
-      const auto i=min+blockIdx.x*blockDim.x+threadIdx.x;
+      /// Loop iteration
+      const auto i=
+	min+blockIdx.x*blockDim.x+threadIdx.x;
       
       if(i<max)
 	f(i);
@@ -55,15 +56,21 @@ namespace ciccios
     INLINE_FUNCTION
     void cudaParallel(const IMin min,
 		      const IMax max,
-		      F f)
+		      F&& f)
     {
-      const auto length=(max-min);
-      const dim3 block_dimension(nCudaThreads);
-      const dim3 grid_dimension((length+block_dimension.x-1)/block_dimension.x);
+      /// Length of the loop
+      const auto length=
+	max-min;
       
-      VERB_LOGGER(2)<<"launching kernel on loop ["<<min<<","<<max<<") using blocks of size "<<block_dimension.x<<" and grid of size "<<grid_dimension.x<<endl;
+      /// Dimension of the block
+      const dim3 blockDimension(nCudaThreads);
       
-      cudaGenericKernel<<<grid_dimension,block_dimension>>>(min,max,std::forward<F>(f));
+      /// Dimension of the grid
+      const dim3 gridDimension((length+blockDimension.x-1)/blockDimension.x);
+      
+      VERB_LOGGER(2)<<"launching kernel on loop ["<<min<<","<<max<<") using blocks of size "<<blockDimension.x<<" and grid of size "<<gridDimension.x<<endl;
+      
+      cudaGenericKernel<<<gridDimension,blockDimension>>>(min,max,std::forward<F>(f));
       cudaBarrier();
       VERB_LOGGER(2)<<" finished"<<endl;
     }

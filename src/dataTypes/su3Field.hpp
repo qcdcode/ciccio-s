@@ -13,6 +13,12 @@ namespace ciccios
     /// Copy from oth, using the correct deep copier
     template <typename O>
     T& deepCopy(const O& oth);
+    
+    CRTP_IMPORT_METHOD(operator());
+    
+    PROVIDE_ALSO_NON_CONST_METHOD_GPU(operator())
+    
+    CRTP_IMPORT_METHOD(sitesLoop);
   };
   
   /////////////////////////////////////////////////////////////////
@@ -454,7 +460,7 @@ namespace ciccios
       
       return res;
     }
-
+    
     /// Copy an SU3 field from CPU with GPU layout to GPU with GPU layout, with the same type
     template <typename F>
     GpuSU3Field<F,StorLoc::ON_GPU>& deepCopy(GpuSU3Field<F,StorLoc::ON_GPU>& res,const GpuSU3Field<F,StorLoc::ON_CPU>& oth)

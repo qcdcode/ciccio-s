@@ -20,17 +20,13 @@ PROVIDE_ASM_DEBUG_HANDLE(SU3FieldsSumProd,float)
 
 /// Compute a+=b*c
 template <typename F>
-INLINE_FUNCTION void su3FieldsSumProd(SU3Field<F>& _field1,const SU3Field<F>& _field2,const SU3Field<F>& _field3)
+INLINE_FUNCTION void su3FieldsSumProd(SU3Field<F>& field1,const SU3Field<F>& field2,const SU3Field<F>& field3)
 {
-  /// Cast to actual type, to be moved inside operator()
-  auto& field1=_field1.crtp();
-  const auto& field2=_field2.crtp();
-  const auto& field3=_field3.crtp();
-  
   /// Fundamental type
-  using Fund=typename F::BaseType;
+  using Fund=
+    typename F::BaseType;
   
-  field1.sitesLoop([=] HOST DEVICE (const int iSite) mutable
+  field1.sitesLoop(KERNEL_LAMBDA_BODY(const int iSite)
 		   {
 		     BOOKMARK_BEGIN_SU3FieldsSumProd(Fund{});
 		     

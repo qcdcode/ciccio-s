@@ -44,7 +44,8 @@ namespace ciccios
   
   /// If the type is an l-value reference, provide the type T&, otherwise wih T
   template <typename T>
-  using ref_or_val_t=std::conditional_t<std::is_lvalue_reference<T>::value,T&,T>;
+  using ref_or_val_t=
+    std::conditional_t<std::is_lvalue_reference<T>::value,T&,T>;
   
   /// First part of the non-const method provider
 #define _PROVIDE_ALSO_NON_CONST_METHOD_BEGIN				\
@@ -105,6 +106,20 @@ namespace ciccios
     
     PROVIDE_ALSO_NON_CONST_METHOD(crtp);
   };
+  
+  /// Import method from CRTP base class
+#define CRTP_IMPORT_METHOD(A...)				\
+  /*! Calls A in the base class */				\
+  template <typename...Args>					\
+    HOST DEVICE							\
+    decltype(auto) A(Args&&...args) const			\
+    {								\
+      return this->crtp().A(std::forward<Args>(args)...);	\
+    }
+    
+  /// Introduces the body of a loop
+#define KERNEL_LAMBDA_BODY(A)\
+  [=] HOST DEVICE (A) mutable
 }
 
 #endif
