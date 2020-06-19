@@ -124,8 +124,9 @@ void test(const int vol,         ///< Volume to simulate
   forEachInTuple(std::tuple<
 		 SimdSU3Field<Fund,StorLoc::ON_CPU>*,
 		 CpuSU3Field<Fund,StorLoc::ON_CPU>*,
-		 GpuSU3Field<Fund,StorLoc::ON_GPU>*,
-		 CpuSU3Field<Fund,StorLoc::ON_GPU>*>{},
+		 GpuSU3Field<Fund,StorLoc::ON_GPU>*// ,
+		 // CpuSU3Field<Fund,StorLoc::ON_GPU>*
+		 >{},
 		 [&](auto t)
 		 {
 		   /// Field type tp be used in the test
