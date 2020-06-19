@@ -97,6 +97,7 @@ namespace ciccios
   struct Crtp
   {
     /// Cast to the base type, with const attribute
+    HOST DEVICE
     operator const T&() const
     {
       return *static_cast<const T*>(this);
@@ -106,6 +107,7 @@ namespace ciccios
     ///
     /// Cannot be achieved with the preprocessor macro, since the name
     /// of the method is weird
+    HOST DEVICE
     operator T&()
     {
       return *static_cast<T*>(this);
