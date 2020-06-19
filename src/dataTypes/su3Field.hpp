@@ -1,8 +1,10 @@
 #ifndef _SU3FIELD_HPP
 #define _SU3FIELD_HPP
 
-#include "base/memoryManager.hpp"
-#include "dataTypes/su3.hpp"
+#include <type_traits>
+
+#include <base/memoryManager.hpp>
+#include <dataTypes/su3.hpp>
 
 namespace ciccios
 {
@@ -45,6 +47,44 @@ namespace ciccios
 	    StorLoc SL>
   struct CpuSU3Field : public SU3Field<CpuSU3Field<Fund,SL>>
   {
+    template <bool IsConst>
+    struct SiteSlice
+    {
+      using T=std::conditional_t<IsConst,const Fund*,Fund*>;
+      
+      T  data;
+      
+      SiteSlice(T data) : data(data)
+      {
+      }
+      
+      /// Index to internal data
+      HOST DEVICE
+      int index(const int& icol1,const int& icol2,const int& reim) const
+      {
+	return reim+2*(icol2+NCOL*icol1);
+      }
+      
+      /// Access to data
+      HOST DEVICE
+      const auto& operator()(const int& icol1,const int& icol2,const int& reim) const
+      {
+	return data[index(icol1,icol2,reim)];
+      }
+      
+      PROVIDE_ALSO_NON_CONST_METHOD_GPU(operator());
+    };
+    
+    SiteSlice<true> site(const int& iSite) const
+    {
+      return &(*this)(iSite,0,0,0);
+    }
+    
+    SiteSlice<false> site(const int& iSite)
+    {
+      return &(*this)(iSite,0,0,0);
+    }
+    
     /// Returns the name of the type
     static std::string nameOfType()
     {
@@ -79,16 +119,6 @@ namespace ciccios
     }
     
     PROVIDE_ALSO_NON_CONST_METHOD_GPU(operator());
-    
-    /// Access to the site
-    const SU3<Complex<Fund>>& site(const int& iSite) const
-    {
-      const Fund& ref=(*this)(iSite,0,0,0);
-      
-      return *reinterpret_cast<const SU3<Complex<Fund>>*>(&ref);
-    }
-    
-    PROVIDE_ALSO_NON_CONST_METHOD(site);
     
     /// Create knowning volume
     CpuSU3Field(const int vol) : vol(vol),isRef(false)
@@ -146,6 +176,34 @@ namespace ciccios
 	    StorLoc SL>
   struct SimdSU3Field : public SU3Field<SimdSU3Field<Fund,SL>>
   {
+    template <bool IsConst>
+    struct SiteSlice
+    {
+      using T=std::conditional_t<IsConst,const Simd<Fund>*,Simd<Fund>*>;
+      
+      T  data;
+      
+      SiteSlice(T data) : data(data)
+      {
+      }
+      
+      /// Index to internal data
+      HOST DEVICE
+      int index(const int& icol1,const int& icol2,const int& reim) const
+      {
+	return reim+2*(icol2+NCOL*icol1);
+      }
+      
+      /// Access to data
+      HOST DEVICE
+      const auto& operator()(const int& icol1,const int& icol2,const int& reim) const
+      {
+	return data[index(icol1,icol2,reim)];
+      }
+      
+      PROVIDE_ALSO_NON_CONST_METHOD_GPU(operator());
+    };
+    
     /// Returns the name of the type
     static std::string nameOfType()
     {
@@ -180,6 +238,18 @@ namespace ciccios
     }
     
     PROVIDE_ALSO_NON_CONST_METHOD_GPU(operator());
+    
+    HOST DEVICE
+    
+    SiteSlice<true> site(const int& iFusedSite) const
+    {
+      return &(*this)(iFusedSite,0,0,0);
+    }
+    
+    SiteSlice<false> site(const int& iFusedSite)
+    {
+      return &(*this)(iFusedSite,0,0,0);
+    }
     
     /// Access to data as a complex quantity
     const Complex<Simd<Fund>>& operator()(const int& iFusedSite,const int& icol1,const int& icol2) const
@@ -281,6 +351,46 @@ namespace ciccios
 	    StorLoc SL>
   struct GpuSU3Field : public SU3Field<GpuSU3Field<Fund,SL>>
   {
+    template <bool IsConst>
+    struct SiteSlice
+    {
+      using T=std::conditional_t<IsConst,const Fund*,Fund*>;
+      
+      T data;
+      
+      int vol;
+      
+      SiteSlice(T data,int vol) : data(data),vol(vol)
+      {
+      }
+      
+      /// Index to internal data
+      HOST DEVICE
+      int index(const int& icol1,const int& icol2,const int& reim) const
+      {
+	return reim+2*vol*(icol2+NCOL*icol1);
+      }
+      
+      /// Access to data
+      HOST DEVICE
+      const auto&  operator()(const int& icol1,const int& icol2,const int& reim) const
+      {
+	return data[index(icol1,icol2,reim)];
+      }
+      
+      PROVIDE_ALSO_NON_CONST_METHOD_GPU(operator());
+    };
+    
+    SiteSlice<true> site(const int& iSite) const
+    {
+      return SiteSlice<true>(&(*this)(iSite,0,0,0),vol);
+    }
+    
+    SiteSlice<false> site(const int& iSite)
+    {
+      return SiteSlice<false>(&(*this)(iSite,0,0,0),vol);
+    }
+    
     /// Returns the name of the type
     static std::string nameOfType()
     {
@@ -315,8 +425,6 @@ namespace ciccios
     }
     
     PROVIDE_ALSO_NON_CONST_METHOD_GPU(operator());
-    
-    PROVIDE_ALSO_NON_CONST_METHOD_GPU(site);
     
     /// Create knowning volume
     GpuSU3Field(const int& vol) : vol(vol),isRef(false)

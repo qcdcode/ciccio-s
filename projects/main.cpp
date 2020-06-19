@@ -13,6 +13,13 @@
 
 using namespace ciccios;
 
+PROVIDE_ASM_DEBUG_HANDLE(sumProd,CpuSU3Field<float,StorLoc::ON_CPU>*);
+PROVIDE_ASM_DEBUG_HANDLE(sumProd,GpuSU3Field<float,StorLoc::ON_GPU>*);
+PROVIDE_ASM_DEBUG_HANDLE(sumProd,SimdSU3Field<float,StorLoc::ON_CPU>*);
+PROVIDE_ASM_DEBUG_HANDLE(sumProd,CpuSU3Field<double,StorLoc::ON_CPU>*);
+PROVIDE_ASM_DEBUG_HANDLE(sumProd,GpuSU3Field<double,StorLoc::ON_GPU>*);
+PROVIDE_ASM_DEBUG_HANDLE(sumProd,SimdSU3Field<double,StorLoc::ON_CPU>*);
+
 /// Compute a+=b*c
 ///
 /// Arguments are caught as generic \a SU3Field so allow for static
@@ -34,6 +41,11 @@ INLINE_FUNCTION void su3FieldsSumProd(SU3Field<F1>& _field1,const SU3Field<F2>& 
   
   field1.sitesLoop(KERNEL_LAMBDA_BODY(const int iSite)
 		   {
+		     auto f1=field1.site(iSite);
+		     auto f2=field2.site(iSite);
+		     auto f3=field3.site(iSite);
+		     
+		     BOOKMARK_BEGIN_sumProd((F2*){});
 		     UNROLLED_FOR(i,NCOL)
 		       UNROLLED_FOR(k,NCOL)
 		         UNROLLED_FOR(j,NCOL)
@@ -42,14 +54,14 @@ INLINE_FUNCTION void su3FieldsSumProd(SU3Field<F1>& _field1,const SU3Field<F2>& 
 			     // gpu we have torn apart real and
 			     // imaginay part
 			     
-			     auto& f1r=field1(iSite,i,j,RE);
-			     auto& f1i=field1(iSite,i,j,IM);
+			     auto& f1r=f1(i,j,RE);
+			     auto& f1i=f1(i,j,IM);
 			     
-			     const auto f2r=field2(iSite,i,k,RE);
-			     const auto f2i=field2(iSite,i,k,IM);
+			     const auto f2r=f2(i,k,RE);
+			     const auto f2i=f2(i,k,IM);
 			     
-			     const auto f3r=field3(iSite,k,j,RE);
-			     const auto f3i=field3(iSite,k,j,IM);
+			     const auto f3r=f3(k,j,RE);
+			     const auto f3i=f3(k,j,IM);
 			     
 			     f1r+=f2r*f3r;
 			     f1r-=f2i*f3i;
@@ -60,6 +72,7 @@ INLINE_FUNCTION void su3FieldsSumProd(SU3Field<F1>& _field1,const SU3Field<F2>& 
 		         UNROLLED_FOR_END;
 		       UNROLLED_FOR_END;
 		     UNROLLED_FOR_END;
+		     BOOKMARK_END_sumProd((F2*){});
 		   }
     );
 }
@@ -126,7 +139,8 @@ void test(const int vol,         ///< Volume to simulate
   forEachInTuple(std::tuple<
 		 SimdSU3Field<Fund,StorLoc::ON_CPU>*,
 		 CpuSU3Field<Fund,StorLoc::ON_CPU>*,
-		 GpuSU3Field<Fund,StorLoc::ON_GPU>*>{},
+		 GpuSU3Field<Fund,StorLoc::ON_GPU>*
+		 >{},
 		 [&](auto t)
 		 {
 		   /// Field type tp be used in the test
