@@ -14,11 +14,11 @@ namespace ciccios
     template <typename O>
     T& deepCopy(const O& oth);
     
-    CRTP_IMPORT_METHOD(operator());
+    // CRTP_IMPORT_METHOD(operator());
     
-    PROVIDE_ALSO_NON_CONST_METHOD_GPU(operator())
+    // PROVIDE_ALSO_NON_CONST_METHOD_GPU(operator())
     
-    CRTP_IMPORT_METHOD(sitesLoop);
+    // CRTP_IMPORT_METHOD(sitesLoop);
   };
   
   /////////////////////////////////////////////////////////////////

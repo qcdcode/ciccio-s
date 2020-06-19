@@ -96,13 +96,28 @@ namespace ciccios
   template <typename T>
   struct Crtp
   {
+    /// Cast to the base type, with const attribute
+    operator const T&() const
+    {
+      return *static_cast<const T*>(this);
+    }
+    
+    /// Cast to the base type
+    ///
+    /// Cannot be achieved with the preprocessor macro, since the name
+    /// of the method is weird
+    operator T&()
+    {
+      return *static_cast<T*>(this);
+    }
+    
     /// Cast to the base type
     ///
     /// This is customarily done by ~ operator, but I don't like it
     HOST DEVICE
     const T& crtp() const
     {
-      return *static_cast<const T*>(this);
+      return *this;
     }
     
     PROVIDE_ALSO_NON_CONST_METHOD_GPU(crtp);

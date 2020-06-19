@@ -13,27 +13,33 @@
 
 using namespace ciccios;
 
-/////////////////////////////////////////////////////////////////
-
-PROVIDE_ASM_DEBUG_HANDLE(SU3FieldsSumProd,double)
-PROVIDE_ASM_DEBUG_HANDLE(SU3FieldsSumProd,float)
-
 /// Compute a+=b*c
-template <typename F>
-INLINE_FUNCTION void su3FieldsSumProd(F& field1,const F& field2,const F& field3)
+///
+/// Arguments are caught as generic \a SU3Field so allow for static
+/// polymorphism, then they must be cast to the actual type. This
+/// might be hidden with some macro, if wanted, which prepends with _
+/// the name of the argument, to be matched with an internal cast
+/// which strips the _.
+template <typename F1,
+	  typename F2,
+	  typename F3>
+INLINE_FUNCTION void su3FieldsSumProd(SU3Field<F1>& _field1,const SU3Field<F2>& _field2,const SU3Field<F3>& _field3)
 {
-  /// Fundamental type
-  using Fund=
-    typename F::BaseType;
+  // Cast to the actual type
+  F1& field1=_field1;
+  const F2& field2=_field2;
+  const F3& field3=_field3;
   
   field1.sitesLoop(KERNEL_LAMBDA_BODY(const int iSite)
 		   {
-		     BOOKMARK_BEGIN_SU3FieldsSumProd(Fund{});
-		     
 		     UNROLLED_FOR(i,NCOL)
 		       UNROLLED_FOR(k,NCOL)
 		         UNROLLED_FOR(j,NCOL)
 		           {
+			     // Unroll the complex product, since with
+			     // gpu we have torn apart real and
+			     // imaginay part
+			     
 			     auto& f1r=field1(iSite,i,j,RE);
 			     auto& f1i=field1(iSite,i,j,IM);
 			     
@@ -52,13 +58,13 @@ INLINE_FUNCTION void su3FieldsSumProd(F& field1,const F& field2,const F& field3)
 		         UNROLLED_FOR_END;
 		       UNROLLED_FOR_END;
 		     UNROLLED_FOR_END;
-		     
-		     BOOKMARK_END_SU3FieldsSumProd(Fund{});
 		   }
     );
 }
 
 /// Perform the test using Field as intermediate type
+///
+/// Allocates three copies of the field, and pass to the kernel
 template <typename Field,
 	  typename Fund>
 void test(const CpuSU3Field<Fund,StorLoc::ON_CPU>& field,const int64_t nIters)
@@ -118,7 +124,8 @@ void test(const int vol,         ///< Volume to simulate
   forEachInTuple(std::tuple<
 		 SimdSU3Field<Fund,StorLoc::ON_CPU>*,
 		 CpuSU3Field<Fund,StorLoc::ON_CPU>*,
-		 GpuSU3Field<Fund,StorLoc::ON_GPU>*>{},
+		 GpuSU3Field<Fund,StorLoc::ON_GPU>*,
+		 CpuSU3Field<Fund,StorLoc::ON_GPU>*>{},
 		 [&](auto t)
 		 {
 		   /// Field type tp be used in the test
