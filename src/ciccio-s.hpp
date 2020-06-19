@@ -21,11 +21,14 @@ namespace ciccios
   }
   
   /// Initialize the library
-  inline void initCiccios(int& narg,char **&arg)
+  template <typename F>
+  inline void initCiccios(F&& f,int& narg,char **&arg)
   {
     initRanks(narg,arg);
     
     printBanner();
+    
+    readAllFlags();
     
     printVersionAndCompileFlags(LOGGER);
     
@@ -34,13 +37,13 @@ namespace ciccios
     cpuMemoryManager=new CPUMemoryManager;
     //cpuMemoryManager->disableCache();
     
-    ThreadPool::poolStart();
-    
     initCuda();
     
 #ifdef USE_CUDA
     gpuMemoryManager=new GPUMemoryManager;
 #endif
+    
+    ThreadPool::poolStart(f,narg,arg);
   }
   
   /// Finalizes
@@ -53,7 +56,7 @@ namespace ciccios
 #ifdef USE_CUDA
     delete gpuMemoryManager;
 #endif
-
+    
     LOGGER<<endl<<"Ariciao!"<<endl<<endl;
     
     finalizeRanks();

@@ -141,10 +141,8 @@ void test(const int vol,         ///< Volume to simulate
   LOGGER<<endl;
 }
 
-int main(int narg,char **arg)
+void inMain(int narg,char **arg)
 {
-  initCiccios(narg,arg);
-  
   int workReducer=1;
   if(narg>=2)
     {
@@ -166,6 +164,12 @@ int main(int narg,char **arg)
 		       test<Fund>(vol,workReducer);
 		     }
 		 });
+  
+}
+
+int main(int narg,char **arg)
+{
+  initCiccios(inMain,narg,arg);
   
   finalizeCiccios();
   

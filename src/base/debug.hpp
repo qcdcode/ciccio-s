@@ -1,6 +1,10 @@
 #ifndef _DEBUG_HPP
 #define _DEBUG_HPP
 
+#ifndef EXTERN_DEBUG
+ #define EXTERN_DEBUG extern
+#endif
+
 #ifdef USE_CUDA
  #include <cuda_runtime.h>
 #endif
@@ -14,6 +18,9 @@
 
 namespace ciccios
 {
+  /// Wait to attach gdb
+  EXTERN_DEBUG bool waitToAttachDebuggerFlag;
+  
   /// Write the list of called routines
   void printBacktraceList(std::ofstream&);
   
@@ -82,7 +89,7 @@ namespace ciccios
   ASM_BOOKMARK("END " COMMENT)
   
 /////////////////////////////////////////////////////////////////
-
+  
 /// Defines an inlined function BOOKMARK_BEGIN/END_NAME(Args...)
 ///
 /// Internal implementation
@@ -158,5 +165,7 @@ namespace ciccios
 #define NAME_OF_TYPE(A) \
   ciccios::nameOfType((A*){nullptr})
 }
+
+#undef EXTERN_DEBUG
 
 #endif

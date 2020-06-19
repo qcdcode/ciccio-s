@@ -24,6 +24,9 @@
 
 namespace ciccios
 {
+  /// Starts the pool as detached or not
+  EXTERN_POOL bool useDetachedPool;
+  
   /// Thread id of master thread
   [[ maybe_unused ]]
   constexpr int masterThreadId=0;
@@ -57,6 +60,9 @@ namespace ciccios
   /// Contains a thread pool
   namespace ThreadPool
   {
+    /// Other thread part of the pool
+    void* poolWorkerLoop(void* _pars);
+    
     namespace resources
     {
       /// Incapsulate the threads
@@ -149,10 +155,51 @@ namespace ciccios
       }
     }
     
-    /// Starts the pool
-    void poolStart();
+    /// Starts the pool, detached or not
+    template <typename F,
+	      typename...Args>
+    void poolStart(F&& f,Args&&...args)
+    {
+      // Checks that the pool is not filled, to avoid recursive call
+      if(poolIsStarted)
+	CRASHER<<"Cannot fill again the pool!"<<endl;
+      
+      if(not ciccios::resources::nThreadsPrinted)
+	{
+	  LOGGER<<"NThreads: "<<nThreads<<endl;
+	  ciccios::resources::nThreadsPrinted=true;
+	}
+      
+      poolIsStarted=true;
+      
+      if(useDetachedPool)
+	{
+	  LOGGER<<"Attached pool"<<endl;
+	  resources::pool.resize(nThreads);
+	  
+	  for(int threadId=1;threadId<nThreads;threadId++)
+	    if(pthread_create(&resources::pool[threadId],nullptr,ThreadPool::poolWorkerLoop,new int(threadId))!=0)
+	      CRASHER<<"creating the thread "<<threadId;
+	  
+	  f(std::forward<Args>(args)...);
+	}
+      else
+	{
+	  LOGGER<<"Not attached pool"<<endl;
+	  #pragma omp parallel
+	  {
+	    /// Get current thread
+	    const int threadId=getThreadId();
+	    
+	    if(not isMasterThread(threadId))
+	      poolWorkerLoop(new int(threadId));
+	    else
+	      f(std::forward<Args>(args)...);
+	  }
+	}
+    }
     
-    /// Stops the pool
+    /// Stops the pool, detached or not
     void poolStop();
     
     /// Starts a parallel section
@@ -163,15 +210,17 @@ namespace ciccios
     INLINE_FUNCTION void parallel(F&& f) ///< Function embedding the work
     {
       if(not poolIsStarted)
-	poolStart();
-	
-      waitThatAllWorkersWaitForWork();
-      work=std::move(f);
-      
-      nThreadsWaitingForWork=0;
-      nWorksAssigned.store(nWorksAssigned+1,std::memory_order_release);
-      
-      work(masterThreadId);
+	poolStart(parallel<F>,std::forward<F>(f));
+      else
+	{
+	  waitThatAllWorkersWaitForWork();
+	  work=std::move(f);
+	  
+	  nThreadsWaitingForWork=0;
+	  nWorksAssigned.store(nWorksAssigned+1,std::memory_order_release);
+	  
+	  work(masterThreadId);
+	}
     }
     
     /// Split a loop into \c nTrheads chunks, giving each chunk as a work for a corresponding thread

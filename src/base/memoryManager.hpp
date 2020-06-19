@@ -384,19 +384,18 @@ namespace ciccios
   ///
   /// Forward definition
   template <StorLoc SL>
-  constexpr const char* StorLocTag="";
-  
-  /// Tag do distinguish CPU or GPU storage
-  ///
-  /// CPU case
-  template <>
-  constexpr const char* StorLocTag<StorLoc::ON_CPU> ="CPU";
-  
-  /// Tag do distinguish CPU or GPU storage
-  ///
-  /// GPU case
-  template <>
-  constexpr const char* StorLocTag<StorLoc::ON_GPU> ="GPU";
+  constexpr const char* storLocTag()
+  {
+    switch(SL)
+      {
+      case StorLoc::ON_CPU:
+	return "CPU";
+	break;
+      case StorLoc::ON_GPU:
+	return "CPU";
+	break;
+      }
+  }
   
   /// Wraps the memory manager
   ///

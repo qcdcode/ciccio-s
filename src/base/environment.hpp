@@ -1,0 +1,33 @@
+#ifndef _ENVIRONMENT_HPP
+#define _ENVIRONMENT_HPP
+
+#ifndef EXTERN_ENVIRONMENT
+ #define EXTERN_ENVIRONMENT extern
+ #define FLAG_LIST(ARGS...) extern const decltype(ARGS) flagList
+#else
+ #define FLAG_LIST(ARGS...) const auto flagList=ARGS
+#endif
+
+#include <tuple>
+
+#include <base/debug.hpp>
+#include <threads/pool.hpp>
+
+namespace ciccios
+{
+  /// Type to hold flag to be read from environment
+  template <typename T>
+  using Flag=std::tuple<T&,const T,const char*,const char*>;
+  
+  /// List of known flags
+  FLAG_LIST(std::make_tuple(std::make_tuple(&waitToAttachDebuggerFlag,false,"WAIT_TO_ATTACH_DEBUGGER","to be used to wait for gdb to attach"),
+			    std::make_tuple(&useDetachedPool,false,"USE_DETACHED_POOL","to be used to create a pool at the begin")));
+  
+  /// Read all flags from environment
+  void readAllFlags();
+}
+
+#undef FLAG_LIST
+#undef EXTERN_ENVIRONMENT
+
+#endif

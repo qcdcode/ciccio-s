@@ -6,6 +6,7 @@
 /// \brief Provides functions to unroll loops
 ///
 
+#include <tuple>
 #include <utility>
 
 #include <gpu/cuda.hpp>
@@ -122,7 +123,7 @@ namespace ciccios
   INLINE_FUNCTION
   void forEachInTuple(Tp&& tp,F&& f)
   {
-    resources::forEachInTupleInternal(std::make_integer_sequence<int,std::tuple_size<Tp>::value>{},
+    resources::forEachInTupleInternal(std::make_integer_sequence<int,std::tuple_size<std::remove_reference_t<Tp>>::value>{},
 				      std::forward<Tp>(tp),std::forward<F>(f));
   }
 }

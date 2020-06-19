@@ -31,7 +31,7 @@ namespace ciccios
 	    StorLoc SL>
   struct CpuSU3Field;
   
-  /// GPU version of  su3 field
+  /// GPU version of su3 field
   ///
   /// Forward definition
   template <typename Fund,
@@ -48,7 +48,7 @@ namespace ciccios
     /// Returns the name of the type
     static std::string nameOfType()
     {
-      return std::string("CpuSU3Field<")+NAME_OF_TYPE(Fund)+","+StorLocTag<SL>+">";
+      return std::string("CpuSU3Field<")+NAME_OF_TYPE(Fund)+","+storLocTag<SL>()+">";
     }
     
     /// Base type
@@ -149,7 +149,7 @@ namespace ciccios
     /// Returns the name of the type
     static std::string nameOfType()
     {
-      return std::string("SimdSU3Field<")+NAME_OF_TYPE(Fund)+","+StorLocTag<SL>+">";
+      return std::string("SimdSU3Field<")+NAME_OF_TYPE(Fund)+","+storLocTag<SL>()+">";
     }
     
     /// Base type
@@ -284,7 +284,7 @@ namespace ciccios
     /// Returns the name of the type
     static std::string nameOfType()
     {
-      return std::string("GpuSU3Field<")+NAME_OF_TYPE(Fund)+","+StorLocTag<SL>+">";
+      return std::string("GpuSU3Field<")+NAME_OF_TYPE(Fund)+","+storLocTag<SL>()+">";
     }
     
     /// Base type

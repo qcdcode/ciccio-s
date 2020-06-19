@@ -2,6 +2,9 @@
  #include "config.hpp"
 #endif
 
+#define EXTERN_DEBUG
+ #include <base/debug.hpp>
+
 #include <execinfo.h>
 #include <unistd.h>
 #include <cstdarg>
@@ -10,9 +13,8 @@
  #include <cuda_runtime.h>
 #endif
 
-#include "debug.hpp"
-#include "git_info.hpp"
-#include "logger.hpp"
+#include <git_info.hpp>
+#include <base/logger.hpp>
 
 namespace ciccios
 {
