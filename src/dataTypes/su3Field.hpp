@@ -13,12 +13,6 @@ namespace ciccios
     /// Copy from oth, using the correct deep copier
     template <typename O>
     T& deepCopy(const O& oth);
-    
-    // CRTP_IMPORT_METHOD(operator());
-    
-    // PROVIDE_ALSO_NON_CONST_METHOD_GPU(operator())
-    
-    // CRTP_IMPORT_METHOD(sitesLoop);
   };
   
   /////////////////////////////////////////////////////////////////
@@ -349,24 +343,6 @@ namespace ciccios
 #endif
     }
     
-    // /// Sum the product of the two passed fields
-    // INLINE_FUNCTION HOST DEVICE
-    // GpuSU3Field& sumProd(const GpuSU3Field& oth1,const GpuSU3Field& oth2)
-    // {
-    //   ASM_BOOKMARK_BEGIN("UnrolledGPUmethod");
-    //   for(int iSite=0;iSite<this->vol;iSite++)
-    //   	{
-    //   	  auto& a=this->GPUSite(iSite);
-    //   	  const auto& b=oth1.GPUSite(iSite);
-    //   	  const auto& c=oth2.GPUSite(iSite);
-	  
-    // 	  a.sumProd(b,c);
-    // 	}
-    //   ASM_BOOKMARK_END("UnrolledGPUmethod");
-      
-    //   return *this;
-    // }
-    
     /// Loop over all sites
     template <typename F>
     void sitesLoop(F&& f) const
@@ -445,7 +421,7 @@ namespace ciccios
 	return res;
       }
     
-    /// Copy an SU3 field from CPU with CPU layout to GPU with GPU layout, with the same type
+    /// Copy an SU3 field from GPU with GPU layout to CPU with GPU layout, with the same type
     template <typename F>
     GpuSU3Field<F,StorLoc::ON_CPU>&deepCopy(GpuSU3Field<F,StorLoc::ON_CPU>& res,const GpuSU3Field<F,StorLoc::ON_GPU>& oth)
     {
@@ -461,9 +437,43 @@ namespace ciccios
       return res;
     }
     
+    /// Copy an SU3 field from GPU with CPU layout to CPU with CPU layout, with the same type
+    ///
+    /// \todo template and revert to above
+    template <typename F>
+    CpuSU3Field<F,StorLoc::ON_CPU>& deepCopy(CpuSU3Field<F,StorLoc::ON_CPU>& res,const CpuSU3Field<F,StorLoc::ON_GPU>& oth)
+    {
+      /// Size to be copied
+      const int64_t size=oth.vol*sizeof(F)*NCOL*NCOL*2;
+      
+#ifdef USE_CUDA
+      DECRYPT_CUDA_ERROR(cudaMemcpy(res.data,oth.data,size,cudaMemcpyDeviceToHost),"Copying %ld bytes from gpu to cpu",size);
+#else
+      memcpy(res.data,oth.data,size);
+#endif
+      
+      return res;
+    }
+    
     /// Copy an SU3 field from CPU with GPU layout to GPU with GPU layout, with the same type
     template <typename F>
     GpuSU3Field<F,StorLoc::ON_GPU>& deepCopy(GpuSU3Field<F,StorLoc::ON_GPU>& res,const GpuSU3Field<F,StorLoc::ON_CPU>& oth)
+      {
+	/// Size to be copied \todo please move somewhere more meaningful
+	const int64_t size=oth.vol*sizeof(F)*NCOL*NCOL*2;
+	
+#ifdef USE_CUDA
+	DECRYPT_CUDA_ERROR(cudaMemcpy(res.data,oth.data,size,cudaMemcpyHostToDevice),"Copying %ld bytes from cpu to gpu",size);
+#else
+	memcpy(res.data,oth.data,size);
+#endif
+	
+	return res;
+      }
+    
+    /// Copy an SU3 field from CPU with CPU layout to GPU with CPU layout, with the same type
+    template <typename F>
+    CpuSU3Field<F,StorLoc::ON_GPU>& deepCopy(CpuSU3Field<F,StorLoc::ON_GPU>& res,const CpuSU3Field<F,StorLoc::ON_CPU>& oth)
       {
 	/// Size to be copied \todo please move somewhere more meaningful
 	const int64_t size=oth.vol*sizeof(F)*NCOL*NCOL*2;
