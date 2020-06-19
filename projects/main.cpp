@@ -19,7 +19,9 @@ using namespace ciccios;
 /// polymorphism, then they must be cast to the actual type. This
 /// might be hidden with some macro, if wanted, which prepends with _
 /// the name of the argument, to be matched with an internal cast
-/// which strips the _.
+/// which strips the _. We might also catch arguments with their
+/// actual type, but we would loose control on the fact that they are
+/// su3field
 template <typename F1,
 	  typename F2,
 	  typename F3>
