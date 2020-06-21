@@ -169,7 +169,7 @@ then
 fi
 
 #maybe we make a function for this
-if test "$CPP_FLAGS" != ""
+if test "$CPPFLAGS_SIMD" != ""
 then
 	if test "$CXX" == "nvcc"
 	then
