@@ -33,8 +33,11 @@ namespace ciccios
   using Flag=std::tuple<T&,const T,const char*,const char*>;
   
   /// List of known flags
-  FLAG_LIST(std::make_tuple(std::make_tuple(&waitToAttachDebuggerFlag,false,"WAIT_TO_ATTACH_DEBUGGER","to be used to wait for gdb to attach"),
-			    std::make_tuple(&useDetachedPool,false,"USE_DETACHED_POOL","to be used to create a pool at the begin")));
+  FLAG_LIST(std::make_tuple(std::make_tuple(&waitToAttachDebuggerFlag,false,"WAIT_TO_ATTACH_DEBUGGER","to be used to wait for gdb to attach")
+#ifdef USE_THREADS
+			    ,std::make_tuple(&useDetachedPool,false,"USE_DETACHED_POOL","to be used to create a pool at the begin")
+#endif
+			    ));
   
   /// Read all flags from environment
   void readAllFlags();

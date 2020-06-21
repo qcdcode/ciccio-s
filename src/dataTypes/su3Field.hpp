@@ -175,6 +175,7 @@ namespace ciccios
     
     /// Loop over all sites
     template <typename F>
+    INLINE_FUNCTION
     void sitesLoop(F&& f) const
     {
       ThreadPool::loopSplit(0,vol,std::forward<F>(f));
@@ -317,6 +318,7 @@ namespace ciccios
     
     /// Loop over all sites
     template <typename F>
+    INLINE_FUNCTION
     void sitesLoop(F&& f) const
     {
       ThreadPool::loopSplit(0,fusedVol,std::forward<F>(f));
@@ -341,6 +343,7 @@ namespace ciccios
     {
       /// Execute the loop
       template <typename F>
+      INLINE_FUNCTION
       static void exec(const int min,const int max,F&& f)
       {
 	ThreadPool::loopSplit(min,max,std::forward<F>(f));
@@ -355,6 +358,7 @@ namespace ciccios
     {
       /// If compiling with cuda exec the loop via threads, divert to cpu case otherwise
       template <typename F>
+      INLINE_FUNCTION
       static void exec(const int min,const int max,F&& f)
       {
 #ifdef USE_CUDA
@@ -484,6 +488,7 @@ namespace ciccios
     
     /// Loop over all sites
     template <typename F>
+    INLINE_FUNCTION
     void sitesLoop(F&& f) const
     {
       resources::GpuSitesLooper<SL>::exec(0,vol,std::forward<F>(f));

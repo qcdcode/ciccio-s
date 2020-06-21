@@ -13,6 +13,7 @@ namespace ciccios
 {
   namespace ThreadPool
   {
+#ifdef USE_THREADS
     void* poolWorkerLoop(void* _pars)
     {
       /// Decrypt the pars
@@ -36,9 +37,11 @@ namespace ciccios
       
       return nullptr;
     }
+#endif
     
     void poolStop()
     {
+#ifdef USE_THREADS
       // Gives all worker a trivial work: mark the pool as not started
       parallel([](const int&)
 	       {
@@ -55,6 +58,7 @@ namespace ciccios
 	  // Remove all pthreads
 	  resources::pool.resize(0);
 	}
+#endif
     }
   }
 }

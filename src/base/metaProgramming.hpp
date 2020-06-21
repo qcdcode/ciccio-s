@@ -143,8 +143,13 @@ namespace ciccios
     }
     
   /// Introduces the body of a loop
-#define KERNEL_LAMBDA_BODY(A)\
+#if defined USE_CUDA
+ #define KERNEL_LAMBDA_BODY(A)			\
   [=] HOST DEVICE (A) mutable
+#else
+  #define KERNEL_LAMBDA_BODY(A)\
+  [&] (A) __attribute__((always_inline))
+#endif
 }
 
 #endif

@@ -29,6 +29,8 @@
 
 namespace ciccios
 {
+#ifdef USE_THREADS
+  
   /// Starts the pool as detached or not
   EXTERN_POOL bool useDetachedPool;
   
@@ -205,9 +207,6 @@ namespace ciccios
 	}
     }
     
-    /// Stops the pool, detached or not
-    void poolStop();
-    
     /// Starts a parallel section
     ///
     /// The object \a f must be callable, returning void and getting
@@ -256,6 +255,47 @@ namespace ciccios
 		   f(i);
 	       });
     }
+  }
+  
+#else
+  
+  namespace ThreadPool
+  {
+    INLINE_FUNCTION
+    void waitThatAllWorkersWaitForWork()
+    {
+    }
+    
+    INLINE_FUNCTION
+    void waitForWork()
+    {
+    }
+    
+    template <typename Size,           // Type for the range of the loop
+	      typename F>              // Type of the function
+    INLINE_FUNCTION
+    void loopSplit(const Size& beg,  ///< Beginning of the loop
+		   const Size& end,  ///< End of the loop
+		   F&& f)            ///< Function to be called
+    {
+      for(Size i=beg;i<end;i++)
+	f(i);
+    }
+    
+    template <typename F,
+	      typename...Args>
+    void poolStart(F&& f,Args&&...args)
+    {
+      f(std::forward<Args>(args)...);
+    }
+  }
+  
+#endif
+  
+  namespace ThreadPool
+  {
+    /// Stops the pool, detached or not
+    void poolStop();
   }
 }
 
