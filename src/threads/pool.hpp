@@ -1,6 +1,10 @@
 #ifndef _POOL_HPP
 #define _POOL_HPP
 
+/// \file pool.hpp
+///
+/// \brief Implement thread pool
+
 #ifdef HAVE_CONFIG_H
  #include "config.hpp"
 #endif
@@ -13,6 +17,7 @@
 
 #include <base/debug.hpp>
 
+// This seems not to be working well, but should be checked again
 //#include <external/inplace_function.h>
 
 #ifndef EXTERN_POOL
@@ -75,6 +80,7 @@ namespace ciccios
     /// Number of threads waiting for work
     EXTERN_POOL std::atomic<int> nThreadsWaitingForWork INIT_POOL_TO(0);
     
+    /// Count the number of assigned works
     EXTERN_POOL std::atomic<int> nWorksAssigned INIT_POOL_TO(0);
     
     /// States if the pool is started

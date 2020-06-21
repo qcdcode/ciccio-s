@@ -1,6 +1,13 @@
 #ifndef _METAPROGRAMMING_HPP
 #define _METAPROGRAMMING_HPP
 
+/// \file metaProgramming.hpp
+///
+/// \brief Implements many metaprogramming techniques
+///
+/// \todo Move it to a dedicated directory and separate
+/// functionalities into more topical files
+
 #include <type_traits>
 #include <utility>
 

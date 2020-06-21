@@ -2,6 +2,10 @@
  #include "config.hpp"
 #endif
 
+/// \file cuda.cpp
+///
+/// \brief Implements the main initialization of cuda
+
 #define EXTERN_CUDA
  #include <gpu/cuda.hpp>
 

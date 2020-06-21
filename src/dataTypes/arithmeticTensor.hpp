@@ -1,13 +1,15 @@
 #ifndef _ARITHMETIC_TENSOR_HPP
 #define _ARITHMETIC_TENSOR_HPP
 
+/// \file arithmeticTensor.hpp
+///
+/// \brief Simple implementation of array and matrix
+///
+/// \todo To be replaced with the metaprogrammed type-aware tensor
+
 #include <base/debug.hpp>
 #include <base/metaProgramming.hpp>
 #include <base/preprocessor.hpp>
-
-/// Simple implementation of array and matrix
-///
-/// To be replaced with the metaprogrammed type-aware tensor
 
 namespace ciccios
 {

@@ -1,6 +1,10 @@
 #ifndef _RANKS_HPP
 #define _RANKS_HPP
 
+/// \file ranks.hpp
+///
+/// MPI parallelization
+
 #include <mpi.h>
 
 #ifndef EXTERN_RANK

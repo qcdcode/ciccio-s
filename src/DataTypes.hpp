@@ -1,6 +1,10 @@
 #ifndef _DATATYPES_HPP
 #define _DATATYPES_HPP
 
+/// \file dataTypes.hpp
+///
+/// \brief Topical header for all data types
+
 #include "dataTypes/arithmeticTensor.hpp"
 #include "dataTypes/complex.hpp"
 #include "dataTypes/su3Field.hpp"

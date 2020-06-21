@@ -1,11 +1,17 @@
 #ifndef _COMPLEX_HPP
 #define _COMPLEX_HPP
 
+/// \file complex.hpp
+///
+/// \brief Implements complex
+///
+/// \todo Replace with generic tensor
+
 #include <array>
 
-#include "base/metaProgramming.hpp"
-#include "base/unroll.hpp"
-#include "dataTypes/SIMD.hpp"
+#include <base/metaProgramming.hpp>
+#include <base/unroll.hpp>
+#include <dataTypes/SIMD.hpp>
 
 namespace ciccios
 {

@@ -1,6 +1,12 @@
 #ifndef _SIMD_HPP
 #define _SIMD_HPP
 
+/// \file SIMD.hpp
+///
+/// \brief Dispatch the intrinsic datatype
+///
+/// \todo Rename Simd into something more appropriate
+
 #ifdef HAVE_CONFIG_H
  #include "config.hpp"
 #endif
@@ -12,8 +18,6 @@
 #include <cstring>
 
 #include <dataTypes/arithmeticTensor.hpp>
-
-// \todo Rename Simd into something more appropriate
 
 namespace ciccios
 {

@@ -2,6 +2,8 @@
  #include "config.hpp"
 #endif
 
+/// \file ranks.cpp
+
 #define EXTERN_RANK
  #include "base/ranks.hpp"
 

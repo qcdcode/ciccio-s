@@ -1,7 +1,10 @@
 #ifndef _PREPROCESSOR_HPP
 #define _PREPROCESSOR_HPP
 
-/// Double macro to force symbol expansion
+/// \file preprocessor.hpp
+///
+/// Implement some macro to concatenate, unroll, stringify etc
+
 #define TO_STRING_INTERNAL(x) #x
 
 /// Put a pragma

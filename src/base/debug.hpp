@@ -1,8 +1,17 @@
 #ifndef _DEBUG_HPP
 #define _DEBUG_HPP
 
+/// \file debug.hpp
+///
+/// \brief Backtrace, assembly bookkeeping, crasher, etc
+
 #ifndef EXTERN_DEBUG
+ 
+ /// Make external if put in front of a variable
+ ///
+ /// Actual allocation is done in the cpp file
  #define EXTERN_DEBUG extern
+ 
 #endif
 
 #ifdef USE_CUDA
@@ -68,12 +77,18 @@ namespace ciccios
     }
   };
   
+/// Invoke the crasher, passing line, file and function
 #define CRASHER Crasher(__LINE__,__FILE__,__FUNCTION__)
 
 #ifdef COMPILING_FOR_DEVICE
+ 
+  /// Symbol to be used to begin an assembler comment, different in nvcc
  #define _ASM_BOOKMARK_SYMBOL "//"
+ 
 #else
+ 
  #define _ASM_BOOKMARK_SYMBOL "#"
+ 
 #endif
   
 /// Include a comment in the assembler, recognizable in the compilation

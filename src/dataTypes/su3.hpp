@@ -1,11 +1,13 @@
 #ifndef _SU3_HPP
 #define _SU3_HPP
 
+/// \file su3.hpp
+///
+/// Temporary file to setup su3 datatype
+
 #include "dataTypes/arithmeticTensor.hpp"
 #include "dataTypes/complex.hpp"
 #include "dataTypes/SIMD.hpp"
-
-// Temporary file to setup su3 datatype
 
 namespace ciccios
 {

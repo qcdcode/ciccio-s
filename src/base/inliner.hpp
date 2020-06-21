@@ -4,7 +4,6 @@
 /// \file inliner.hpp
 ///
 /// \brief Provides attribute to inline functions
-///
 
 /// Force the compiler to inline
 ///

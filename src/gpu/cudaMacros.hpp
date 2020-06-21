@@ -1,6 +1,11 @@
 #ifndef _CUDAMACROS_HPP
 #define _CUDAMACROS_HPP
 
+/// \file cudaMacros.cpp
+///
+/// \brief Change DEVICE and similars in terms of whether we compile
+/// with nvcc or not
+
 #ifdef HAVE_CONFIG_H
  #include "config.hpp"
 #endif

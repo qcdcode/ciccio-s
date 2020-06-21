@@ -13,6 +13,7 @@
 
 using namespace ciccios;
 
+// Provides the assembly comment useful to catch the produced code for each data type
 PROVIDE_ASM_DEBUG_HANDLE(sumProd,CpuSU3Field<float,StorLoc::ON_CPU>*);
 PROVIDE_ASM_DEBUG_HANDLE(sumProd,GpuSU3Field<float,StorLoc::ON_GPU>*);
 PROVIDE_ASM_DEBUG_HANDLE(sumProd,SimdSU3Field<float,StorLoc::ON_CPU>*);
@@ -41,11 +42,21 @@ INLINE_FUNCTION void su3FieldsSumProd(SU3Field<F1>& _field1,const SU3Field<F2>& 
   
   field1.sitesLoop(KERNEL_LAMBDA_BODY(const int iSite)
 		   {
+		     // This puts a bookmark in the assembly to check
+		     // the compiler implementation
+		     BOOKMARK_BEGIN_sumProd((F2*){});
+		     
+		     /// Take access to the looping site, so the
+		     /// compiler needs not to recompute the full
+		     /// index for each color components, and it has a
+		     /// clearer view which makes it easier to produce
+		     /// optimized code
 		     auto f1=field1.site(iSite);
 		     auto f2=field2.site(iSite);
 		     auto f3=field3.site(iSite);
 		     
-		     BOOKMARK_BEGIN_sumProd((F2*){});
+		     // This could be moved to a dedicated routine but it he
+		     
 		     UNROLLED_FOR(i,NCOL)
 		       UNROLLED_FOR(k,NCOL)
 		         UNROLLED_FOR(j,NCOL)
@@ -54,24 +65,31 @@ INLINE_FUNCTION void su3FieldsSumProd(SU3Field<F1>& _field1,const SU3Field<F2>& 
 			     // gpu we have torn apart real and
 			     // imaginay part
 			     
+			     /// Result real and imaginary part
 			     auto& f1r=f1(i,j,RE);
 			     auto& f1i=f1(i,j,IM);
 			     
+			     /// First opeand, real and imaginary
 			     const auto f2r=f2(i,k,RE);
 			     const auto f2i=f2(i,k,IM);
 			     
+			     /// Second operand, real and imaginary
 			     const auto f3r=f3(k,j,RE);
 			     const auto f3i=f3(k,j,IM);
 			     
+			     // Adds the real part
 			     f1r+=f2r*f3r;
 			     f1r-=f2i*f3i;
 			     
+			     // Adds the imaginary part of the product
 			     f1i+=f2r*f3i;
 			     f1i+=f2i*f3r;
 			   }
 		         UNROLLED_FOR_END;
 		       UNROLLED_FOR_END;
 		     UNROLLED_FOR_END;
+		     
+		     // End of the bokkmarked assembly section
 		     BOOKMARK_END_sumProd((F2*){});
 		   }
     );
@@ -118,8 +136,8 @@ void test(const CpuSU3Field<Fund,StorLoc::ON_CPU>& field,const int64_t nIters)
   LOGGER<<NAME_OF_TYPE(Field)<<" \t GFlops/s: "<<gFlopsPerSec<<"\t Check: "<<fieldRes(0,0,0,0)<<" "<<fieldRes(0,0,0,1)<<" time: "<<timeInSec<<endl;
 }
 
-/// Perform the tests on the given type (double/floatf
-template <typename Fund>
+/// Perform the tests on the given type (double/float)
+template <typename Fund>           // Fundamental datatype
 void test(const int vol,         ///< Volume to simulate
 	  const int workReducer) ///< Reduce worksize to make a quick test
 {
@@ -132,18 +150,19 @@ void test(const int vol,         ///< Volume to simulate
     for(int ic1=0;ic1<NCOL;ic1++)
       for(int ic2=0;ic2<NCOL;ic2++)
 	for(int ri=0;ri<2;ri++)
-	  field(iSite,ic1,ic2,ri)=(ri+2*(ic2+NCOL*(ic1+NCOL*iSite)))/Fund((NCOL*NCOL*2)*(iSite+1));
+	  field(iSite,ic1,ic2,ri)=
+	    (ri+2*(ic2+NCOL*(ic1+NCOL*iSite)))/Fund((NCOL*NCOL*2)*(iSite+1));
   
   LOGGER<<"Volume: "<<vol<<" dataset: "<<3*(double)vol*sizeof(SU3<Complex<Fund>>)/(1<<20)<<endl;
   
+  // Loop over three different layout and storage
   forEachInTuple(std::tuple<
 		 SimdSU3Field<Fund,StorLoc::ON_CPU>*,
 		 CpuSU3Field<Fund,StorLoc::ON_CPU>*,
-		 GpuSU3Field<Fund,StorLoc::ON_GPU>*
-		 >{},
+		 GpuSU3Field<Fund,StorLoc::ON_GPU>*>{},
 		 [&](auto t)
 		 {
-		   /// Field type tp be used in the test
+		   /// Field type to be used in the test
 		   using F=
 		     std::remove_reference_t<decltype(*t)>;
 		   
@@ -155,15 +174,20 @@ void test(const int vol,         ///< Volume to simulate
   LOGGER<<endl;
 }
 
+/// inMmain is the actual main, which is where the main thread of the
+/// pool is sent to work while the workers are sent in the background
 void inMain(int narg,char **arg)
 {
+  /// Workreducer is useful for speeding up the test
   int workReducer=1;
+  
   if(narg>=2)
     {
       workReducer=atoi(arg[1]);
       LOGGER<<"WorkReducer: "<<workReducer<<endl;
     }
   
+  // Loop ofer float and double
   forEachInTuple(std::tuple<float,double>{},
 		 [&](auto t)
 		 {
@@ -181,6 +205,7 @@ void inMain(int narg,char **arg)
   
 }
 
+/// This might be moved to the library, and \a inMain expected
 int main(int narg,char **arg)
 {
   initCiccios(inMain,narg,arg);

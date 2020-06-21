@@ -2,6 +2,11 @@
  #include "config.hpp"
 #endif
 
+/// \file environment.cpp
+///
+/// \brief Contains the implementation of the routines needed to read
+/// environment variables
+
 #define EXTERN_ENVIRONMENT
  #include <base/environment.hpp>
 

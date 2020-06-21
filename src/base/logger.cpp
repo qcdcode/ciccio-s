@@ -2,6 +2,10 @@
  #include "config.hpp"
 #endif
 
+/// \file logger.hpp
+///
+/// \brief Implement the banner
+
 #define EXTERN_LOGGER
  #include <base/logger.hpp>
 

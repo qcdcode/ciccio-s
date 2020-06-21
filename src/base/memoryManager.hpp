@@ -1,6 +1,10 @@
 #ifndef _MEMORY_MANAGER_HPP
 #define _MEMORY_MANAGER_HPP
 
+/// \file memoryManager.hpp
+///
+/// \brief Main manager for GPU and CPU memory
+
 #include <map>
 #include <vector>
 

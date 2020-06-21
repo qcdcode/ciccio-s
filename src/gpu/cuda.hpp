@@ -1,15 +1,26 @@
 #ifndef _CUDA_HPP
 #define _CUDA_HPP
 
+/// \file cuda.hpp
+///
+/// \brief Implements an intermediate layout in front of cuda
+
 #ifdef HAVE_CONFIG_H
  #include "config.hpp"
 #endif
 
 #ifndef EXTERN_CUDA
+
+ /// Make external if put in front of a variable
+ ///
+ /// Actual allocation is done in the cpp file
  #define EXTERN_CUDA extern
-#define INIT_CUDA_TO(...)
+ #define INIT_CUDA_TO(...)
+
 #else
+
  #define INIT_CUDA_TO(...) (__VA_ARGS__)
+
 #endif
 
 #include <base/inliner.hpp>
@@ -20,6 +31,7 @@
 namespace ciccios
 {
 #ifdef USE_CUDA
+  /// Internal implementation of GPU functionalities
   namespace Gpu
   {
     /// Number of threads for cuda, to be generalized

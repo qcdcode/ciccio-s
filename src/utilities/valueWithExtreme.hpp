@@ -1,6 +1,10 @@
 #ifndef _VALUE_WITH_EXTREME_HPP
 #define _VALUE_WITH_EXTREME_HPP
 
+/// \file valueWithExtreme.hpp
+///
+/// \brief Implements a class with maximum or minimium
+
 #include <limits>
 
 namespace ciccios

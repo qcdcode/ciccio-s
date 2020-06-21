@@ -1,6 +1,10 @@
 #ifndef _LOGGER_HPP
 #define _LOGGER_HPP
 
+/// \file logger.hpp
+///
+/// \brief Header file for routines to report on the console
+
 #ifndef EXTERN_LOGGER
  #define EXTERN_LOGGER extern
 #define INIT_LOGGER_TO(...)

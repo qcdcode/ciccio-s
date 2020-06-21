@@ -1,6 +1,10 @@
 #ifndef _BASE_HPP
 #define _BASE_HPP
 
+/// \file Base.hpp
+///
+/// \brief Include all headers from base directory
+
 #include <base/debug.hpp>
 #include <base/environment.hpp>
 #include <base/inliner.hpp>

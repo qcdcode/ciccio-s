@@ -4,7 +4,6 @@
 /// \file unroll.hpp
 ///
 /// \brief Provides functions to unroll loops
-///
 
 #include <tuple>
 #include <utility>
@@ -22,7 +21,8 @@ namespace ciccios
     template <typename F,
 	      typename...Args>
     INLINE_FUNCTION HOST DEVICE
-    int call(F&& f,Args&&...args)
+    int call(F&& f,          ///< Function to be called
+	     Args&&...args)  ///< Calling arguments
     {
       f(std::forward<Args>(args)...);
       

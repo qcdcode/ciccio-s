@@ -2,6 +2,8 @@
  #include "config.hpp"
 #endif
 
+/// \file debug.hpp
+
 #define EXTERN_DEBUG
  #include <base/debug.hpp>
 

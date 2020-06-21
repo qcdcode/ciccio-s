@@ -1,6 +1,12 @@
 #ifndef _SU3FIELD_HPP
 #define _SU3FIELD_HPP
 
+/// \file su3Field.hpp
+///
+/// \brief CPU, GPU and SIMD implementation, with GPU or CPU storage
+///
+/// \todo Make a Field type more general
+
 #include <type_traits>
 
 #include <base/memoryManager.hpp>
@@ -47,14 +53,18 @@ namespace ciccios
 	    StorLoc SL>
   struct CpuSU3Field : public SU3Field<CpuSU3Field<Fund,SL>>
   {
-    template <bool IsConst>
+    /// Implements a slice to a specifc field site
+    template <bool IsConst> // Constant or nor acces
     struct SiteSlice
     {
-      using T=std::conditional_t<IsConst,const Fund*,Fund*>;
+      /// Fundamental type: constant or not depending on the template par
+      using T=std::conditional_t<IsConst,const Fund,Fund>;
       
-      T  data;
+      /// Data access
+      T*  data;
       
-      SiteSlice(T data) : data(data)
+      /// Constructor taking the pointer as argument
+      SiteSlice(T* data) : data(data)
       {
       }
       
@@ -75,11 +85,13 @@ namespace ciccios
       PROVIDE_ALSO_NON_CONST_METHOD_GPU(operator());
     };
     
+    /// Constant access to site
     SiteSlice<true> site(const int& iSite) const
     {
       return &(*this)(iSite,0,0,0);
     }
     
+    /// Non const access to site
     SiteSlice<false> site(const int& iSite)
     {
       return &(*this)(iSite,0,0,0);
@@ -176,14 +188,20 @@ namespace ciccios
 	    StorLoc SL>
   struct SimdSU3Field : public SU3Field<SimdSU3Field<Fund,SL>>
   {
-    template <bool IsConst>
+    /// Implements a slice to a specifc field site
+    ///
+    /// \todo Make a base class taking all common method
+    template <bool IsConst> // Constant or nor acces
     struct SiteSlice
     {
-      using T=std::conditional_t<IsConst,const Simd<Fund>*,Simd<Fund>*>;
+      /// Fundamental type: constant or not depending on the template par
+      using T=std::conditional_t<IsConst,const Simd<Fund>,Simd<Fund>>;
       
-      T  data;
+      /// Reference to the data
+      T*  data;
       
-      SiteSlice(T data) : data(data)
+      /// Constructor taking pointer to sliced field
+      SiteSlice(T* data) : data(data)
       {
       }
       
@@ -239,13 +257,15 @@ namespace ciccios
     
     PROVIDE_ALSO_NON_CONST_METHOD_GPU(operator());
     
+    /// Constant access to site
     HOST DEVICE
-    
     SiteSlice<true> site(const int& iFusedSite) const
     {
       return &(*this)(iFusedSite,0,0,0);
     }
     
+    /// Non constant access to site
+    HOST DEVICE
     SiteSlice<false> site(const int& iFusedSite)
     {
       return &(*this)(iFusedSite,0,0,0);
@@ -351,16 +371,25 @@ namespace ciccios
 	    StorLoc SL>
   struct GpuSU3Field : public SU3Field<GpuSU3Field<Fund,SL>>
   {
-    template <bool IsConst>
+    /// Implements a slice to a specifc field site
+    ///
+    /// \todo Make a base class taking all common method
+    template <bool IsConst> // Constant or nor acces
     struct SiteSlice
     {
-      using T=std::conditional_t<IsConst,const Fund*,Fund*>;
+      /// Fundamental type: constant or not depending on the template par
+      using T=std::conditional_t<IsConst,const Fund,Fund>;
       
-      T data;
+      /// Pointer to sliced field
+      T* data;
       
+      /// Volume, needed to recompute the index
       int vol;
       
-      SiteSlice(T data,int vol) : data(data),vol(vol)
+      /// Construct from field and pointer
+      ///
+      /// \todo maybe use the field to make a common interface
+      SiteSlice(T* data,int vol) : data(data),vol(vol)
       {
       }
       
@@ -381,11 +410,13 @@ namespace ciccios
       PROVIDE_ALSO_NON_CONST_METHOD_GPU(operator());
     };
     
+    /// Constant access to site
     SiteSlice<true> site(const int& iSite) const
     {
       return SiteSlice<true>(&(*this)(iSite,0,0,0),vol);
     }
     
+    /// Non constant access to site
     SiteSlice<false> site(const int& iSite)
     {
       return SiteSlice<false>(&(*this)(iSite,0,0,0),vol);
