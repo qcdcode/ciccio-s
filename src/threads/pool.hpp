@@ -210,10 +210,11 @@ namespace ciccios
     
     /// Starts a parallel section
     ///
-    /// The object \c f must be callable, returning void and getting
+    /// The object \a f must be callable, returning void and getting
     /// an integer as a parameter, representing the thread id
     template <typename F>
-    INLINE_FUNCTION void parallel(F&& f) ///< Function embedding the work
+    INLINE_FUNCTION
+    void parallel(F&& f) ///< Function embedding the work
     {
       if(not poolIsStarted)
 	poolStart(parallel<F>,std::forward<F>(f));
