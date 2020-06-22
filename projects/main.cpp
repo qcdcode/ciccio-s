@@ -133,7 +133,9 @@ void test(const CpuSU3Field<Fund,StorLoc::ON_CPU>& field,const int64_t nIters)
   
   /// Compute performances
   const double gFlopsPerSec=gFlops/timeInSec;
-  LOGGER<<NAME_OF_TYPE(Field)<<" \t GFlops/s: "<<gFlopsPerSec<<"\t Check: "<<fieldRes(0,0,0,0)<<" "<<fieldRes(0,0,0,1)<<" time: "<<timeInSec<<endl;
+  LOGGER<<"Volume: "<<field.vol<<" dataset: "<<3*(double)field.vol*sizeof(SU3<Complex<Fund>>)/(1<<20) << " precision: " <<
+    NAME_OF_TYPE(Fund) << " field: " << NAME_OF_TYPE(Field)<<" \t GFlops/s: "<<
+    gFlopsPerSec<<"\t Check: "<<fieldRes(0,0,0,0)<<" "<<fieldRes(0,0,0,1)<<" time: "<<timeInSec<<endl;
 }
 
 /// Perform the tests on the given type (double/float)
