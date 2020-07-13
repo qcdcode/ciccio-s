@@ -61,7 +61,7 @@ namespace ciccios
       using T=std::conditional_t<IsConst,const Fund,Fund>;
       
       /// Data access
-      T*  data;
+      T* data;
       
       /// Constructor taking the pointer as argument
       SiteSlice(T* data) : data(data)
