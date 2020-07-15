@@ -16,10 +16,7 @@ namespace ciccios
   struct TensCompSize
   {
     /// Value beyond end
-    static constexpr Size sizeAtCompileTime()
-    {
-      return SIZE;
-    };
+    static constexpr Size sizeAtCompileTime=SIZE;
   };
   
   /// Predicate returning whether the size is known ow not at compile time

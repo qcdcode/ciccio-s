@@ -41,16 +41,19 @@ namespace ciccios
     using Base=S;
     
     /// Value type
-    using Size=typename S::Size;
+    using Size=
+      typename S::Size;
     
     /// Value
     Size i;
     
     /// Check if the size is known at compile time
-    static constexpr bool SizeIsKnownAtCompileTime=Base::sizeAtCompileTime()!=DYNAMIC;
+    static constexpr bool SizeIsKnownAtCompileTime=
+      Base::sizeAtCompileTime!=DYNAMIC;
     
     /// Init from value
-    explicit constexpr TensCompIdx(Size i) : i(i)
+    template <typename T>
+    explicit constexpr TensCompIdx(T&& i) : i(i)
     {
     }
     
@@ -89,9 +92,9 @@ namespace ciccios
   /// Promotes the argument i to a COMPONENT, through a function with given NAME
 #define DECLARE_COMPONENT_FACTORY(NAME,COMPONENT...)		\
   template <typename T>						\
-  INLINE_ATTRIBUTE COMPONENT NAME(T&& i)			\
+  INLINE_FUNCTION COMPONENT NAME(T&& i)				\
   {								\
-    return i;							\
+    return COMPONENT(i);					\
   }
   
   /// Declare a component with no special feature
@@ -134,7 +137,9 @@ namespace ciccios
   DECLARE_COMPONENT_FACTORY(FACTORY,NAME)
   
   /////////////////////////////////////////////////////////////////
-  
+
+/// \todo move to a physics file
+
   DECLARE_COMPONENT(Compl,int,2,complComp);
   
   /// Number of component for a spin vector
