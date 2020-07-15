@@ -41,7 +41,7 @@ namespace ciccios
   
   /// Returns the type without "const" attribute if it is a reference
   template <typename T>
-  HOST DEVICE
+  CUDA_HOST_DEVICE
   decltype(auto) remove_const_if_ref(T&& t)
   {
     using Tv=std::remove_const_t<std::remove_reference_t<T>>;
@@ -96,7 +96,7 @@ namespace ciccios
   
 #define PROVIDE_ALSO_NON_CONST_METHOD_GPU(NAME)				\
   _PROVIDE_ALSO_NON_CONST_METHOD_BEGIN					\
-  HOST DEVICE								\
+  CUDA_HOST_DEVICE								\
   _PROVIDE_ALSO_NON_CONST_METHOD_BODY(NAME)
   
   /// Implements the CRTP pattern
@@ -104,7 +104,7 @@ namespace ciccios
   struct Crtp
   {
     /// Cast to the base type, with const attribute
-    HOST DEVICE
+    CUDA_HOST_DEVICE
     operator const T&() const
     {
       return *static_cast<const T*>(this);
@@ -114,7 +114,7 @@ namespace ciccios
     ///
     /// Cannot be achieved with the preprocessor macro, since the name
     /// of the method is weird
-    HOST DEVICE
+    CUDA_HOST_DEVICE
     operator T&()
     {
       return *static_cast<T*>(this);
@@ -123,7 +123,7 @@ namespace ciccios
     /// Cast to the base type
     ///
     /// This is customarily done by ~ operator, but I don't like it
-    HOST DEVICE
+    CUDA_HOST_DEVICE
     const T& crtp() const
     {
       return *this;
@@ -136,7 +136,7 @@ namespace ciccios
 #define CRTP_IMPORT_METHOD(A...)				\
   /*! Calls A in the base class */				\
   template <typename...Args>					\
-    HOST DEVICE							\
+    CUDA_HOST_DEVICE							\
     decltype(auto) A(Args&&...args) const			\
     {								\
       return this->crtp().A(std::forward<Args>(args)...);	\
@@ -145,7 +145,7 @@ namespace ciccios
   /// Introduces the body of a loop
 #if defined USE_CUDA
  #define KERNEL_LAMBDA_BODY(A)			\
-  [=] HOST DEVICE (A) mutable
+  [=] CUDA_HOST_DEVICE (A) mutable
 #else
   #define KERNEL_LAMBDA_BODY(A)\
   [&] (A) __attribute__((always_inline))

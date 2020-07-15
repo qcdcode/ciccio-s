@@ -110,7 +110,7 @@ namespace ciccios
 /// Internal implementation
 #define PROVIDE_ASM_DEBUG_HANDLE_BEGIN_OR_END(BE,NAME,ARGS...)		\
   /*! Put in the assembly a bookmark named composing name and the arguments */ \
-  INLINE_FUNCTION HOST DEVICE						\
+  INLINE_FUNCTION CUDA_HOST_DEVICE						\
   void BOOKMARK_ ## BE ## _ ## NAME (ARGS)				\
   {									\
     ASM_BOOKMARK_ ## BE(#NAME #ARGS);					\

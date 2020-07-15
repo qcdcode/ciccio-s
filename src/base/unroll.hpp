@@ -20,7 +20,7 @@ namespace ciccios
     /// unrolling without any recursion
     template <typename F,
 	      typename...Args>
-    INLINE_FUNCTION HOST DEVICE
+    INLINE_FUNCTION CUDA_HOST_DEVICE
     int call(F&& f,          ///< Function to be called
 	     Args&&...args)  ///< Calling arguments
     {
@@ -34,7 +34,7 @@ namespace ciccios
     /// Actual implementation
     template <int...Is,
 	      typename F>
-    INLINE_FUNCTION HOST DEVICE
+    INLINE_FUNCTION CUDA_HOST_DEVICE
     void unrolledForInternal(std::integer_sequence<int,Is...>,F&& f)
     {
       /// Dummy initialized list, discarded at compile time

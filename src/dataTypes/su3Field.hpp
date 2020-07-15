@@ -69,14 +69,14 @@ namespace ciccios
       }
       
       /// Index to internal data
-      HOST DEVICE
+      CUDA_HOST_DEVICE
       int index(const int& icol1,const int& icol2,const int& reim) const
       {
 	return reim+2*(icol2+NCOL*icol1);
       }
       
       /// Access to data
-      HOST DEVICE
+      CUDA_HOST_DEVICE
       const auto& operator()(const int& icol1,const int& icol2,const int& reim) const
       {
 	return data[index(icol1,icol2,reim)];
@@ -117,14 +117,14 @@ namespace ciccios
     Fund* data;
     
     /// Index function
-    HOST DEVICE
+    CUDA_HOST_DEVICE
     int index(const int& iSite,const int& icol1,const int& icol2,const int& reim) const
     {
       return reim+2*(icol2+NCOL*(icol1+NCOL*iSite));
     }
     
     /// Access to data
-    HOST DEVICE
+    CUDA_HOST_DEVICE
     const Fund& operator()(const int& iSite,const int& icol1,const int& icol2,const int& reim) const
     {
       return data[index(iSite,icol1,icol2,reim)];
@@ -147,7 +147,7 @@ namespace ciccios
     }
     
     /// Destroy
-    HOST DEVICE
+    CUDA_HOST_DEVICE
     ~CpuSU3Field()
     {
 #ifndef COMPILING_FOR_DEVICE
@@ -207,14 +207,14 @@ namespace ciccios
       }
       
       /// Index to internal data
-      HOST DEVICE
+      CUDA_HOST_DEVICE
       int index(const int& icol1,const int& icol2,const int& reim) const
       {
 	return reim+2*(icol2+NCOL*icol1);
       }
       
       /// Access to data
-      HOST DEVICE
+      CUDA_HOST_DEVICE
       const auto& operator()(const int& icol1,const int& icol2,const int& reim) const
       {
 	return data[index(icol1,icol2,reim)];
@@ -243,14 +243,14 @@ namespace ciccios
     Simd<Fund>* data;
     
     /// Index to internal data
-    HOST DEVICE
+    CUDA_HOST_DEVICE
     int index(const int& iFusedSite,const int& icol1,const int& icol2,const int& reim) const
     {
       return reim+2*(icol2+NCOL*(icol1+NCOL*iFusedSite));
     }
     
     /// Access to data
-    HOST DEVICE
+    CUDA_HOST_DEVICE
     const Simd<Fund>& operator()(const int& iFusedSite,const int& icol1,const int& icol2,const int& reim) const
     {
       return data[index(iFusedSite,icol1,icol2,reim)];
@@ -259,14 +259,14 @@ namespace ciccios
     PROVIDE_ALSO_NON_CONST_METHOD_GPU(operator());
     
     /// Constant access to site
-    HOST DEVICE
+    CUDA_HOST_DEVICE
     SiteSlice<true> site(const int& iFusedSite) const
     {
       return &(*this)(iFusedSite,0,0,0);
     }
     
     /// Non constant access to site
-    HOST DEVICE
+    CUDA_HOST_DEVICE
     SiteSlice<false> site(const int& iFusedSite)
     {
       return &(*this)(iFusedSite,0,0,0);
@@ -288,13 +288,13 @@ namespace ciccios
     }
     
     /// Copy constructor
-    HOST DEVICE
+    CUDA_HOST_DEVICE
     SimdSU3Field(const SimdSU3Field& oth) : fusedVol(oth.fusedVol),isRef(true),data(oth.data)
     {
     }
     
     /// Destroy
-    HOST DEVICE
+    CUDA_HOST_DEVICE
     ~SimdSU3Field()
     {
 #ifndef COMPILING_FOR_DEVICE
@@ -398,14 +398,14 @@ namespace ciccios
       }
       
       /// Index to internal data
-      HOST DEVICE
+      CUDA_HOST_DEVICE
       int index(const int& icol1,const int& icol2,const int& reim) const
       {
 	return reim+2*vol*(icol2+NCOL*icol1);
       }
       
       /// Access to data
-      HOST DEVICE
+      CUDA_HOST_DEVICE
       const auto&  operator()(const int& icol1,const int& icol2,const int& reim) const
       {
 	return data[index(icol1,icol2,reim)];
@@ -446,14 +446,14 @@ namespace ciccios
     Fund* data;
     
     /// Index function
-    HOST DEVICE
+    CUDA_HOST_DEVICE
     int index(const int& iSite,const int& icol1,const int& icol2,const int& reim) const
     {
       return reim+2*(iSite+vol*(icol2+NCOL*icol1));
     }
     
     /// Access to data
-    HOST DEVICE
+    CUDA_HOST_DEVICE
     const Fund& operator()(const int& iSite,const int& icol1,const int& icol2,const int& reim) const
     {
       return data[index(iSite,icol1,icol2,reim)];
@@ -471,13 +471,13 @@ namespace ciccios
     }
     
     /// Copy constructor
-    HOST DEVICE
+    CUDA_HOST_DEVICE
     GpuSU3Field(const GpuSU3Field& oth) : vol(oth.vol),isRef(true),data(oth.data)
     {
     }
     
     /// Destroy
-    HOST DEVICE
+    CUDA_HOST_DEVICE
     ~GpuSU3Field()
     {
 #ifndef COMPILING_FOR_DEVICE

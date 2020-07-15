@@ -41,7 +41,7 @@ namespace ciccios
     template <typename IMin,
 	      typename IMax,
 	      typename F>
-    GLOBAL
+    CUDA_GLOBAL
     void cudaGenericKernel(const IMin min,
 			   const IMax max,
 			   F f)

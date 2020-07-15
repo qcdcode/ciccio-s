@@ -3,7 +3,7 @@
 
 /// \file cudaMacros.cpp
 ///
-/// \brief Change DEVICE and similars in terms of whether we compile
+/// \brief Change CUDA_DEVICE and similars in terms of whether we compile
 /// with nvcc or not
 
 #ifdef HAVE_CONFIG_H
@@ -12,27 +12,30 @@
 
 #ifdef USE_CUDA
 
- /// DEVICE is actually the cuda attribute
- #define DEVICE __device__
+ /// CUDA_DEVICE is actually the cuda attribute
+ #define CUDA_DEVICE __device__
  
- /// GLOBAL is actually the cuda attribute
- #define GLOBAL __global__
+ /// CUDA_GLOBAL is actually the cuda attribute
+ #define CUDA_GLOBAL __global__
  
- /// HOST is actually the cuda attribute
- #define HOST __host__
+ /// CUDA_HOST is actually the cuda attribute
+ #define CUDA_HOST __host__
  
 #else
  
- /// DEVICE is a dummy macro
- #define DEVICE
+ /// CUDA_DEVICE is a dummy macro
+ #define CUDA_DEVICE
  
- /// HOST is a dummy macro
- #define HOST
+ /// CUDA_HOST is a dummy macro
+ #define CUDA_HOST
  
- /// GLOBAL is a dummy macro
- #define GLOBAL
+ /// CUDA_GLOBAL is a dummy macro
+ #define CUDA_GLOBAL
  
 #endif
+
+/// Put together CUDA_HOST and CUDA_DEVICE
+#define CUDA_HOST_DEVICE CUDA_HOST CUDA_DEVICE
 
 #ifdef __CUDA_ARCH__
  
@@ -40,5 +43,17 @@
  #define COMPILING_FOR_DEVICE
  
 #endif
+
+/// True or false depending on whether we are compiling on device
+[[ maybe_unused ]]
+constexpr bool CompilingForDevice=
+#ifdef COMPILING_FOR_DEVICE
+	    true
+#else
+	    false
+#endif
+	    ;
+ 
+
 
 #endif

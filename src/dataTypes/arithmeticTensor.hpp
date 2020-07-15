@@ -22,7 +22,7 @@ namespace ciccios
     T data[N];
     
     /// Access to internal data
-    INLINE_FUNCTION HOST DEVICE
+    INLINE_FUNCTION CUDA_HOST_DEVICE
     const T& operator[](const int i) const
     {
       return data[i];
@@ -33,7 +33,7 @@ namespace ciccios
     /// Multiply another array
     template <typename U,
 	      typename R=decltype(T()*U())>
-    HOST DEVICE
+    CUDA_HOST_DEVICE
     auto operator*(const ArithmeticArray<U,N>& oth) const
     {
       /// Result
@@ -47,7 +47,7 @@ namespace ciccios
     
     /// Summassign another array
     template <typename U>
-    HOST DEVICE
+    CUDA_HOST_DEVICE
     auto operator+=(const ArithmeticArray<U,N>& oth)
     {
       for(int i=0;i<N;i++)
@@ -58,7 +58,7 @@ namespace ciccios
     
     /// Subtassign another array
     template <typename U>
-    HOST DEVICE
+    CUDA_HOST_DEVICE
     auto operator-=(const ArithmeticArray<U,N>& oth)
     {
       for(int i=0;i<N;i++)

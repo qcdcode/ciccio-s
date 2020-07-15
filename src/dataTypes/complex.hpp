@@ -52,7 +52,7 @@ namespace ciccios
     }
     
     /// Product with another complex
-    INLINE_FUNCTION HOST DEVICE
+    INLINE_FUNCTION CUDA_HOST_DEVICE
     Complex& sumProd(const Complex oth1,const Complex oth2) //Don't take it by reference or aliasing might arise
     {
       /// Alias for this
