@@ -16,7 +16,7 @@ namespace ciccios
     /// Result
     T out=init;
     
-    constexpr T l[]{list...};
+    T l[]{list...};
     
     for(auto i : l)
       out=f(out,i);
