@@ -62,10 +62,10 @@ namespace ciccios
   auto ref(BaseTens<T>& _t,const TensCompSignature<C>& _c)
   {
     T& t=
-      _t.crtp();
+      _t();
     
     const C& c=
-      _c.crtp();
+      _c();
     
     const auto offset=
       t.template offset<C>();

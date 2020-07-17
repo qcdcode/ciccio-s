@@ -46,11 +46,8 @@ namespace ciccios
     
     void setOffset()
     {
-      const auto& t=
-	static_cast<const T&>(*this);
-      
       auto& nested=
-	static_cast<TensOffset<T,TensComps<TailComps...>>&>(*this);
+	static_cast<Nested&>(*this);
       
       nested.setOffset();
       
@@ -168,7 +165,7 @@ namespace ciccios
 	
   // 	/// Current size
   // 	const auto thisSize=
-  // 	  t.crtp().template compSize<Head>();
+  // 	  t().template compSize<Head>();
 	
   // 	return nestedOffset*thisSize;
   //     }

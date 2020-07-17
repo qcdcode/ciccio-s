@@ -157,7 +157,7 @@ namespace ciccios
   
   // /// Qualify a component as such
   // template <typename T>
-  // struct Comp : public Crtp<T>
+  // struct Comp : public Feature<T>
   // {
   // };
   

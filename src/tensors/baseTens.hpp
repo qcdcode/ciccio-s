@@ -11,7 +11,7 @@ namespace ciccios
 {
   /// Base type to detect a tensor
   template <typename T>
-  struct BaseTens : public Crtp<T>
+  struct BaseTens : public Feature<T>
   {
   };
 }

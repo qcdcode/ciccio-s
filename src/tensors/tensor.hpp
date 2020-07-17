@@ -177,8 +177,8 @@ namespace ciccios
     /// Initialize the tensor with the knowledge of the dynamic size
     template <typename...TD>
     Tens(const TensCompSignature<TD>&...td) :
-      dynamicSizes{initializeDynSizes((DynamicComps*)nullptr,td.crtp()...)},
-      data(staticSize*productAll<Size>(td.crtp()...))
+      dynamicSizes{initializeDynSizes((DynamicComps*)nullptr,td()...)},
+      data(staticSize*productAll<Size>(td()...))
     {
       this->setOffset();
       /// Dynamic size
@@ -207,7 +207,7 @@ namespace ciccios
     // const Fund& eval(const BaseTensComp<Cp>&...comps) const ///< Components
     // {
     //   /// Compute the index
-    //   const Size i=reorderedIndex(comps.crtp()...);
+    //   const Size i=reorderedIndex(comps()...);
       
     //   //cout<<"Index: "<<i<<endl;
     //   return data[i];

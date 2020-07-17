@@ -9,7 +9,7 @@ namespace ciccios
 {
   /// Basic storage, to use to detect storage
   template <typename T>
-  struct BaseTensStorage : public Crtp<T>
+  struct BaseTensStorage : public Feature<T>
   {
   };
   

@@ -16,7 +16,7 @@ namespace ciccios
 {
   /// Base type for SU3Field, needed to obtain static polymorphism
   template <typename T>
-  struct SU3Field : public Crtp<T>
+  struct SU3Field : public Feature<T>
   {
     /// Copy from oth, using the correct deep copier
     template <typename O>
@@ -705,7 +705,7 @@ namespace ciccios
   T& SU3Field<T>::deepCopy(const O& oth)
   {
     return
-      resources::deepCopy(this->crtp(),oth);
+      resources::deepCopy((*this)(),oth);
   }
   
   /////////////////////////////////////////////////////////////////

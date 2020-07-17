@@ -19,7 +19,7 @@ namespace ciccios
   
   /// Class used to detect the TensCompSignature atribute
   template <typename T>
-  struct TensCompSignature : public Crtp<T>
+  struct TensCompSignature : public Feature<T>
   {
   };
   

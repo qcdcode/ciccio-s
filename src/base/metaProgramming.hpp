@@ -96,12 +96,14 @@ namespace ciccios
   
 #define PROVIDE_ALSO_NON_CONST_METHOD_GPU(NAME)				\
   _PROVIDE_ALSO_NON_CONST_METHOD_BEGIN					\
-  CUDA_HOST_DEVICE								\
+  CUDA_HOST_DEVICE							\
   _PROVIDE_ALSO_NON_CONST_METHOD_BODY(NAME)
   
-  /// Implements the CRTP pattern
+  /// Implements a feature through the CRTP pattern
+  ///
+  /// This class must be inherited by any class representing a featrue
   template <typename T>
-  struct Crtp
+  struct Feature
   {
     /// Cast to the base type, with const attribute
     CUDA_HOST_DEVICE
@@ -120,27 +122,27 @@ namespace ciccios
       return *static_cast<T*>(this);
     }
     
-    /// Cast to the base type
+    /// Cast to the featuring class
     ///
     /// This is customarily done by ~ operator, but I don't like it
     CUDA_HOST_DEVICE
-    const T& crtp() const
+    const T& operator()() const
     {
       return *this;
     }
     
-    PROVIDE_ALSO_NON_CONST_METHOD_GPU(crtp);
+    PROVIDE_ALSO_NON_CONST_METHOD_GPU(operator());
   };
   
-  /// Import method from CRTP base class
-#define CRTP_IMPORT_METHOD(A...)				\
+  /// Import method from the feature class
+#define IMPORT_FEATURE_METHOD(A...)				\
   /*! Calls A in the base class */				\
   template <typename...Args>					\
-    CUDA_HOST_DEVICE							\
-    decltype(auto) A(Args&&...args) const			\
-    {								\
-      return this->crtp().A(std::forward<Args>(args)...);	\
-    }
+  CUDA_HOST_DEVICE						\
+  decltype(auto) A(Args&&...args) const				\
+  {								\
+    return (*this)().A(std::forward<Args>(args)...);		\
+  }
     
   /// Introduces the body of a loop
 #if defined USE_CUDA

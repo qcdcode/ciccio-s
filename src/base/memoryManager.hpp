@@ -40,7 +40,7 @@ namespace ciccios
   
   /// Memory manager, base type
   template <typename C>
-  class BaseMemoryManager : public Crtp<C>
+  class BaseMemoryManager : public Feature<C>
   {
   protected:
     
@@ -203,7 +203,7 @@ namespace ciccios
       
       // If not found in the cache, allocate new memory
       if(ptr==nullptr)
-	ptr=this->crtp().allocateRaw(size,alignment);
+	ptr=(*this)().allocateRaw(size,alignment);
       else
 	nCachedReused++;
       
@@ -223,7 +223,7 @@ namespace ciccios
       else
 	{
 	  popFromUsed(ptr);
-	  this->crtp().deAllocateRaw(static_cast<void*>(ptr));
+	  (*this)().deAllocateRaw(static_cast<void*>(ptr));
 	}
       
       ptr=nullptr;
@@ -246,7 +246,7 @@ namespace ciccios
 	  // Increment iterator before releasing
 	  el++;
 	  
-	  this->crtp().release(ptr);
+	  (*this)().release(ptr);
 	}
     }
     
@@ -277,7 +277,7 @@ namespace ciccios
 	      void* ptr=popFromCache(size,DEFAULT_ALIGNMENT);
 	      
 	      VERB_LOGGER(3)<<"ptr: "<<ptr<<endl;
-	      this->crtp().deAllocateRaw(ptr);
+	      (*this)().deAllocateRaw(ptr);
 	    }
 	}
     }
