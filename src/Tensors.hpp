@@ -10,6 +10,7 @@
 #endif
 
 #include <tensors/component.hpp>
+#include <tensors/reference.hpp>
 #include <tensors/tensor.hpp>
 
 #endif

@@ -32,7 +32,8 @@ namespace ciccios
   struct TensCompIdx : public TensCompSignature<TensCompIdx<S,RC,Which>>
   {
     /// Transposed type of component
-    static constexpr RwCl TranspRC=(RC==ANY)?ANY:((RC==CLN)?ROW:CLN);
+    static constexpr RwCl TranspRC=
+      (RC==ANY)?ANY:((RC==CLN)?ROW:CLN);
     
     /// Transposed component
     using Transp=TensCompIdx<S,TranspRC,Which>;
@@ -146,6 +147,11 @@ namespace ciccios
   constexpr int NSpinComp=4;
   
   DECLARE_ROW_OR_CLN_COMPONENT(Spin,int,NSpinComp,sp);
+  
+  /// Number of component for a fuf vector
+  constexpr int64_t NFufComp=14;
+  
+  DECLARE_ROW_OR_CLN_COMPONENT(Fuf,int64_t,NFufComp,fuf);
   
   // constexpr int NDirac=4;
   
