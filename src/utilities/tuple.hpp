@@ -107,7 +107,7 @@ namespace ciccios
     typename impl::TupleFilterOut<F,Tp>::type;
   
   /////////////////////////////////////////////////////////////////
-
+  
   namespace impl
   {
     /// Predicate returning whether the type is present in the list a given number of times N
