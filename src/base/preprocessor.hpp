@@ -3,7 +3,9 @@
 
 /// \file preprocessor.hpp
 ///
-/// Implement some macro to concatenate, unroll, stringify etc
+/// \brief Implement some macro to concatenate, unroll, stringify etc
+///
+/// \todo have a look here https://github.com/pfultz2/Cloak/wiki/C-Preprocessor-tricks,-tips,-and-idioms
 
 #define TO_STRING_INTERNAL(x) #x
 
