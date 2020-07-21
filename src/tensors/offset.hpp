@@ -5,7 +5,6 @@
 ///
 /// \brief Calculation of the offset for a given component in a tensor
 
-#include <tensors/baseTens.hpp>
 #include <tensors/component.hpp>
 #include <tensors/componentsList.hpp>
 
@@ -98,12 +97,12 @@ namespace ciccios
   //   /// No more args to parse
   //   template <TensorOffsetParsing State,
   // 	      typename C>
-  //   struct TensOffset<State,TensCompSignature<C>,TensComps<>>
+  //   struct TensOffset<State,TensCompFeat<C>,TensComps<>>
   //   {
   //     /// Returns 1, to form the basis for the calculation
   //     template <typename T>
   //     INLINE_FUNCTION constexpr static
-  //     auto offset(const BaseTens<T>& t)
+  //     auto offset(const TensFeat<T>& t)
   //     {
   // 	// LOGGER<<"We run out of comps"<<endl;
 	
@@ -116,8 +115,8 @@ namespace ciccios
   //   /// Case in which we are parsing the actual component
   //   template <typename C,
   // 	      typename...Tail>
-  //   struct TensOffset<TensorOffsetParsing::BEFORE_COMP,TensCompSignature<C>,TensComps<C,Tail...>> :
-  //     public TensOffset<TensorOffsetParsing::AFTER_COMP,TensCompSignature<C>,TensComps<C,Tail...>>
+  //   struct TensOffset<TensorOffsetParsing::BEFORE_COMP,TensCompFeat<C>,TensComps<C,Tail...>> :
+  //     public TensOffset<TensorOffsetParsing::AFTER_COMP,TensCompFeat<C>,TensComps<C,Tail...>>
   //   {
   //   };
     
@@ -127,18 +126,18 @@ namespace ciccios
   //   template <typename C,
   // 		typename Head,
   // 		typename...Tail>
-  //   struct TensOffset<TensorOffsetParsing::BEFORE_COMP,TensCompSignature<C>,TensComps<Head,Tail...>>
+  //   struct TensOffset<TensorOffsetParsing::BEFORE_COMP,TensCompFeat<C>,TensComps<Head,Tail...>>
   //   {
   //     /// Returns the nested offset
   //     template <typename T>
   //     INLINE_FUNCTION constexpr static
-  //     auto offset(const BaseTens<T>& t)
+  //     auto offset(const TensFeat<T>& t)
   //     {
   // 	// LOGGER<<"We are not deeper"<<endl;
 	
   // 	/// Nested offset
   // 	const auto nested=
-  // 	  TensOffset<TensorOffsetParsing::BEFORE_COMP,TensCompSignature<C>,TensComps<Tail...>>::offset(t);
+  // 	  TensOffset<TensorOffsetParsing::BEFORE_COMP,TensCompFeat<C>,TensComps<Tail...>>::offset(t);
 	
   // 	return nested;
   //     }
@@ -150,18 +149,18 @@ namespace ciccios
   //   template <typename C,
   // 	      typename Head,
   // 	      typename...Tail>
-  //   struct TensOffset<TensorOffsetParsing::AFTER_COMP,TensCompSignature<C>,TensComps<Head,Tail...>>
+  //   struct TensOffset<TensorOffsetParsing::AFTER_COMP,TensCompFeat<C>,TensComps<Head,Tail...>>
   //   {
   //     /// Returns the nested offset multiplied by current size
   //     template <typename T>
   //     INLINE_FUNCTION constexpr static
-  //     auto offset(const BaseTens<T>& t)
+  //     auto offset(const TensFeat<T>& t)
   //     {
   // 	// LOGGER<<"We are deeper"<<endl;
 	
   // 	/// Nested offset
   // 	const auto nestedOffset=
-  // 	  TensOffset<TensorOffsetParsing::AFTER_COMP,TensCompSignature<C>,TensComps<Tail...>>::offset(t);
+  // 	  TensOffset<TensorOffsetParsing::AFTER_COMP,TensCompFeat<C>,TensComps<Tail...>>::offset(t);
 	
   // 	/// Current size
   // 	const auto thisSize=
@@ -178,7 +177,7 @@ namespace ciccios
   // template <typename C,
   // 	    typename T>
   // INLINE_FUNCTION constexpr
-  // auto tensCompOffset(const BaseTens<T>& t)
+  // auto tensCompOffset(const TensFeat<T>& t)
   //   {
   //     using namespace impl;
       

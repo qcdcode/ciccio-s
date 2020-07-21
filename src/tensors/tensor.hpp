@@ -1,7 +1,6 @@
 #ifndef _TENSOR_HPP
 #define _TENSOR_HPP
 
-#include <tensors/baseTens.hpp>
 #include <tensors/componentSignature.hpp>
 #include <tensors/componentsList.hpp>
 #include <tensors/offset.hpp>
@@ -19,6 +18,12 @@ namespace ciccios
 #endif
     ;
   
+  /// Base type to detect a tensor
+  template <typename T>
+  struct TensFeat : public Feature<T>
+  {
+  };
+  
   /// Tensor with Comps components, of Fund funamental type
   ///
   /// Forward definition to capture actual components
@@ -32,7 +37,7 @@ namespace ciccios
 	    StorLoc SL,
 	    typename...TC>
   struct Tens<TensComps<TC...>,F,SL> :
-    public BaseTens<Tens<TensComps<TC...>,F,SL>>,
+    public TensFeat<Tens<TensComps<TC...>,F,SL>>,
     public TensOffset<Tens<TensComps<TC...>,F,SL>,
 		      TensComps<TC...>>
   {
@@ -176,7 +181,7 @@ namespace ciccios
     
     /// Initialize the tensor with the knowledge of the dynamic size
     template <typename...TD>
-    Tens(const TensCompSignature<TD>&...td) :
+    Tens(const TensCompFeat<TD>&...td) :
       dynamicSizes{initializeDynSizes((DynamicComps*)nullptr,td()...)},
       data(staticSize*productAll<Size>(td()...))
     {
@@ -204,7 +209,7 @@ namespace ciccios
     
     // /// Access to inner data with any order
     // template <typename...Cp>
-    // const Fund& eval(const BaseTensComp<Cp>&...comps) const ///< Components
+    // const Fund& eval(const TensCompFeat<Cp>&...comps) const ///< Components
     // {
     //   /// Compute the index
     //   const Size i=reorderedIndex(comps()...);

@@ -29,7 +29,7 @@ namespace ciccios
   template <typename S,
 	    RwCl RC=ROW,
 	    int Which=0>
-  struct TensCompIdx : public TensCompSignature<TensCompIdx<S,RC,Which>>
+  struct TensCompIdx : public TensCompFeat<TensCompIdx<S,RC,Which>>
   {
     /// Transposed type of component
     static constexpr RwCl TranspRC=

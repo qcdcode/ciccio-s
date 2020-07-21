@@ -52,14 +52,14 @@ namespace ciccios
   };
   
   template <typename T>
-  auto ref(BaseTens<T>& t)
+  auto ref(TensFeat<T>& t)
   {
     return TensRef<T,TensComps<>>(t,t.data);
   }
   
   template <typename T,
 	    typename C>
-  auto ref(BaseTens<T>& _t,const TensCompSignature<C>& _c)
+  auto ref(TensFeat<T>& _t,const TensCompFeat<C>& _c)
   {
     T& t=
       _t();

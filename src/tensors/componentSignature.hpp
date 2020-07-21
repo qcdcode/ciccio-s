@@ -17,9 +17,9 @@ namespace ciccios
   /// Row or column
   enum RwCl{ROW,CLN,ANY};
   
-  /// Class used to detect the TensCompSignature atribute
+  /// Class used to detect the TensComp feature
   template <typename T>
-  struct TensCompSignature : public Feature<T>
+  struct TensCompFeat : public Feature<T>
   {
   };
   
@@ -30,7 +30,7 @@ namespace ciccios
 #define DECLARE_COMPONENT_SIGNATURE(NAME,TYPE,SIZE)		\
   /*! Signature for the NAME component */			\
   struct NAME ## Signature :					\
-    public TensCompSignature<NAME ## Signature>,		\
+    public TensCompFeat<NAME ## Signature>,		\
     public TensCompSize<TYPE,SIZE>				\
   {								\
     /*! Type used for the index */				\
