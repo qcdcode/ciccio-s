@@ -59,13 +59,14 @@ namespace ciccios
   
   template <typename T,
 	    typename C>
-  auto ref(TensFeat<T>& _t,const TensCompFeat<C>& _c)
+  auto ref(TensFeat<T>& tFeat,
+	   const TensCompFeat<C>& cFeat)
   {
     T& t=
-      _t();
+      tFeat.defeat();
     
     const C& c=
-      _c();
+      cFeat.defeat();
     
     const auto offset=
       t.template offset<C>();

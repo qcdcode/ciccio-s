@@ -126,12 +126,12 @@ namespace ciccios
     ///
     /// This is customarily done by ~ operator, but I don't like it
     CUDA_HOST_DEVICE
-    const T& operator()() const
+    const T& defeat() const
     {
       return *this;
     }
     
-    PROVIDE_ALSO_NON_CONST_METHOD_GPU(operator());
+    PROVIDE_ALSO_NON_CONST_METHOD_GPU(defeat);
   };
   
   /// Import method from the feature class
