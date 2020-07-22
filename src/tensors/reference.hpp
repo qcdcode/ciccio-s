@@ -39,7 +39,7 @@ namespace ciccios
     
     /// Visible components
     using Comps=
-      TupleFilterOut<OrigComps, SubscribedComps>;
+      TupleFilterOut<OrigComps,SubscribedComps>;
     
     /// Storage for the data
     Fund* const data;
@@ -58,7 +58,8 @@ namespace ciccios
   }
   
   template <typename T,
-	    typename C>
+	    typename C,
+	    SFINAE_ON_TEMPLATE_ARG(nOfComps<T>!=1)>
   auto ref(TensFeat<T>& tFeat,
 	   const TensCompFeat<C>& cFeat)
   {

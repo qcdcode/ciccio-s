@@ -14,6 +14,11 @@ namespace ciccios
   /// Collection of components
   template <typename...Tc>
   using TensComps=std::tuple<Tc...>;
+  
+  /// Returns the number of components of a tensComp
+  template <typename T>
+  constexpr int nOfComps=
+    std::tuple_size<typename T::Comps>::value;
 }
 
 #endif
