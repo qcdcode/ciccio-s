@@ -9,6 +9,7 @@
 #include <base/metaProgramming.hpp>
 #include <tensors/component.hpp>
 #include <tensors/componentsList.hpp>
+#include <tensors/subscribe.hpp>
 #include <tensors/tensFeat.hpp>
 #include <utilities/tuple.hpp>
 
@@ -33,7 +34,8 @@ namespace ciccios
   template <typename T,    // Tensor
 	    typename...Vc> // Visible components
   struct THIS : public
-  TensRefFeat<IsTensRef,THIS>,
+    TensRefFeat<IsTensRef,THIS>,
+    Subscribable<THIS>,
     TensRefFeat<std::conditional_t<(sizeof...(Vc)>1),ReturnsRefWhenSliced,ReturnsDataWhenSliced>,THIS>
   {
     /// Original tensor to which we refer

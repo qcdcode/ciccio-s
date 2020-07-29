@@ -5,6 +5,7 @@
 #include <tensors/componentsList.hpp>
 #include <tensors/offset.hpp>
 #include <tensors/reference.hpp>
+#include <tensors/subscribe.hpp>
 #include <tensors/storage.hpp>
 #include <tensors/tensFeat.hpp>
 #include <utilities/tuple.hpp>
@@ -39,6 +40,7 @@ namespace ciccios
   struct THIS : public
     TensFeat<std::conditional_t<sizeof...(TC)!=1,ReturnsRefWhenSliced,ReturnsDataWhenSliced>,THIS>,
     TensFeat<IsTens,THIS>,
+    Subscribable<THIS>,
     TensOffset<THIS,TensComps<TC...>>
   {
     /// Fundamental type

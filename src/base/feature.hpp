@@ -1,6 +1,8 @@
 #ifndef _FEATURE_HPP
 #define _FEATURE_HPP
 
+#include <gpu/cudaMacros.hpp>
+
 namespace ciccios
 {
   /// Provides a simple struct with the given name, to be used to catch a feature
