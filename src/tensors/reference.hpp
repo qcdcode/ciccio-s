@@ -105,28 +105,39 @@ namespace ciccios
   //   return TensRef<T,TensComps<>>(t,t.data);
   // }
   
+  namespace impl
+  {
+    /// Compute the result of taking a sliced reference
+    template <typename T,
+	      typename C>
+    auto ref(const T& t,
+	     const C& c)
+    {
+      decltype(auto) base=
+	deRef(t);
+      
+      const auto shift=
+	base.computeShiftOfComp(c);
+      
+      using Bt=
+	std::decay_t<decltype(base)>;
+      
+      using Vc=
+	ciccios::TupleFilterOut<TensComps<C>,typename T::Comps>;
+      
+      static_assert((nOfComps<T> -1)==(std::tuple_size<Vc>::value),"Asking to subscribe an absent or already subscribed component");
+      
+      return TensRef<Bt,Vc>(base,t.getDataPtr()+shift);
+    }
+  }
+  
   template <typename T,
 	    typename C,
 	    template <typename,typename> class FG>
   auto ref(const FG<ReturnsRefWhenSliced,T>& tFeat,
 	   const TensCompFeat<IsTensComp,C>& cFeat)
   {
-    auto& t=
-      tFeat.defeat();
-    
-    auto& base=
-      deRef(t);
-    
-    using Bt=
-      std::decay_t<decltype(base)>;
-    
-    using Vc=
-      TupleFilterOut<TensComps<C>,typename T::Comps>;
-    
-    auto shift=
-      base.computeShiftOfComp(cFeat.defeat());
-    
-    return TensRef<Bt,Vc>(base,t.getDataPtr()+shift);
+    return impl::ref(tFeat.defeat(),cFeat.defeat());
   }
   
   template <typename T,
@@ -135,18 +146,9 @@ namespace ciccios
   decltype(auto) ref(const FG<ReturnsDataWhenSliced,T>& tFeat,
 		     const TensCompFeat<IsTensComp,C>& cFeat)
   {
-    auto& t=
-      tFeat.defeat();
-    
-    auto& base=
-      deRef(t);
-    
-    auto shift=
-      base.computeShiftOfComp(cFeat.defeat());
-    
-    return t.getDataPtr()[shift];
+    return
+      *(impl::ref(tFeat.defeat(),cFeat.defeat()).data);
   }
-  
 }
 
 #endif
