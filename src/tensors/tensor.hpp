@@ -4,7 +4,9 @@
 #include <tensors/componentSignature.hpp>
 #include <tensors/componentsList.hpp>
 #include <tensors/offset.hpp>
+#include <tensors/reference.hpp>
 #include <tensors/storage.hpp>
+#include <tensors/tensFeat.hpp>
 #include <utilities/tuple.hpp>
 
 namespace ciccios
@@ -18,12 +20,6 @@ namespace ciccios
 #endif
     ;
   
-  /// Base type to detect a tensor
-  template <typename T>
-  struct TensFeat : public Feature<T>
-  {
-  };
-  
   /// Tensor with Comps components, of Fund funamental type
   ///
   /// Forward definition to capture actual components
@@ -32,14 +28,18 @@ namespace ciccios
 	    StorLoc SL=DefaultStorage>
   struct Tens;
   
+  /// Short name for the tensor
+  #define THIS \
+    Tens<TensComps<TC...>,F,SL>
+  
   /// Tensor
   template <typename F,
 	    StorLoc SL,
 	    typename...TC>
-  struct Tens<TensComps<TC...>,F,SL> :
-    public TensFeat<Tens<TensComps<TC...>,F,SL>>,
-    public TensOffset<Tens<TensComps<TC...>,F,SL>,
-		      TensComps<TC...>>
+  struct THIS : public
+    TensFeat<std::conditional_t<sizeof...(TC)!=1,ReturnsRefWhenSliced,ReturnsDataWhenSliced>,THIS>,
+    TensFeat<IsTens,THIS>,
+    TensOffset<THIS,TensComps<TC...>>
   {
     /// Fundamental type
     using Fund=F;
@@ -65,12 +65,13 @@ namespace ciccios
 			TC::Base::sizeAtCompileTime:
 			1)...);
     
-    template <typename C>
-    constexpr INLINE_FUNCTION
-    auto offset() const
-    {
-      return this->getOffset((C*)nullptr);
-    }
+    // /// Read the offset
+    // template <typename C>
+    // constexpr INLINE_FUNCTION
+    // auto offset() const
+    // {
+    //   return this->getOffset((C*)nullptr);
+    // }
     
     // /// Calculate the index - no more components to parse
     // Size index(Size outer) const ///< Value of all the outer components
@@ -157,6 +158,13 @@ namespace ciccios
     /// Actual storage
     StorageType data;
     
+    decltype(auto) getDataPtr() const
+    {
+      return data.getDataPtr();
+    }
+    
+    PROVIDE_ALSO_NON_CONST_METHOD(getDataPtr);
+    
     /// Initialize the dynamical component \t Out using the inputs
     template <typename Ds,   // Type of the dynamically allocated components
 	      typename Out>  // Type to set
@@ -181,7 +189,7 @@ namespace ciccios
     
     /// Initialize the tensor with the knowledge of the dynamic size
     template <typename...TD>
-    Tens(const TensCompFeat<TD>&...td) :
+    Tens(const TensComp<TD>&...td) :
       dynamicSizes{initializeDynSizes((DynamicComps*)nullptr,td()...)},
       data(staticSize*productAll<Size>(td()...))
     {
@@ -244,7 +252,17 @@ namespace ciccios
     }
     
     PROVIDE_ALSO_NON_CONST_METHOD(getRawAccess);
+    
+    /// Returns the shift for the passed component
+    template <typename C>
+    auto computeShiftOfComp(const TensCompFeat<IsTensComp,C>& cFeat) const
+    {
+      return
+	this->getOffset(static_cast<C*>(nullptr))*cFeat.defeat();
+    }
   };
+  
+  #undef THIS
   
   // /// Traits of the Tensor
   // template <typename Fund,
@@ -257,6 +275,19 @@ namespace ciccios
     
   //   using Comps=TensComps<TC...>;
   // };
+  
+  /// Returns the same than the passed argument
+#define PROVIDE_DEREF(ATTRIB)				\
+  template <typename T>					\
+  decltype(auto) deRef(ATTRIB TensFeat<IsTens,T>& t)	\
+  {							\
+    return t.defeat();					\
+  }
+  
+  PROVIDE_DEREF();
+  PROVIDE_DEREF(const);
+  
+#undef PROVIDE_DEREF
 }
 
 #endif

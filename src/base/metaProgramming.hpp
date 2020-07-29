@@ -102,48 +102,38 @@ namespace ciccios
   /// Implements a feature through the CRTP pattern
   ///
   /// This class must be inherited by any class representing a featrue
-  template <typename T>
-  struct Feature
-  {
-    /// Cast to the base type, with const attribute
-    CUDA_HOST_DEVICE
-    operator const T&() const
-    {
-      return *static_cast<const T*>(this);
-    }
+  // template <typename T>
+  // struct Feature
+  // {
+    // /// Cast to the base type, with const attribute
+    // CUDA_HOST_DEVICE
+    // operator const T&() const
+    // {
+    //   return *static_cast<const T*>(this);
+    // }
     
-    /// Cast to the base type
-    ///
-    /// Cannot be achieved with the preprocessor macro, since the name
-    /// of the method is weird
-    CUDA_HOST_DEVICE
-    operator T&()
-    {
-      return *static_cast<T*>(this);
-    }
+    // /// Cast to the base type
+    // ///
+    // /// Cannot be achieved with the preprocessor macro, since the name
+    // /// of the method is weird
+    // CUDA_HOST_DEVICE
+    // operator T&()
+    // {
+    //   return *static_cast<T*>(this);
+    // }
     
-    /// Cast to the featuring class
-    ///
-    /// This is customarily done by ~ operator, but I don't like it
-    CUDA_HOST_DEVICE
-    const T& defeat() const
-    {
-      return *this;
-    }
+    // /// Cast to the featuring class
+    // ///
+    // /// This is customarily done by ~ operator, but I don't like it
+    // CUDA_HOST_DEVICE
+    // const T& defeat() const
+    // {
+    //   return *this;
+    // }
     
-    PROVIDE_ALSO_NON_CONST_METHOD_GPU(defeat);
-  };
+    // PROVIDE_ALSO_NON_CONST_METHOD_GPU(defeat);
+  // };
   
-  /// Import method from the feature class
-#define IMPORT_FEATURE_METHOD(A...)				\
-  /*! Calls A in the base class */				\
-  template <typename...Args>					\
-  CUDA_HOST_DEVICE						\
-  decltype(auto) A(Args&&...args) const				\
-  {								\
-    return (*this)().A(std::forward<Args>(args)...);		\
-  }
-    
   /// Introduces the body of a loop
 #if defined USE_CUDA
  #define KERNEL_LAMBDA_BODY(A)			\
@@ -152,6 +142,12 @@ namespace ciccios
   #define KERNEL_LAMBDA_BODY(A)\
   [&] (A) __attribute__((always_inline))
 #endif
+
+  /// Dummy type that eats any argument
+  template <typename...>
+  struct DummyType
+  {
+  };
 }
 
 #endif

@@ -15,6 +15,7 @@
 /// TensCompIdx with the appropriated signature.
 
 #include <base/inliner.hpp>
+#include <base/feature.hpp>
 #include <base/metaProgramming.hpp>
 #include <tensors/componentSize.hpp>
 #include <tensors/componentSignature.hpp>
@@ -25,18 +26,27 @@ namespace ciccios
 {
   int p=std::array<int,2>({0,8})[1];
   
+  DEFINE_FEATURE(IsTensComp);
+  
+  DEFINE_FEATURE_GROUP(TensCompFeat);
+  
+  /// Short name for the TensComp
+#define THIS					\
+  TensComp<S,RC,Which>
+  
   /// Tensor component defined by base type S
   template <typename S,
 	    RwCl RC=ROW,
 	    int Which=0>
-  struct TensCompIdx : public TensCompFeat<TensCompIdx<S,RC,Which>>
+  struct TensComp : public TensCompFeat<IsTensComp,THIS>
   {
     /// Transposed type of component
     static constexpr RwCl TranspRC=
       (RC==ANY)?ANY:((RC==CLN)?ROW:CLN);
     
     /// Transposed component
-    using Transp=TensCompIdx<S,TranspRC,Which>;
+    using Transp=
+      TensComp<S,TranspRC,Which>;
     
     /// Base type
     using Base=S;
@@ -54,12 +64,12 @@ namespace ciccios
     
     /// Init from value
     template <typename T>
-    explicit constexpr TensCompIdx(T&& i) : i(i)
+    explicit constexpr TensComp(T&& i) : i(i)
     {
     }
     
     /// Default constructor
-    TensCompIdx()
+    TensComp()
     {
     }
     
@@ -82,13 +92,15 @@ namespace ciccios
     }
     
     /// Assignment operator
-    TensCompIdx& operator=(const Size& oth)
+    TensComp& operator=(const Size& oth)
     {
       i=oth;
       
       return *this;
     }
   };
+  
+  #undef THIS
   
   /// Promotes the argument i to a COMPONENT, through a function with given NAME
 #define DECLARE_COMPONENT_FACTORY(NAME,COMPONENT...)		\
@@ -106,7 +118,7 @@ namespace ciccios
   DECLARE_COMPONENT_SIGNATURE(NAME,TYPE,SIZE);			\
   								\
   /*! NAME component */						\
-  using NAME=TensCompIdx<NAME ## Signature,ANY,0>;		\
+  using NAME=TensComp<NAME ## Signature,ANY,0>;		\
 								\
   DECLARE_COMPONENT_FACTORY(FACTORY,NAME)
   
@@ -120,7 +132,7 @@ namespace ciccios
   /*! NAME component */						\
   template <RwCl RC=ROW,					\
 	    int Which=0>					\
-  using NAME ## RC=TensCompIdx<NAME ## Signature,RC,Which>;	\
+  using NAME ## RC=TensComp<NAME ## Signature,RC,Which>;	\
 								\
   /*! Row kind of NAME component */				\
   using NAME ## Row=NAME ## RC<ROW,0>;				\
@@ -138,9 +150,9 @@ namespace ciccios
   DECLARE_COMPONENT_FACTORY(FACTORY,NAME)
   
   /////////////////////////////////////////////////////////////////
-
+  
 /// \todo move to a physics file
-
+  
   DECLARE_COMPONENT(Compl,int,2,complComp);
   
   /// Number of component for a spin vector

@@ -16,8 +16,10 @@ namespace ciccios
 {
   /// Base type for SU3Field, needed to obtain static polymorphism
   template <typename T>
-  struct SU3Field : public Feature<T>
+  struct SU3Field
   {
+    PROVIDE_DEFEAT_METHOD(T);
+    
     /// Copy from oth, using the correct deep copier
     template <typename O>
     T& deepCopy(const O& oth);

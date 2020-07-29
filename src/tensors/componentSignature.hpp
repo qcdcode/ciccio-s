@@ -17,12 +17,6 @@ namespace ciccios
   /// Row or column
   enum RwCl{ROW,CLN,ANY};
   
-  /// Class used to detect the TensComp feature
-  template <typename T>
-  struct TensCompFeat : public Feature<T>
-  {
-  };
-  
   /// Define the signature for a componenent convertible to TYPE of given NAME and SIZE
   ///
   /// The specified name is suffixed with "Signature", to allow the
@@ -30,7 +24,6 @@ namespace ciccios
 #define DECLARE_COMPONENT_SIGNATURE(NAME,TYPE,SIZE)		\
   /*! Signature for the NAME component */			\
   struct NAME ## Signature :					\
-    public TensCompFeat<NAME ## Signature>,		\
     public TensCompSize<TYPE,SIZE>				\
   {								\
     /*! Type used for the index */				\

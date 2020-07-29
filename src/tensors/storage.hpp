@@ -9,8 +9,9 @@ namespace ciccios
 {
   /// Basic storage, to use to detect storage
   template <typename T>
-  struct BaseTensStorage : public Feature<T>
+  struct BaseTensStorage
   {
+    PROVIDE_DEFEAT_METHOD(T);
   };
   
   /// Class to store the data
@@ -22,9 +23,15 @@ namespace ciccios
     /// Structure to hold dynamically allocated data
     struct DynamicStorage
     {
-      
       /// Storage
       Fund* data;
+      
+      decltype(auto) getDataPtr() const
+      {
+	return data;
+      }
+      
+      PROVIDE_ALSO_NON_CONST_METHOD(getDataPtr);
       
       /// Construct allocating data
       DynamicStorage(const Size& dynSize)
@@ -45,6 +52,14 @@ namespace ciccios
     {
       /// Storage
       Fund data[StaticSize];
+      
+      /// Return the pointer to inner data
+      const Fund* getDataPtr() const
+      {
+	return data;
+      }
+      
+      PROVIDE_ALSO_NON_CONST_METHOD(getDataPtr);
       
       /// Constructor: since the data is statically allocated, we need to do nothing
       StackStorage(const Size&)
@@ -67,6 +82,13 @@ namespace ciccios
     
     /// Storage of data
     ActualStorage data;
+    
+    decltype(auto) getDataPtr() const
+    {
+      return data.getDataPtr();
+    }
+    
+    PROVIDE_ALSO_NON_CONST_METHOD(getDataPtr);
     
     /// Forbids copy
     TensStorage(const TensStorage&) =delete;

@@ -12,11 +12,12 @@
  #include <cuda_runtime.h>
 #endif
 
-#include "base/debug.hpp"
-#include "base/logger.hpp"
-#include "base/metaProgramming.hpp"
-#include "threads/pool.hpp"
-#include "utilities/valueWithExtreme.hpp"
+#include <base/debug.hpp>
+#include <base/feature.hpp>
+#include <base/logger.hpp>
+#include <base/metaProgramming.hpp>
+#include <threads/pool.hpp>
+#include <utilities/valueWithExtreme.hpp>
 
 namespace ciccios
 {
@@ -40,8 +41,10 @@ namespace ciccios
   
   /// Memory manager, base type
   template <typename C>
-  class BaseMemoryManager : public Feature<C>
+  class BaseMemoryManager
   {
+    PROVIDE_DEFEAT_METHOD(C);
+    
   protected:
     
     /// Number of allocation performed
