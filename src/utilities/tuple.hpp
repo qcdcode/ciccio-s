@@ -132,6 +132,13 @@ namespace ciccios
     };
   }
   
+  /// Returns whether the type T is in the tuple Tp N times
+  template <typename T,
+	    typename Tp,
+	    int N=1>
+  constexpr bool TupleHasType=
+    impl::TypeIsInList<N,Tp>::template t<T>::value;
+  
   /// Returns a tuple containing all types common to the two tuples
   template <typename TupleToSearch,
 	    typename TupleBeingSearched>
