@@ -15,36 +15,6 @@
 
 namespace ciccios
 {
-  /// Returns the argument as a constant
-  template <typename T>
-  constexpr const T& asConst(T& t) noexcept
-  {
-    return t;
-  }
-  
-  /////////////////////////////////////////////////////////////////
-  
-  /// Remove \c const qualifier from any reference
-  template <typename T>
-  constexpr T& asMutable(const T& v) noexcept
-  {
-    return const_cast<T&>(v);
-  }
-  
-  /// Remove \c const qualifier from any const rvalue reference
-  template <typename T>
-  constexpr T&& asMutable(const T&& v) noexcept
-  {
-    return const_cast<T&&>(v);
-  }
-  
-  /// Remove \c const qualifier from any pointer
-  template <typename T>
-  constexpr T* asMutable(const T* v) noexcept
-  {
-    return const_cast<T*>(v);
-  }
-  
   /////////////////////////////////////////////////////////////////
   
   /// Provides a SFINAE to be used in template par list
@@ -59,6 +29,32 @@ namespace ciccios
   /// \endcode
 #define SFINAE_ON_TEMPLATE_ARG(...)	\
   std::enable_if_t<(__VA_ARGS__),void*> =nullptr
+  
+  /////////////////////////////////////////////////////////////////
+  
+  /// Returns the argument as a constant
+  template <typename T>
+  constexpr const T& asConst(T& t) noexcept
+  {
+    return t;
+  }
+  
+  /////////////////////////////////////////////////////////////////
+  
+  /// Remove \c const qualifier from any reference
+  template <typename T,
+	    SFINAE_ON_TEMPLATE_ARG(not std::is_pointer<T>::value)>
+  constexpr T& asMutable(const T& v) noexcept
+  {
+    return const_cast<T&>(v);
+  }
+  
+  /// Remove \c const qualifier from any pointer
+  template <typename T>
+  constexpr T* asMutable(const T* v) noexcept
+  {
+    return (T*)(v);
+  }
   
   /// Return the type T or const T if B is true
   template <bool B,
