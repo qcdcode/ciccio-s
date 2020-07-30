@@ -11,7 +11,6 @@
 
 #include <tensors/component.hpp>
 #include <tensors/reference.hpp>
-#include <tensors/subscribe.hpp>
 #include <tensors/tensor.hpp>
 
 #endif

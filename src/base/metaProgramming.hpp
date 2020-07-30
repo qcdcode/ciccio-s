@@ -22,6 +22,31 @@ namespace ciccios
     return t;
   }
   
+  /////////////////////////////////////////////////////////////////
+  
+  /// Remove \c const qualifier from any reference
+  template <typename T>
+  constexpr T& asMutable(const T& v) noexcept
+  {
+    return const_cast<T&>(v);
+  }
+  
+  /// Remove \c const qualifier from any const rvalue reference
+  template <typename T>
+  constexpr T&& asMutable(const T&& v) noexcept
+  {
+    return const_cast<T&&>(v);
+  }
+  
+  /// Remove \c const qualifier from any pointer
+  template <typename T>
+  constexpr T* asMutable(const T* v) noexcept
+  {
+    return const_cast<T*>(v);
+  }
+  
+  /////////////////////////////////////////////////////////////////
+  
   /// Provides a SFINAE to be used in template par list
   ///
   /// This follows
@@ -35,19 +60,11 @@ namespace ciccios
 #define SFINAE_ON_TEMPLATE_ARG(...)	\
   std::enable_if_t<(__VA_ARGS__),void*> =nullptr
   
-  /// Returns true if T is a const lvalue reference
-  template <typename T>
-  constexpr bool is_const_lvalue_reference_v=std::is_lvalue_reference<T>::value and std::is_const<std::remove_reference_t<T>>::value;
-  
-  /// Returns the type without "const" attribute if it is a reference
-  template <typename T>
-  CUDA_HOST_DEVICE
-  decltype(auto) remove_const_if_ref(T&& t)
-  {
-    using Tv=std::remove_const_t<std::remove_reference_t<T>>;
-    
-    return (std::conditional_t<is_const_lvalue_reference_v<T>,Tv&,Tv>)t;
-  }
+  /// Return the type T or const T if B is true
+  template <bool B,
+	    typename T>
+  using ConstIf=
+    std::conditional_t<B,const T,T>;
   
   /// If the type is an l-value reference, provide the type T&, otherwise wih T
   template <typename T>
@@ -63,7 +80,7 @@ namespace ciccios
 #define _PROVIDE_ALSO_NON_CONST_METHOD_BODY(NAME)			\
   decltype(auto) NAME(Ts&&...ts) /*!< Arguments                      */ \
   {									\
-    return remove_const_if_ref(asConst(*this).NAME(std::forward<Ts>(ts)...)); \
+    return asMutable(asConst(*this).NAME(std::forward<Ts>(ts)...)); \
   }
   
   /// Provides also a non-const version of the method \c NAME
@@ -126,7 +143,7 @@ namespace ciccios
     // ///
     // /// This is customarily done by ~ operator, but I don't like it
     // CUDA_HOST_DEVICE
-    // const T& defeat() const
+    // const T& deFeat() const
     // {
     //   return *this;
     // }

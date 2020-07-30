@@ -5,7 +5,6 @@
 #include <tensors/componentsList.hpp>
 #include <tensors/offset.hpp>
 #include <tensors/reference.hpp>
-#include <tensors/subscribe.hpp>
 #include <tensors/storage.hpp>
 #include <tensors/tensFeat.hpp>
 #include <utilities/tuple.hpp>
@@ -38,9 +37,7 @@ namespace ciccios
 	    StorLoc SL,
 	    typename...TC>
   struct THIS : public
-    TensFeat<std::conditional_t<sizeof...(TC)!=1,ReturnsRefWhenSliced,ReturnsDataWhenSliced>,THIS>,
     TensFeat<IsTens,THIS>,
-    Subscribable<THIS>,
     TensOffset<THIS,TensComps<TC...>>
   {
     /// Fundamental type
@@ -255,12 +252,48 @@ namespace ciccios
     
     PROVIDE_ALSO_NON_CONST_METHOD(getRawAccess);
     
+    /// Provide subscribe operator when returning a reference
+#define PROVIDE_SUBSCRIBE_OPERATOR(CONST_ATTR,CONST_AS_BOOL)		\
+    /*! Operator to take a const reference to a given component */	\
+    template <typename C,						\
+	      SFINAE_ON_TEMPLATE_ARG(sizeof...(TC)>1  and TupleHasType<C,Comps>)> \
+    auto operator[](const TensCompFeat<IsTensComp,C>& cFeat) CONST_ATTR	\
+    {									\
+      /* Residual components */						\
+      using RefComps=							\
+	TupleFilterOut<TensComps<C>,Comps>;				\
+									\
+      return								\
+	TensRef<CONST_AS_BOOL,THIS,RefComps>(*this,getDataPtr()+computeShiftOfComp(cFeat)); \
+    }
+    
+    PROVIDE_SUBSCRIBE_OPERATOR(/* not const */, false);
+    PROVIDE_SUBSCRIBE_OPERATOR(const, true);
+    
+#undef PROVIDE_SUBSCRIBE_OPERATOR
+    
+    /// Provide subscribe operator when returning direct access
+#define PROVIDE_SUBSCRIBE_OPERATOR(CONST_ATTR)				\
+    /*! Operator to return direct access to data */			\
+    template <typename C,						\
+	      SFINAE_ON_TEMPLATE_ARG(sizeof...(TC)==1 and TupleHasType<C,Comps>)> \
+    CONST_ATTR Fund& operator[](const TensCompFeat<IsTensComp,C>& cFeat) CONST_ATTR \
+    {									\
+      return								\
+	data[cFeat.deFeat()];						\
+    }
+    
+    PROVIDE_SUBSCRIBE_OPERATOR(/* not const */);
+    PROVIDE_SUBSCRIBE_OPERATOR(const);
+    
+#undef PROVIDE_SUBSCRIBE_OPERATOR
+    
     /// Returns the shift for the passed component
     template <typename C>
     auto computeShiftOfComp(const TensCompFeat<IsTensComp,C>& cFeat) const
     {
       return
-	this->getOffset(static_cast<C*>(nullptr))*cFeat.defeat();
+	this->getOffset(static_cast<C*>(nullptr))*cFeat.deFeat();
     }
   };
   
@@ -283,7 +316,7 @@ namespace ciccios
   template <typename T>					\
   decltype(auto) deRef(ATTRIB TensFeat<IsTens,T>& t)	\
   {							\
-    return t.defeat();					\
+    return t.deFeat();					\
   }
   
   PROVIDE_DEREF();

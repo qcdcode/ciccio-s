@@ -206,7 +206,7 @@ namespace ciccios
       
       // If not found in the cache, allocate new memory
       if(ptr==nullptr)
-	ptr=this->defeat().allocateRaw(size,alignment);
+	ptr=this->deFeat().allocateRaw(size,alignment);
       else
 	nCachedReused++;
       
@@ -226,7 +226,7 @@ namespace ciccios
       else
 	{
 	  popFromUsed(ptr);
-	  this->defeat().deAllocateRaw(static_cast<void*>(ptr));
+	  this->deFeat().deAllocateRaw(static_cast<void*>(ptr));
 	}
       
       ptr=nullptr;
@@ -249,7 +249,7 @@ namespace ciccios
 	  // Increment iterator before releasing
 	  el++;
 	  
-	  this->defeat().release(ptr);
+	  this->deFeat().release(ptr);
 	}
     }
     
@@ -280,7 +280,7 @@ namespace ciccios
 	      void* ptr=popFromCache(size,DEFAULT_ALIGNMENT);
 	      
 	      VERB_LOGGER(3)<<"ptr: "<<ptr<<endl;
-	      this->defeat().deAllocateRaw(ptr);
+	      this->deFeat().deAllocateRaw(ptr);
 	    }
 	}
     }

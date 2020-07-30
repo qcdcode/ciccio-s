@@ -707,7 +707,7 @@ namespace ciccios
   T& SU3Field<T>::deepCopy(const O& oth)
   {
     return
-      resources::deepCopy(this->defeat(),oth);
+      resources::deepCopy(this->deFeat(),oth);
   }
   
   /////////////////////////////////////////////////////////////////

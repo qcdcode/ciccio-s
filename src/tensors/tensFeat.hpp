@@ -5,13 +5,12 @@
 ///
 /// \brief Implements the feature to detect a tensor
 
+#include <base/feature.hpp>
 #include <base/metaProgramming.hpp>
 
 namespace ciccios
 {
   DEFINE_FEATURE(IsTens);
-  DEFINE_FEATURE(ReturnsRefWhenSliced);
-  DEFINE_FEATURE(ReturnsDataWhenSliced);
   
   DEFINE_FEATURE_GROUP(TensFeat);
 }

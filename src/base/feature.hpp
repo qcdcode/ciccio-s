@@ -41,12 +41,12 @@ namespace ciccios
   									\
   /*! Cast to the featuring class */					\
   CUDA_HOST_DEVICE							\
-  const T& defeat() const						\
+  const T& deFeat() const						\
   {									\
     return *this;							\
   }									\
   									\
-  PROVIDE_ALSO_NON_CONST_METHOD_GPU(defeat)
+  PROVIDE_ALSO_NON_CONST_METHOD_GPU(deFeat)
   
   /// Import method from the feature class
 #define IMPORT_FEATURE_METHOD(A...)				\

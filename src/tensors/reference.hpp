@@ -9,7 +9,6 @@
 #include <base/metaProgramming.hpp>
 #include <tensors/component.hpp>
 #include <tensors/componentsList.hpp>
-#include <tensors/subscribe.hpp>
 #include <tensors/tensFeat.hpp>
 #include <utilities/tuple.hpp>
 
@@ -22,28 +21,32 @@ namespace ciccios
   /// Reference to a Tensor
   ///
   /// Forward implementation
-  template <typename T, // Tensor
-	    typename C> // Visible componenents
+  template <bool Const, // Const or not
+	    typename T,   // Tensor
+	    typename C>   // Visible componenents
   struct TensRef;
   
   /// Shortcut for TensRef
 #define THIS					\
-  TensRef<T,TensComps<Vc...>>
+  TensRef<Const,T,TensComps<Vc...>>
   
   /// Reference to a Tensor
-  template <typename T,    // Tensor
+  template <bool Const,    // Const or not
+	    typename T,    // Tensor
 	    typename...Vc> // Visible components
   struct THIS : public
-    TensRefFeat<IsTensRef,THIS>,
-    Subscribable<THIS>,
-    TensRefFeat<std::conditional_t<(sizeof...(Vc)>1),ReturnsRefWhenSliced,ReturnsDataWhenSliced>,THIS>
+    TensRefFeat<IsTensRef,THIS>
   {
+    /// Holds info on whether the reference is constant
+    static constexpr bool IsConst=
+      Const;
+    
     /// Original tensor to which we refer
     using OrigTens=T;
     
     /// Fundamental data type
-    using Fund=
-      typename T::Fund;
+    using Data=
+      ConstIf<IsConst,typename T::Fund>;
     
     /// Original components
     using OrigComps=
@@ -53,17 +56,17 @@ namespace ciccios
     using Comps=
       TensComps<Vc...>;
     
-    /// Reference to original quantity
-    const T& t;
+    /// Reference to original tensor
+    const OrigTens& t;
     
     /// Returns the reference
-    const T& deRef() const
+    OrigTens& deRef() const
     {
       return t;
     }
     
     /// Storage for the data
-    const Fund* const data;
+    Data* const data;
     
     /// Returns the pointer to data, which incorporates possible offsets w.r.t t.data
     decltype(auto) getDataPtr() const
@@ -73,19 +76,55 @@ namespace ciccios
     
     PROVIDE_ALSO_NON_CONST_METHOD(getDataPtr);
     
+    /// Provide subscribe operator when returning a reference
+#define PROVIDE_SUBSCRIBE_OPERATOR(CONST_ATTR,CONST_AS_BOOL)		\
+    /*! Operator to take a const reference to a given component */	\
+    template <typename C,						\
+	      SFINAE_ON_TEMPLATE_ARG(sizeof...(Vc)>1  and TupleHasType<C,Comps>)> \
+    auto operator[](const TensCompFeat<IsTensComp,C>& cFeat) CONST_ATTR	\
+    {									\
+      /* Residual components */						\
+      using RefComps=							\
+	TupleFilterOut<TensComps<C>,Comps>;				\
+									\
+      return								\
+	TensRef<CONST_AS_BOOL or IsConst,T,RefComps>(this->t,getDataPtr()+t.computeShiftOfComp(cFeat)); \
+    }
+    
+    PROVIDE_SUBSCRIBE_OPERATOR(/* not const */, false);
+    PROVIDE_SUBSCRIBE_OPERATOR(const, true);
+    
+#undef PROVIDE_SUBSCRIBE_OPERATOR
+    
+    /// Provide subscribe operator when returning direct access
+#define PROVIDE_SUBSCRIBE_OPERATOR(CONST_ATTR)				\
+    /*! Operator to return direct access to data */			\
+    template <typename C,						\
+	      SFINAE_ON_TEMPLATE_ARG(sizeof...(Vc)==1 and TupleHasType<C,Comps>)> \
+    CONST_ATTR auto& operator[](const TensCompFeat<IsTensComp,C>& cFeat) CONST_ATTR \
+    {									\
+      return								\
+	data[cFeat.deFeat()];						\
+    }
+    
+    PROVIDE_SUBSCRIBE_OPERATOR(/* not const */);
+    PROVIDE_SUBSCRIBE_OPERATOR(const);
+    
+#undef PROVIDE_SUBSCRIBE_OPERATOR
+    
     // /// Offset to access to data
     // template <typename C>
     // auto computeShiftOfComp(const TensCompFeat<IsTensComp,C>& c) const
     // {
     //   return
-    // 	t.computeShiftOfComp(c.defeat());
+    // 	t.computeShiftOfComp(c.deFeat());
     // }
     
     /// Constructor taking the original object as a reference
     ///
     /// Note that data may contains offsets
     TensRef(const TensFeat<IsTens,T>& t,
-	    const Fund* data) : t(t.defeat()),data(data)
+	    Data* data) : t(t.deFeat()),data(data)
     {
     }
   };
@@ -94,63 +133,20 @@ namespace ciccios
   
   /////////////////////////////////////////////////////////////////
   
-  /// Returns the same than the passed argument
-  template <typename T>
-  decltype(auto) deRef(const TensRefFeat<IsTensRef,T>& rFeat)
-  {
-    return rFeat.defeat().deRef();
+  /// Provides a constant or not dereferencing
+#define PROVIDE_DEREF(ATTR)					\
+  /*! Returns the referred tensor */				\
+  template <typename T>						\
+  decltype(auto) deRef(ATTR TensRefFeat<IsTensRef,T>& rFeat)	\
+  {								\
+    return rFeat.deFeat().deRef();				\
   }
   
-  // template <typename T>
-  // auto ref(TensFeat<IsTens,T>& t)
-  // {
-  //   return TensRef<T,TensComps<>>(t,t.data);
-  // }
+  PROVIDE_DEREF();
+  PROVIDE_DEREF(const);
   
-  namespace impl
-  {
-    /// Compute the result of taking a sliced reference
-    template <typename T,
-	      typename C>
-    auto ref(const T& t,
-	     const C& c)
-    {
-      decltype(auto) base=
-	deRef(t);
-      
-      const auto shift=
-	base.computeShiftOfComp(c);
-      
-      using Bt=
-	std::decay_t<decltype(base)>;
-      
-      using Vc=
-	ciccios::TupleFilterOut<TensComps<C>,typename T::Comps>;
-      
-      static_assert((nOfComps<T> -1)==(std::tuple_size<Vc>::value),"Asking to subscribe an absent or already subscribed component");
-      
-      return TensRef<Bt,Vc>(base,t.getDataPtr()+shift);
-    }
-  }
+#undef PROVIDE_DEREF
   
-  template <typename T,
-	    typename C,
-	    template <typename,typename> class FG>
-  auto ref(const FG<ReturnsRefWhenSliced,T>& tFeat,
-	   const TensCompFeat<IsTensComp,C>& cFeat)
-  {
-    return impl::ref(tFeat.defeat(),cFeat.defeat());
-  }
-  
-  template <typename T,
-	    typename C,
-	    template <typename,typename> class FG>
-  decltype(auto) ref(const FG<ReturnsDataWhenSliced,T>& tFeat,
-		     const TensCompFeat<IsTensComp,C>& cFeat)
-  {
-    return
-      *(impl::ref(tFeat.defeat(),cFeat.defeat()).data);
-  }
 }
 
 #endif
