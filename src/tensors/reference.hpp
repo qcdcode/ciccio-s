@@ -104,7 +104,7 @@ namespace ciccios
     CONST_ATTR auto& operator[](const TensCompFeat<IsTensComp,C>& cFeat) CONST_ATTR \
     {									\
       return								\
-	data[cFeat.deFeat()];						\
+	data[t.computeShiftOfComp(cFeat)];				\
     }
     
     PROVIDE_SUBSCRIBE_OPERATOR(/* not const */);

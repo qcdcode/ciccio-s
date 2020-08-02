@@ -257,7 +257,7 @@ namespace ciccios
     /*! Operator to take a const reference to a given component */	\
     template <typename C,						\
 	      SFINAE_ON_TEMPLATE_ARG(sizeof...(TC)>1  and TupleHasType<C,Comps>)> \
-    auto operator[](const TensCompFeat<IsTensComp,C>& cFeat) CONST_ATTR	\
+    INLINE_FUNCTION auto operator[](const TensCompFeat<IsTensComp,C>& cFeat) CONST_ATTR	\
     {									\
       /* Residual components */						\
       using RefComps=							\
@@ -280,7 +280,7 @@ namespace ciccios
     CONST_ATTR Fund& operator[](const TensCompFeat<IsTensComp,C>& cFeat) CONST_ATTR \
     {									\
       return								\
-	data[cFeat.deFeat()];						\
+	data[computeShiftOfComp(cFeat)];				\
     }
     
     PROVIDE_SUBSCRIBE_OPERATOR(/* not const */);

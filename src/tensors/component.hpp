@@ -160,11 +160,6 @@ namespace ciccios
   
   DECLARE_ROW_OR_CLN_COMPONENT(Spin,int,NSpinComp,sp);
   
-  /// Number of component for a fuf vector
-  constexpr int64_t NFufComp=14;
-  
-  DECLARE_ROW_OR_CLN_COMPONENT(Fuf,int64_t,NFufComp,fuf);
-  
   // constexpr int NDirac=4;
   
   // /// Qualify a component as such

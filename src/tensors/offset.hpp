@@ -31,7 +31,7 @@ namespace ciccios
     
     using Nested::getOffset;
     
-    INLINE_FUNCTION const Offset& getOffset(HeadComp*) const
+    INLINE_FUNCTION constexpr const Offset& getOffset(HeadComp*) const
     {
       return offset;
     }
@@ -43,7 +43,7 @@ namespace ciccios
 	static_cast<const T&>(*this).template compSize<HeadComp>();
     }
     
-    void setOffset()
+    constexpr void setOffset()
     {
       auto& nested=
 	static_cast<Nested&>(*this);
@@ -67,12 +67,12 @@ namespace ciccios
       return 1;
     }
     
-    INLINE_FUNCTION const Offset& getOffset(void*) const
+    INLINE_FUNCTION constexpr const Offset getOffset(void*) const
     {
-      return offset;
+      return 1;
     }
     
-    void setOffset() const
+    constexpr void setOffset() const
     {
     }
   };
