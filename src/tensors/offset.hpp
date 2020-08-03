@@ -27,13 +27,17 @@ namespace ciccios
     
     using Offset=decltype(NestedOffset{}*ThisCompSize{});
     
-    Offset offset;
+    Offset _offset;
     
     using Nested::getOffset;
     
-    INLINE_FUNCTION constexpr const Offset& getOffset(HeadComp*) const
+    INLINE_FUNCTION constexpr const Offset getOffset(HeadComp*) const
     {
-      return offset;
+#if 0
+      return computeOffset();
+#else
+      return _offset;
+#endif
     }
     
     INLINE_FUNCTION constexpr
@@ -43,14 +47,20 @@ namespace ciccios
 	static_cast<const T&>(*this).template compSize<HeadComp>();
     }
     
+    constexpr auto computeOffset() const
+    {
+      const auto& nested=
+	static_cast<const Nested&>(*this);
+      
+      auto n=
+	nested.computeOffset();
+      
+      return n*nested.compSize();
+    }
+    
     constexpr void setOffset()
     {
-      auto& nested=
-	static_cast<Nested&>(*this);
-      
-      nested.setOffset();
-      
-      offset=(nested.offset*nested.compSize());
+      _offset=computeOffset();
     }
   };
   
@@ -59,7 +69,7 @@ namespace ciccios
   {
     using Offset=int;
     
-    const Offset offset{1};
+    const Offset _offset{1};
     
     INLINE_FUNCTION constexpr
     Offset compSize() const
@@ -74,6 +84,11 @@ namespace ciccios
     
     constexpr void setOffset() const
     {
+    }
+    
+    constexpr auto computeOffset() const
+    {
+      return 1;
     }
   };
   

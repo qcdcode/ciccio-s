@@ -21,18 +21,20 @@ namespace ciccios
   /// Reference to a Tensor
   ///
   /// Forward implementation
-  template <bool Const, // Const or not
-	    typename T,   // Tensor
-	    typename C>   // Visible componenents
+  template <bool Const,    // Const or not
+	    typename T,    // Tensor
+	    typename O,    // Offset
+	    typename C>    // Visible componenents
   struct TensRef;
   
   /// Shortcut for TensRef
 #define THIS					\
-  TensRef<Const,T,TensComps<Vc...>>
+  TensRef<Const,T,O,TensComps<Vc...>>
   
   /// Reference to a Tensor
   template <bool Const,    // Const or not
 	    typename T,    // Tensor
+	    typename O,    // Offset
 	    typename...Vc> // Visible components
   struct THIS : public
     TensRefFeat<IsTensRef,THIS>
@@ -43,10 +45,6 @@ namespace ciccios
     
     /// Original tensor to which we refer
     using OrigTens=T;
-    
-    /// Fundamental data type
-    using Data=
-      ConstIf<IsConst,typename T::Fund>;
     
     /// Original components
     using OrigComps=
@@ -65,16 +63,16 @@ namespace ciccios
       return t;
     }
     
-    /// Storage for the data
-    Data* const data;
+    /// Offset of the data
+    const O offs;
     
     /// Returns the pointer to data, which incorporates possible offsets w.r.t t.data
-    decltype(auto) getDataPtr() const
-    {
-      return data;
-    }
+    // decltype(auto) getDataPtr() const
+    // {
+    //   return data;
+    // }
     
-    PROVIDE_ALSO_NON_CONST_METHOD(getDataPtr);
+    // PROVIDE_ALSO_NON_CONST_METHOD(getDataPtr);
     
     /// Provide subscribe operator when returning a reference
 #define PROVIDE_SUBSCRIBE_OPERATOR(CONST_ATTR,CONST_AS_BOOL)		\
@@ -87,8 +85,16 @@ namespace ciccios
       using RefComps=							\
 	TupleFilterOut<TensComps<C>,Comps>;				\
 									\
+      /*! Nested offset */						\
+      const auto no=							\
+	offs+t.computeShiftOfComp(cFeat);				\
+      									\
+      /*! Offset */							\
+      using NO=								\
+	decltype(no);							\
+      									\
       return								\
-	TensRef<CONST_AS_BOOL or IsConst,T,RefComps>(this->t,getDataPtr()+t.computeShiftOfComp(cFeat)); \
+	TensRef<CONST_AS_BOOL or IsConst,T,NO,RefComps>(this->t,no);	\
     }
     
     PROVIDE_SUBSCRIBE_OPERATOR(/* not const */, false);
@@ -104,7 +110,7 @@ namespace ciccios
     CONST_ATTR auto& operator[](const TensCompFeat<IsTensComp,C>& cFeat) CONST_ATTR \
     {									\
       return								\
-	data[t.computeShiftOfComp(cFeat)];				\
+	t.getDataPtr()[offs+t.computeShiftOfComp(cFeat)];		\
     }
     
     PROVIDE_SUBSCRIBE_OPERATOR(/* not const */);
@@ -124,7 +130,7 @@ namespace ciccios
     ///
     /// Note that data may contains offsets
     TensRef(const TensFeat<IsTens,T>& t,
-	    Data* data) : t(t.deFeat()),data(data)
+	    const O offs) : t(t.deFeat()),offs(offs)
     {
     }
   };

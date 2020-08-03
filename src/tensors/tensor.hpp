@@ -263,8 +263,17 @@ namespace ciccios
       using RefComps=							\
 	TupleFilterOut<TensComps<C>,Comps>;				\
 									\
+      /*! Offset to be used */						\
+      auto o=								\
+	computeShiftOfComp(cFeat);					\
+      									\
+      									\
+      /*! Type of Offset */						\
+      using O=								\
+	decltype(o);							\
+      									\
       return								\
-	TensRef<CONST_AS_BOOL,THIS,RefComps>(*this,getDataPtr()+computeShiftOfComp(cFeat)); \
+	TensRef<CONST_AS_BOOL,THIS,O,RefComps>(*this,o);		\
     }
     
     PROVIDE_SUBSCRIBE_OPERATOR(/* not const */, false);
