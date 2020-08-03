@@ -13,7 +13,8 @@ namespace ciccios
 {
   /// Collection of components
   template <typename...Tc>
-  using TensComps=std::tuple<Tc...>;
+  using TensComps=
+    std::tuple<Tc...>;
   
   /// Returns the number of components of a tensComp
   template <typename T>

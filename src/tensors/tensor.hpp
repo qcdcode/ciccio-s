@@ -47,6 +47,10 @@ namespace ciccios
     using Comps=
       TensComps<TC...>;
     
+    /// Type to be used for the index
+    using Index=
+      std::common_type_t<TC...>;
+    
     /// List of all statically allocated components
     using StaticComps=
       TupleFilter<SizeIsKnownAtCompileTime<true>::t,TensComps<TC...>>;
@@ -59,7 +63,7 @@ namespace ciccios
     const DynamicComps dynamicSizes;
     
     /// Static size
-    static constexpr Size staticSize=
+    static constexpr Index staticSize=
       productAll<Size>((TC::SizeIsKnownAtCompileTime?
 			TC::Base::sizeAtCompileTime:
 			1)...);
@@ -72,20 +76,15 @@ namespace ciccios
     //   return this->getOffset((C*)nullptr);
     // }
     
-    // /// Calculate the index - no more components to parse
-    // Size index(Size outer) const ///< Value of all the outer components
-    // {
-    //   return outer;
-    // }
-    
     /// Size of the Tv component
     ///
     /// Case in which the component size is knwon at compile time
     template <typename Tv,
 	      std::enable_if_t<Tv::SizeIsKnownAtCompileTime,void*> =nullptr>
-    constexpr Size compSize() const
+    constexpr auto compSize() const
     {
-      return Tv::Base::sizeAtCompileTime;
+      return
+	Tv::Base::sizeAtCompileTime;
     }
     
     /// Size of the Tv component
@@ -93,61 +92,68 @@ namespace ciccios
     /// Case in which the component size is not knwon at compile time
     template <typename Tv,
 	      std::enable_if_t<not Tv::SizeIsKnownAtCompileTime,void*> =nullptr>
-    const Size& compSize() const
+    const auto& compSize() const
     {
-      return std::get<Tv>(dynamicSizes);
+      return
+	std::get<Tv>(dynamicSizes);
     }
     
-    // // Calculate index iteratively
+    /// Calculate the index - no more components to parse
+    Index _index(Index outer) const ///< Value of all the outer components
+    {
+      return
+	outer;
+    }
     
-    // // Given the components (i,j,k) we must compute ((0*ni+i)*nj+j)*nk+k
+    /// Calculate index iteratively
+    ///
+    /// Given the components (i,j,k) we must compute ((0*ni+i)*nj+j)*nk+k
+    ///
+    /// The parsing of the variadic components is done left to right, so
+    /// to compute the nested bracket list we must proceed inward. Let's
+    /// say we are at component j. We define outer=(0*ni+i) the result
+    /// of inner step. We need to compute thisVal=outer*nj+j and pass it
+    /// to the inner step, which incorporate iteratively all the inner
+    /// components. The first step requires outer=0.
+    template <typename T,
+    	      typename...Tp>
+    Index _index(Index outer,        ///< Value of all the outer components
+    	       T&& thisComp,       ///< Currently parsed component
+    	       Tp&&...innerComps)  ///< Inner components
+      const
+    {
+      /// Remove reference to access to types
+      using Tv=
+	std::remove_reference_t<T>;
+      
+      /// Size of this component
+      const auto thisSize=
+	compSize<Tv>();
+      
+      //cout<<"thisSize: "<<thisSize<<endl;
+      /// Value of the index when including this component
+      const auto thisVal=
+	outer*thisSize+thisComp;
+      
+      return
+	_index(thisVal,innerComps...);
+    }
     
-    // // The parsing of the variadic components is done left to right, so
-    // // to compute the nested bracket list we must proceed inward. Let's
-    // // say we are at component j. We define outer=(0*ni+i) the result
-    // // of inner step. We need to compute thisVal=outer*nj+j and pass it
-    // // to the inner step, which incorporate iteratively all the inner
-    // // components. The first step requires outer=0.
-    // template <typename T,
-    // 	      typename...Tp>
-    // Size index(Size outer,      ///< Value of all the outer components
-    // 	       T&& thisComp,       ///< Currently parsed component
-    // 	       Tp&&...innerComps)  ///< Inner components
-    //   const
-    // {
-    //   /// Remove reference to access to types
-    //   using Tv=std::remove_reference_t<T>;
-      
-    //   /// Size of this component
-    //   const Size thisSize=compSize<Tv>();
-      
-    //   //cout<<"thisSize: "<<thisSize<<endl;
-    //   /// Value of the index when including this component
-    //   const Size thisVal=outer*thisSize+thisComp;
-      
-    //   return index(thisVal,innerComps...);
-    // }
-    
-    // /// Intermediate layer to reorder the passed components
-    // template <typename...Cp>
-    // Size reorderedIndex(Cp&&...comps) const
-    // {
-    //   /// Put the arguments in atuple
-    //   auto argsInATuple=std::make_tuple(std::forward<Cp>(comps)...);
-      
-    //   /// Build the index reordering the components
-    //   return index(0,std::get<TC>(argsInATuple)...);
-    // }
-    
-    // /// Compute the data size
-    // Size size;
+    /// Intermediate layer to reorder the passed components
+    template <typename...T>
+    Index index(const TensComps<T...>& comps) const
+    {
+      /// Build the index reordering the components
+      return
+	_index(0,std::get<TC>(comps)...);
+    }
     
     /// Determine whether the components are all static, or not
     static constexpr bool allCompsAreStatic=
       std::is_same<DynamicComps,std::tuple<>>::value;
     
     /// Computes the storage size at compile time, if knwon
-    static constexpr Size storageSizeAtCompileTime=
+    static constexpr Index storageSizeAtCompileTime=
       allCompsAreStatic?staticSize:DYNAMIC;
     
     /// Storage type
@@ -167,7 +173,7 @@ namespace ciccios
     /// Initialize the dynamical component \t Out using the inputs
     template <typename Ds,   // Type of the dynamically allocated components
 	      typename Out>  // Type to set
-    Size initializeDynSize(const Ds& inputs, ///< Input sizes
+    Index initializeDynSize(const Ds& inputs, ///< Input sizes
 			   Out& out)         ///< Output size to set
     {
       out=std::get<Out>(inputs);
@@ -252,28 +258,27 @@ namespace ciccios
     
     PROVIDE_ALSO_NON_CONST_METHOD(getRawAccess);
     
+    /// True if has more than 1 component
+    static constexpr bool hasMoreThanOneComps=
+			       sizeof...(TC)>1;
+    
+    template <typename C>
+    static constexpr bool hasComp=
+	      TupleHasType<C,Comps>;
+    
     /// Provide subscribe operator when returning a reference
 #define PROVIDE_SUBSCRIBE_OPERATOR(CONST_ATTR,CONST_AS_BOOL)		\
     /*! Operator to take a const reference to a given component */	\
     template <typename C,						\
-	      SFINAE_ON_TEMPLATE_ARG(sizeof...(TC)>1  and TupleHasType<C,Comps>)> \
+	      SFINAE_ON_TEMPLATE_ARG(hasMoreThanOneComps and hasComp<C>)> \
     INLINE_FUNCTION auto operator[](const TensCompFeat<IsTensComp,C>& cFeat) CONST_ATTR	\
     {									\
-      /* Residual components */						\
-      using RefComps=							\
-	TupleFilterOut<TensComps<C>,Comps>;				\
+      /*! Subscribed components */					\
+      using SubsComps=							\
+	TensComps<C>;							\
 									\
-      /*! Offset to be used */						\
-      auto o=								\
-	computeShiftOfComp(cFeat);					\
-      									\
-      									\
-      /*! Type of Offset */						\
-      using O=								\
-	decltype(o);							\
-      									\
       return								\
-	TensRef<CONST_AS_BOOL,THIS,O,RefComps>(*this,o);		\
+	TensRef<CONST_AS_BOOL,THIS,SubsComps>(*this,SubsComps(cFeat.deFeat())); \
     }
     
     PROVIDE_SUBSCRIBE_OPERATOR(/* not const */, false);
@@ -286,10 +291,10 @@ namespace ciccios
     /*! Operator to return direct access to data */			\
     template <typename C,						\
 	      SFINAE_ON_TEMPLATE_ARG(sizeof...(TC)==1 and TupleHasType<C,Comps>)> \
-    CONST_ATTR Fund& operator[](const TensCompFeat<IsTensComp,C>& cFeat) CONST_ATTR \
+    CONST_ATTR Fund& operator[](const TensCompFeat<IsTensComp,C>& cFeat) CONST_ATTR	\
     {									\
       return								\
-	data[computeShiftOfComp(cFeat)];				\
+	data[cFeat.deFeat()];						\
     }
     
     PROVIDE_SUBSCRIBE_OPERATOR(/* not const */);

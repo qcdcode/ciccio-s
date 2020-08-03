@@ -33,7 +33,7 @@ namespace ciccios
     
     INLINE_FUNCTION constexpr const Offset getOffset(HeadComp*) const
     {
-#if 0
+#if 1
       return computeOffset();
 #else
       return _offset;
