@@ -68,19 +68,13 @@ namespace ciccios
       return t;
     }
     
-    /// Returns the pointer to data, which incorporates possible offsets w.r.t t.data
-    // decltype(auto) getDataPtr() const
-    // {
-    //   return data;
-    // }
-    
-    // PROVIDE_ALSO_NON_CONST_METHOD(getDataPtr);
-    
     /// Provide subscribe operator when returning a reference
 #define PROVIDE_SUBSCRIBE_OPERATOR(CONST_ATTR,CONST_AS_BOOL)		\
     /*! Operator to take a const reference to a given component */	\
     template <typename C,						\
-	      SFINAE_ON_TEMPLATE_ARG(std::tuple_size<Comps>::value >1  and TupleHasType<C,Comps>)> \
+	      typename Cp=Comps,					\
+	      SFINAE_ON_TEMPLATE_ARG((std::tuple_size<Cp>::value>1) and \
+				     TupleHasType<C,Cp>)>		\
     auto operator[](const TensCompFeat<IsTensComp,C>& cFeat) CONST_ATTR	\
     {									\
 									\
@@ -91,9 +85,13 @@ namespace ciccios
       /*! Type used to hold all components */				\
     using NestedSubsComps=						\
       decltype(nestedSubsComps);					\
-									\
+    									\
+    /*! Reference type */						\
+    using R=								\
+      TensRef<CONST_AS_BOOL or IsConst,T,NestedSubsComps>;		\
+    									\
     return								\
-      TensRef<CONST_AS_BOOL or IsConst,T,NestedSubsComps>(this->t,nestedSubsComps); \
+      R(this->t,nestedSubsComps);					\
     }
     
     PROVIDE_SUBSCRIBE_OPERATOR(/* not const */, false);
@@ -105,7 +103,9 @@ namespace ciccios
 #define PROVIDE_SUBSCRIBE_OPERATOR(CONST_ATTR)				\
     /*! Operator to return direct access to data */			\
     template <typename C,						\
-	      SFINAE_ON_TEMPLATE_ARG(std::tuple_size<Comps>::value==1 and TupleHasType<C,Comps>)> \
+	      typename Cp=Comps,					\
+	      SFINAE_ON_TEMPLATE_ARG(std::tuple_size<Cp>::value==1 and \
+				     TupleHasType<C,Cp>)>		\
     CONST_ATTR auto& operator[](const TensCompFeat<IsTensComp,C>& cFeat) CONST_ATTR \
     {									\
       return								\
@@ -117,17 +117,7 @@ namespace ciccios
     
 #undef PROVIDE_SUBSCRIBE_OPERATOR
     
-    // /// Offset to access to data
-    // template <typename C>
-    // auto computeShiftOfComp(const TensCompFeat<IsTensComp,C>& c) const
-    // {
-    //   return
-    // 	t.computeShiftOfComp(c.deFeat());
-    // }
-    
-    /// Constructor taking the original object as a reference
-    ///
-    /// Note that data may contains offsets
+    /// Create from reference and list of subscribed components
     TensRef(const TensFeat<IsTens,T>& t,
 	    const SubsComps& subsComps) : t(t.deFeat()),subsComps(subsComps)
     {

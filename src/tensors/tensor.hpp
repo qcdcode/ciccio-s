@@ -3,7 +3,6 @@
 
 #include <tensors/componentSignature.hpp>
 #include <tensors/componentsList.hpp>
-#include <tensors/offset.hpp>
 #include <tensors/reference.hpp>
 #include <tensors/storage.hpp>
 #include <tensors/tensFeat.hpp>
@@ -20,7 +19,7 @@ namespace ciccios
 #endif
     ;
   
-  /// Tensor with Comps components, of Fund funamental type
+  /// Tensor with Comps components, of Fund fundamental type
   ///
   /// Forward definition to capture actual components
   template <typename Comps,
@@ -37,8 +36,7 @@ namespace ciccios
 	    StorLoc SL,
 	    typename...TC>
   struct THIS : public
-    TensFeat<IsTens,THIS>,
-    TensOffset<THIS,TensComps<TC...>>
+    TensFeat<IsTens,THIS>
   {
     /// Fundamental type
     using Fund=F;
@@ -67,14 +65,6 @@ namespace ciccios
       productAll<Size>((TC::SizeIsKnownAtCompileTime?
 			TC::Base::sizeAtCompileTime:
 			1)...);
-    
-    // /// Read the offset
-    // template <typename C>
-    // constexpr INLINE_FUNCTION
-    // auto offset() const
-    // {
-    //   return this->getOffset((C*)nullptr);
-    // }
     
     /// Size of the Tv component
     ///
@@ -198,49 +188,12 @@ namespace ciccios
       dynamicSizes{initializeDynSizes((DynamicComps*)nullptr,td()...)},
       data(staticSize*productAll<Size>(td()...))
     {
-      this->setOffset();
-      /// Dynamic size
-      //const Size dynamicSize=product<Size>(std::forward<TD>(td)...);
-      
-      //size=dynamicSize*staticSize;
-      //cout<<"Total size: "<<size<<endl;
-      
-      //data=std::unique_ptr<Fund[]>(new Fund[size]);
     }
     
     /// Move constructor
     Tens(Tens<TensComps<TC...>,Fund,SL>&& oth) : dynamicSizes(oth.dynamicSizes),data(oth.data.data.data)
     {
-      LOGGER<<"Check offsets"<<endl;
-      exit(0);
     }
-    
-    // Tens<TensComps<TC...>,Fund,SL,true> getRef()
-    // {
-    //   return Tens<TensComps<TC...>,Fund,SL,true>(dynamicSizes,data);
-    // }
-    
-    // /// Access to inner data with any order
-    // template <typename...Cp>
-    // const Fund& eval(const TensCompFeat<Cp>&...comps) const ///< Components
-    // {
-    //   /// Compute the index
-    //   const Size i=reorderedIndex(comps()...);
-      
-    //   //cout<<"Index: "<<i<<endl;
-    //   return data[i];
-    // }
-    
-    // PROVIDE_ALSO_NON_CONST_METHOD(eval);
-    
-    // /// Single component access via subscribe operator
-    // template <typename T>                   // Subscribed component type
-    // decltype(auto) operator[](T&& t) const  ///< Subscribed component
-    // {
-    //   return (*this)(std::forward<T>(t));
-    // }
-    
-    //PROVIDE_ALSO_NON_CONST_METHOD(operator[]);
     
     /// Provide trivial access to the fundamental data
     const Fund& trivialAccess(const Size& i) const
@@ -258,19 +211,15 @@ namespace ciccios
     
     PROVIDE_ALSO_NON_CONST_METHOD(getRawAccess);
     
-    /// True if has more than 1 component
-    static constexpr bool hasMoreThanOneComps=
-			       sizeof...(TC)>1;
-    
-    template <typename C>
-    static constexpr bool hasComp=
-	      TupleHasType<C,Comps>;
-    
     /// Provide subscribe operator when returning a reference
+    ///
+    /// \todo move to tag dispatch, so we can avoid the horrible sfinae subtleties
 #define PROVIDE_SUBSCRIBE_OPERATOR(CONST_ATTR,CONST_AS_BOOL)		\
     /*! Operator to take a const reference to a given component */	\
     template <typename C,						\
-	      SFINAE_ON_TEMPLATE_ARG(hasMoreThanOneComps and hasComp<C>)> \
+	      typename Cp=Comps,					\
+	      SFINAE_ON_TEMPLATE_ARG(std::tuple_size<Cp>::value>1 and	\
+				     TupleHasType<C,Comps>)>		\
     INLINE_FUNCTION auto operator[](const TensCompFeat<IsTensComp,C>& cFeat) CONST_ATTR	\
     {									\
       /*! Subscribed components */					\
@@ -290,8 +239,11 @@ namespace ciccios
 #define PROVIDE_SUBSCRIBE_OPERATOR(CONST_ATTR)				\
     /*! Operator to return direct access to data */			\
     template <typename C,						\
-	      SFINAE_ON_TEMPLATE_ARG(sizeof...(TC)==1 and TupleHasType<C,Comps>)> \
-    CONST_ATTR Fund& operator[](const TensCompFeat<IsTensComp,C>& cFeat) CONST_ATTR	\
+	      typename Cp=Comps,					\
+	      SFINAE_ON_TEMPLATE_ARG(std::tuple_size<Cp>::value==1 and	\
+				     TupleHasType<C,Comps>)>		\
+    INLINE_FUNCTION CONST_ATTR						\
+    Fund& operator[](const TensCompFeat<IsTensComp,C>& cFeat) CONST_ATTR \
     {									\
       return								\
 	data[cFeat.deFeat()];						\
@@ -302,41 +254,9 @@ namespace ciccios
     
 #undef PROVIDE_SUBSCRIBE_OPERATOR
     
-    /// Returns the shift for the passed component
-    template <typename C>
-    auto computeShiftOfComp(const TensCompFeat<IsTensComp,C>& cFeat) const
-    {
-      return
-	this->getOffset(static_cast<C*>(nullptr))*cFeat.deFeat();
-    }
   };
   
-  #undef THIS
-  
-  // /// Traits of the Tensor
-  // template <typename Fund,
-  // 	    typename...TC,
-  // 	    TensStorageLocation SL,
-  // 	    bool IsRef>
-  // struct CompsTraits<Tens<TensComps<TC...>,Fund,SL,IsRef>>
-  // {
-  //   using Type=Tens<TensComps<TC...>,Fund,SL,IsRef>;
-    
-  //   using Comps=TensComps<TC...>;
-  // };
-  
-  /// Returns the same than the passed argument
-#define PROVIDE_DEREF(ATTRIB)				\
-  template <typename T>					\
-  decltype(auto) deRef(ATTRIB TensFeat<IsTens,T>& t)	\
-  {							\
-    return t.deFeat();					\
-  }
-  
-  PROVIDE_DEREF();
-  PROVIDE_DEREF(const);
-  
-#undef PROVIDE_DEREF
+#undef THIS
 }
 
 #endif
