@@ -246,7 +246,8 @@ namespace ciccios
 	      typename Cp=Comps,					\
 	      SFINAE_ON_TEMPLATE_ARG(std::tuple_size<Cp>::value>1 and	\
 				     TupleHasType<C,Comps>)>		\
-    INLINE_FUNCTION auto operator[](const TensCompFeat<IsTensComp,C>& cFeat) CONST_ATTR	\
+    CUDA_HOST_DEVICE INLINE_FUNCTION					\
+    auto operator[](const TensCompFeat<IsTensComp,C>& cFeat) CONST_ATTR	\
     {									\
       /*! Subscribed components */					\
       using SubsComps=							\
@@ -268,7 +269,7 @@ namespace ciccios
 	      typename Cp=Comps,					\
 	      SFINAE_ON_TEMPLATE_ARG(std::tuple_size<Cp>::value==1 and	\
 				     TupleHasType<C,Comps>)>		\
-    INLINE_FUNCTION CONST_ATTR						\
+    CUDA_HOST_DEVICE INLINE_FUNCTION CONST_ATTR				\
     Fund& operator[](const TensCompFeat<IsTensComp,C>& cFeat) CONST_ATTR \
     {									\
       return								\
