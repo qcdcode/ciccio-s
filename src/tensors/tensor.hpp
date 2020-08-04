@@ -108,13 +108,13 @@ namespace ciccios
     template <typename T,
     	      typename...Tp>
     Index _index(Index outer,        ///< Value of all the outer components
-    	       T&& thisComp,       ///< Currently parsed component
-    	       Tp&&...innerComps)  ///< Inner components
+		 T&& thisComp,       ///< Currently parsed component
+		 Tp&&...innerComps)  ///< Inner components
       const
     {
-      /// Remove reference to access to types
+      /// Remove reference and all attributes to access to types
       using Tv=
-	std::remove_reference_t<T>;
+	std::decay_t<T>;
       
       /// Size of this component
       const auto thisSize=
@@ -184,9 +184,9 @@ namespace ciccios
     
     /// Initialize the tensor with the knowledge of the dynamic size
     template <typename...TD>
-    Tens(const TensComp<TD>&...td) :
-      dynamicSizes{initializeDynSizes((DynamicComps*)nullptr,td()...)},
-      data(staticSize*productAll<Size>(td()...))
+    Tens(const TensCompFeat<IsTensComp,TD>&...tdFeat) :
+      dynamicSizes{initializeDynSizes((DynamicComps*)nullptr,tdFeat.deFeat()...)},
+      data(staticSize*productAll<Size>(tdFeat.deFeat()...))
     {
     }
     

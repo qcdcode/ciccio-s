@@ -24,8 +24,6 @@
 
 namespace ciccios
 {
-  int p=std::array<int,2>({0,8})[1];
-  
   DEFINE_FEATURE(IsTensComp);
   
   DEFINE_FEATURE_GROUP(TensCompFeat);
@@ -107,7 +105,8 @@ namespace ciccios
   template <typename T>						\
   INLINE_FUNCTION COMPONENT NAME(T&& i)				\
   {								\
-    return COMPONENT(i);					\
+    return							\
+      COMPONENT(i);						\
   }
   
   /// Declare a component with no special feature
@@ -118,7 +117,8 @@ namespace ciccios
   DECLARE_COMPONENT_SIGNATURE(NAME,TYPE,SIZE);			\
   								\
   /*! NAME component */						\
-  using NAME=TensComp<NAME ## Signature,ANY,0>;		\
+  using NAME=							\
+    TensComp<NAME ## Signature,ANY,0>;				\
 								\
   DECLARE_COMPONENT_FACTORY(FACTORY,NAME)
   
@@ -160,50 +160,7 @@ namespace ciccios
   
   DECLARE_ROW_OR_CLN_COMPONENT(Spin,int,NSpinComp,sp);
   
-  // constexpr int NDirac=4;
-  
-  // /// Qualify a component as such
-  // template <typename T>
-  // struct Comp : public Feature<T>
-  // {
-  // };
-  
-  // enum RC{ROW,CLN};
-  
-  // template <typename Q,
-  // 	    RC Rc,
-  // 	    typename I,
-  // 	    I _Max>
-  // struct CompImpl : public Comp<CompImpl<Q,Rc,I,_Max>>
-  // {
-  //   using Int=I;
-    
-  //   static constexpr I Max=_Max;
-    
-  //   I i;
-    
-  //   operator const I&() const
-  //   {
-  //     return i;
-  //   }
-    
-  //   operator I&()
-  //   {
-  //     return i;
-  //   }
-    
-  //   CompImpl& operator=(const I& oth)
-  //   {
-  //     i=oth;
-      
-  //     return *this;
-  //   }
-  // };
-  
-  // struct _Spin; qua eredita da basecomp, che contiene min ed eventualmente disambigua
-
-  // template <RC Rc>
-  // using Spin=CompImpl<_Spin,Rc,int,NDirac>;
+  DECLARE_COMPONENT(SpaceTime,int64_t,DYNAMIC,spaceTime);
 }
 
 #endif
