@@ -13,6 +13,8 @@
 
 using namespace ciccios;
 
+#if 0
+
 // Provides the assembly comment useful to catch the produced code for each data type
 PROVIDE_ASM_DEBUG_HANDLE(sumProd,CpuSU3Field<float,StorLoc::ON_CPU>*);
 PROVIDE_ASM_DEBUG_HANDLE(sumProd,GpuSU3Field<float,StorLoc::ON_GPU>*);
@@ -138,11 +140,50 @@ void test(const CpuSU3Field<Fund,StorLoc::ON_CPU>& field,const int64_t nIters)
     gFlopsPerSec<<"\t Check: "<<fieldRes(0,0,0,0)<<" "<<fieldRes(0,0,0,1)<<" time: "<<timeInSec<<endl;
 }
 
+template <typename I>
+struct Coord;
+
+template <typename...>
+struct a;
+
+template <typename...Args>
+struct a<std::tuple<Coord<Args>...>>
+{
+  std::tuple<Coord<Args>*...> fa;
+  
+  static void print()
+  {
+    forEachInTuple(std::tuple<Args...>{},[](auto t){LOGGER<<typeid(t).name()<<endl;});
+  }
+};
+
+#endif
+
+template<typename T,
+	 typename...Args>
+constexpr int tuple_element_index_helper()
+{
+  int is[]={std::is_same<T,Args>::value...};
+  
+  for (int i = 0; i < (int)sizeof...(Args); i++)
+    if (is[i])
+      return i;
+
+  return sizeof...(Args);
+}
+
+#if 0
 /// Perform the tests on the given type (double/float)
 template <typename Fund>           // Fundamental datatype
 void test(const int vol,         ///< Volume to simulate
 	  const int workReducer) ///< Reduce worksize to make a quick test
 {
+  a<std::tuple<Coord<int>,Coord<uint64_t>>>::print();
+
+  constexpr int i=tuple_element_index_helper<int, int,double>();
+  
+  LOGGER<<std::get<i>(std::make_tuple(23320,9))<<endl;
+  
   /// Number of iterations
   const int64_t nIters=400000000LL/vol/workReducer;
   
@@ -176,10 +217,80 @@ void test(const int vol,         ///< Volume to simulate
   LOGGER<<endl;
 }
 
+#endif
+
+const SpaceTime LocVol{4};
+
+using T=Tens<TensComps<SpaceTime,ColRow,ColCln,Compl>,double,StorLoc::ON_CPU>;
+
+auto& subs1(T& t,int i,int j,int k)
+{
+  //std::index_sequence<T::hasComp<SpinRow>,T::hasMoreThanOneComps>& u="";
+  
+  ASM_BOOKMARK_BEGIN("subs1");
+  auto& m=t[clRow(j)][clCln(k)][complComp(0)][spaceTime(i)];
+  ASM_BOOKMARK_END("subs1");
+  
+  return m;
+}
+
+auto& subs2(T& t,int i,int j,int k)
+{
+  ASM_BOOKMARK_BEGIN("subs2");
+  auto& m=t[spaceTime(i)][clRow(j)][clCln(k)][complComp(0)];
+  ASM_BOOKMARK_END("subs2");
+  
+  return m;
+}
+
+auto& fund(T& t,int i,int j,int k)
+{
+  ASM_BOOKMARK_BEGIN("fund");
+  
+  auto& m=t.data.data.data[k+NColComp*(j+NColComp*i)];
+  
+  ASM_BOOKMARK_END("fund");
+  
+  return m;
+}
+
+void testOffsets()
+{
+  T t(LocVol);
+  
+  ThreadPool::loopSplit(spaceTime(0),LocVol,
+			KERNEL_LAMBDA_BODY(const SpaceTime iVol)
+			{
+			  t;
+			  // for(ColRow ic1{0};ic1<NColComp;ic1++)
+			  //   for(ColCln ic2{0};ic2<NColComp;ic1++)
+			  //     for(Compl ri{0};ri<2;ri++)
+			  // 	t[iVol][ic1][ic2][ri]=
+			  // 	  (ri+2*(ic2+NColComp*(ic1+NColComp*iVol)))/double((NColComp*NColComp*2)*(iVol+1));
+			}
+			);
+  
+  
+  int i,j,k;
+  std::cin>>i>>j>>k;
+  LOGGER<<&subs1(t,i,j,k)<<" "<<&subs2(t,i,j,k)<<" "<<&fund(t,i,j,k)<<endl;
+  
+  //LOGGER<<"AAA "<<&k<<" "<<&r<<" "<<&s<<endl;
+  
+  //t[sp(0)];
+  LOGGER<<t.data.stackAllocated<<endl;
+  
+}
+
 /// inMmain is the actual main, which is where the main thread of the
 /// pool is sent to work while the workers are sent in the background
 void inMain(int narg,char **arg)
 {
+  testOffsets();
+  
+  SpinRow a;
+  a=1;
+    
   /// Workreducer is useful for speeding up the test
   int workReducer=1;
   
@@ -200,8 +311,10 @@ void inMain(int narg,char **arg)
 		   
 		   for(int volLog2=4;volLog2<20;volLog2++)
 		     {
+#if 0
 		       const int vol=1<<volLog2;
 		       test<Fund>(vol,workReducer);
+#endif
 		     }
 		 });
   

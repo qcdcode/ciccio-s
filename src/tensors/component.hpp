@@ -50,47 +50,54 @@ namespace ciccios
     using Base=S;
     
     /// Value type
-    using Size=
-      typename S::Size;
+    using Index=
+      typename S::Index;
     
     /// Value
-    Size i;
+    Index i;
     
     /// Check if the size is known at compile time
-    static constexpr bool SizeIsKnownAtCompileTime=
+    static constexpr
+    bool SizeIsKnownAtCompileTime=
       Base::sizeAtCompileTime!=DYNAMIC;
     
     /// Init from value
     template <typename T>
+    CUDA_HOST_DEVICE
     explicit constexpr TensComp(T&& i) : i(i)
     {
     }
     
     /// Default constructor
+    CUDA_HOST_DEVICE
     TensComp()
     {
     }
     
     /// Convert to actual value
-    operator Size&()
+    CUDA_HOST_DEVICE
+    operator Index&()
     {
       return i;
     }
     
     /// Convert to actual value with const attribute
-    operator const Size&() const
+    CUDA_HOST_DEVICE
+    operator const Index&() const
     {
       return i;
     }
     
     /// Transposed index
+    CUDA_HOST_DEVICE
     auto transp() const
     {
       return Transp{i};
     }
     
     /// Assignment operator
-    TensComp& operator=(const Size& oth)
+    CUDA_HOST_DEVICE
+    TensComp& operator=(const Index& oth)
     {
       i=oth;
       
@@ -103,6 +110,7 @@ namespace ciccios
   /// Promotes the argument i to a COMPONENT, through a function with given NAME
 #define DECLARE_COMPONENT_FACTORY(NAME,COMPONENT...)		\
   template <typename T>						\
+  CUDA_HOST_DEVICE						\
   INLINE_FUNCTION COMPONENT NAME(T&& i)				\
   {								\
     return							\
@@ -151,7 +159,7 @@ namespace ciccios
   
   /////////////////////////////////////////////////////////////////
   
-/// \todo move to a physics file
+  /// \todo move to a physics file
   
   DECLARE_COMPONENT(Compl,int,2,complComp);
   
@@ -160,6 +168,12 @@ namespace ciccios
   
   DECLARE_ROW_OR_CLN_COMPONENT(Spin,int,NSpinComp,sp);
   
+  /// Number of component for a color vector
+  constexpr int NColComp=3;
+  
+  DECLARE_ROW_OR_CLN_COMPONENT(Col,int,NColComp,cl);
+  
+  // Spacetime
   DECLARE_COMPONENT(SpaceTime,int64_t,DYNAMIC,spaceTime);
 }
 

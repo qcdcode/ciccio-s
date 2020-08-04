@@ -21,13 +21,14 @@ namespace ciccios
   ///
   /// The specified name is suffixed with "Signature", to allow the
   /// definition of the actual component with the expected name
-#define DECLARE_COMPONENT_SIGNATURE(NAME,TYPE,SIZE)		\
+#define DECLARE_COMPONENT_SIGNATURE(NAME,TYPE,LENGTH)		\
   /*! Signature for the NAME component */			\
   struct NAME ## Signature :					\
-    public TensCompSize<TYPE,SIZE>				\
+    public TensCompSize<TYPE,LENGTH>				\
   {								\
     /*! Type used for the index */				\
-    using Size=TYPE;						\
+    using Index=						\
+      TYPE;							\
   }
 }
 

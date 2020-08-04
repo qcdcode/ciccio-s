@@ -3,12 +3,15 @@
 
 #include <functional>
 
+#include <gpu/cudaMacros.hpp>
+
 namespace ciccios
 {
   /// Combine the the passed list of values
   template <typename F,
 	    typename T,
 	    typename...Ts>
+  CUDA_HOST_DEVICE
   constexpr T binaryCombine(F&& f,
 			    const T& init,
 			    Ts&&...list)
@@ -18,7 +21,7 @@ namespace ciccios
     
     T l[]{list...};
     
-    for(auto i : l)
+    for(auto& i : l)
       out=f(out,i);
     
     return out;
@@ -27,6 +30,7 @@ namespace ciccios
   ///Product of the arguments
   template <typename T,
 	    typename...Ts>
+  CUDA_HOST_DEVICE
   constexpr auto productAll(Ts&&...t)
   {
     return binaryCombine(std::multiplies<>(),T{1},std::forward<Ts>(t)...);
@@ -35,6 +39,7 @@ namespace ciccios
   ///Sum of the arguments
   template <typename T,
 	    typename...Ts>
+  CUDA_HOST_DEVICE
   constexpr auto sumAll(Ts&&...t)
   {
     return binaryCombine(std::plus<>(),T{0},std::forward<Ts>(t)...);

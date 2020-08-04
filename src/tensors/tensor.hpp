@@ -163,6 +163,7 @@ namespace ciccios
     /// Initialize the dynamical component \t Out using the inputs
     template <typename Ds,   // Type of the dynamically allocated components
 	      typename Out>  // Type to set
+    CUDA_HOST_DEVICE
     Index initializeDynSize(const Ds& inputs, ///< Input sizes
 			   Out& out)         ///< Output size to set
     {
@@ -174,6 +175,7 @@ namespace ciccios
     /// Compute the size needed to initialize the tensor and set it
     template <typename...Td,
 	      typename...T>
+    CUDA_HOST_DEVICE
     TensComps<Td...> initializeDynSizes(TensComps<Td...>*,
 					T&&...in)
     {
@@ -184,6 +186,7 @@ namespace ciccios
     
     /// Initialize the tensor with the knowledge of the dynamic size
     template <typename...TD>
+    CUDA_HOST_DEVICE
     Tens(const TensCompFeat<IsTensComp,TD>&...tdFeat) :
       dynamicSizes{initializeDynSizes((DynamicComps*)nullptr,tdFeat.deFeat()...)},
       data(staticSize*productAll<Size>(tdFeat.deFeat()...))
@@ -191,7 +194,14 @@ namespace ciccios
     }
     
     /// Move constructor
-    Tens(Tens<TensComps<TC...>,Fund,SL>&& oth) : dynamicSizes(oth.dynamicSizes),data(oth.data.data.data)
+    CUDA_HOST_DEVICE
+    Tens(Tens<TensComps<TC...>,Fund,SL>&& oth) : dynamicSizes(oth.dynamicSizes),data(std::move(oth.data))
+    {
+    }
+    
+    /// Copy constructor
+    CUDA_HOST_DEVICE
+    Tens(const Tens& oth) : dynamicSizes(oth.dynamicSizes),data(oth.data)
     {
     }
     

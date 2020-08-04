@@ -240,16 +240,20 @@ namespace ciccios
       parallel([beg,end,nPieces=nThreads,f](const int& threadId) mutable
 	       {
 		 /// Workload for each thread, taking into account the remainder
-		 const Size threadLoad=
-		   (end-beg+nPieces-1)/nPieces;
+		 const Size threadLoad
+		   {(end-beg+nPieces-1)/nPieces};
 		 
 		 /// Beginning of the chunk
-		 const Size threadBeg=
-		   threadLoad*threadId;
+		 const Size threadBeg
+		   {threadLoad*threadId};
+		 
+		 /// End of the assignment for last bunch, if \c end is not smaller
+		 const Size lastBunchEnd
+		   {threadBeg+threadLoad};
 		 
 		 /// End of the chunk
-		 const Size threadEnd=
-		   std::min(end,threadBeg+threadLoad);
+		 const Size threadEnd
+		   {std::min(end,lastBunchEnd)};
 		 
 		 for(Size i=threadBeg;i<threadEnd;i++)
 		   f(i);
