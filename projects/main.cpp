@@ -6,6 +6,7 @@
  #include <eigen3/Eigen/Dense>
 #endif
 
+#include <iostream>
 #include <chrono>
 #include <omp.h>
 
