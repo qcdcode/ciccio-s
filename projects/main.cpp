@@ -261,12 +261,11 @@ void testOffsets()
   ThreadPool::loopSplit(spaceTime(0),LocVol,
 			KERNEL_LAMBDA_BODY(const SpaceTime iVol)
 			{
-			  t;
-			  // for(ColRow ic1{0};ic1<NColComp;ic1++)
-			  //   for(ColCln ic2{0};ic2<NColComp;ic1++)
-			  //     for(Compl ri{0};ri<2;ri++)
-			  // 	t[iVol][ic1][ic2][ri]=
-			  // 	  (ri+2*(ic2+NColComp*(ic1+NColComp*iVol)))/double((NColComp*NColComp*2)*(iVol+1));
+			  for(ColRow ic1{0};ic1<NColComp;ic1++)
+			    for(ColCln ic2{0};ic2<NColComp;ic1++)
+			      for(Compl ri{0};ri<2;ri++)
+			  	t[iVol][ic1][ic2][ri]=
+			  	  (ri+2*(ic2+NColComp*(ic1+NColComp*iVol)))/double((NColComp*NColComp*2)*(iVol+1));
 			}
 			);
   

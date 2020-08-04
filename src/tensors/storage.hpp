@@ -31,12 +31,13 @@ namespace ciccios
       Fund* data;
       
       /// Returns the pointer to data
+      CUDA_HOST_DEVICE
       decltype(auto) getDataPtr() const
       {
 	return data;
       }
       
-      PROVIDE_ALSO_NON_CONST_METHOD(getDataPtr);
+      PROVIDE_ALSO_NON_CONST_METHOD_GPU(getDataPtr);
       
       /// Construct allocating data
       DynamicStorage(const Size& dynSize) :
@@ -54,6 +55,7 @@ namespace ciccios
       }
       
       /// Move constructor
+      CUDA_HOST_DEVICE
       DynamicStorage(DynamicStorage&& oth) :
 	isRef(oth.isRef),
 	data(oth.data)
@@ -79,22 +81,26 @@ namespace ciccios
       Fund data[StaticSize];
       
       /// Return the pointer to inner data
+      CUDA_HOST_DEVICE
       const Fund* getDataPtr() const
       {
 	return data;
       }
       
-      PROVIDE_ALSO_NON_CONST_METHOD(getDataPtr);
+      PROVIDE_ALSO_NON_CONST_METHOD_GPU(getDataPtr);
       
       /// Constructor: since the data is statically allocated, we need to do nothing
+      CUDA_HOST_DEVICE
       StackStorage(const Size&)
       {
       }
       
       /// Copy constructor is deleted
+      CUDA_HOST_DEVICE
       StackStorage(const StackStorage&) =delete;
       
       /// Move constructor is deleted
+      CUDA_HOST_DEVICE
       StackStorage(StackStorage&&) =delete;
     };
     
@@ -119,17 +125,24 @@ namespace ciccios
     ActualStorage data;
     
     /// Returns the pointer to data
+    CUDA_HOST_DEVICE
     decltype(auto) getDataPtr() const
     {
       return data.getDataPtr();
     }
     
-    PROVIDE_ALSO_NON_CONST_METHOD(getDataPtr);
+    PROVIDE_ALSO_NON_CONST_METHOD_GPU(getDataPtr);
     
     /// Construct taking the size to allocate
     TensStorage(const Size& size) ///< Size to allocate
       : data(size)
     {
+    }
+    
+    /// Construct taking the size to allocate
+    TensStorage() ///< Size to allocate
+    {
+      static_assert(stackAllocated,"If not stack allocated must pass the size");
     }
     
     /// Copy constructor
@@ -139,6 +152,7 @@ namespace ciccios
     }
     
     /// Move constructor
+    CUDA_HOST_DEVICE
     TensStorage(TensStorage&& oth) : data(std::move(oth.data))
     {
     }

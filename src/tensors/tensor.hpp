@@ -71,6 +71,7 @@ namespace ciccios
     /// Case in which the component size is knwon at compile time
     template <typename Tv,
 	      std::enable_if_t<Tv::SizeIsKnownAtCompileTime,void*> =nullptr>
+    CUDA_HOST_DEVICE
     constexpr auto compSize() const
     {
       return
@@ -82,6 +83,7 @@ namespace ciccios
     /// Case in which the component size is not knwon at compile time
     template <typename Tv,
 	      std::enable_if_t<not Tv::SizeIsKnownAtCompileTime,void*> =nullptr>
+    CUDA_HOST_DEVICE
     const auto& compSize() const
     {
       return
@@ -89,6 +91,7 @@ namespace ciccios
     }
     
     /// Calculate the index - no more components to parse
+    CUDA_HOST_DEVICE
     Index _index(Index outer) const ///< Value of all the outer components
     {
       return
@@ -107,6 +110,7 @@ namespace ciccios
     /// components. The first step requires outer=0.
     template <typename T,
     	      typename...Tp>
+    CUDA_HOST_DEVICE
     Index _index(Index outer,        ///< Value of all the outer components
 		 T&& thisComp,       ///< Currently parsed component
 		 Tp&&...innerComps)  ///< Inner components
@@ -131,6 +135,7 @@ namespace ciccios
     
     /// Intermediate layer to reorder the passed components
     template <typename...T>
+    CUDA_HOST_DEVICE
     Index index(const TensComps<T...>& comps) const
     {
       /// Build the index reordering the components
@@ -153,12 +158,14 @@ namespace ciccios
     /// Actual storage
     StorageType data;
     
+    /// Returns the pointer to the data
+    CUDA_HOST_DEVICE
     decltype(auto) getDataPtr() const
     {
       return data.getDataPtr();
     }
     
-    PROVIDE_ALSO_NON_CONST_METHOD(getDataPtr);
+    PROVIDE_ALSO_NON_CONST_METHOD_GPU(getDataPtr);
     
     /// Initialize the dynamical component \t Out using the inputs
     template <typename Ds,   // Type of the dynamically allocated components
@@ -185,11 +192,20 @@ namespace ciccios
     }
     
     /// Initialize the tensor with the knowledge of the dynamic size
-    template <typename...TD>
-    CUDA_HOST_DEVICE
+    template <typename...TD,
+	      SFINAE_ON_TEMPLATE_ARG(sizeof...(TD)>=1)>
     Tens(const TensCompFeat<IsTensComp,TD>&...tdFeat) :
       dynamicSizes{initializeDynSizes((DynamicComps*)nullptr,tdFeat.deFeat()...)},
       data(staticSize*productAll<Size>(tdFeat.deFeat()...))
+    {
+    }
+    
+    /// Initialize the tensor when no dynamic component is present
+    template <typename...TD,
+	      SFINAE_ON_TEMPLATE_ARG(sizeof...(TD)==0 and sizeof...(TC)==0)>
+    CUDA_HOST_DEVICE
+    Tens() :
+      dynamicSizes{}
     {
     }
     

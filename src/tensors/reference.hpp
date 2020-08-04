@@ -75,6 +75,7 @@ namespace ciccios
 	      typename Cp=Comps,					\
 	      SFINAE_ON_TEMPLATE_ARG((std::tuple_size<Cp>::value>1) and \
 				     TupleHasType<C,Cp>)>		\
+    CUDA_HOST_DEVICE							\
     auto operator[](const TensCompFeat<IsTensComp,C>& cFeat) CONST_ATTR	\
     {									\
 									\
@@ -104,8 +105,9 @@ namespace ciccios
     /*! Operator to return direct access to data */			\
     template <typename C,						\
 	      typename Cp=Comps,					\
-	      SFINAE_ON_TEMPLATE_ARG(std::tuple_size<Cp>::value==1 and \
+	      SFINAE_ON_TEMPLATE_ARG(std::tuple_size<Cp>::value==1 and	\
 				     TupleHasType<C,Cp>)>		\
+    CUDA_HOST_DEVICE							\
     CONST_ATTR auto& operator[](const TensCompFeat<IsTensComp,C>& cFeat) CONST_ATTR \
     {									\
       return								\
@@ -118,6 +120,7 @@ namespace ciccios
 #undef PROVIDE_SUBSCRIBE_OPERATOR
     
     /// Create from reference and list of subscribed components
+    CUDA_HOST_DEVICE
     TensRef(const TensFeat<IsTens,T>& t,
 	    const SubsComps& subsComps) : t(t.deFeat()),subsComps(subsComps)
     {
