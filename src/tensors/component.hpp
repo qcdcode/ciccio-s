@@ -174,7 +174,8 @@ namespace ciccios
   DECLARE_ROW_OR_CLN_COMPONENT(Col,int,NColComp,cl);
   
   // Spacetime
-  DECLARE_COMPONENT(SpaceTime,int64_t,DYNAMIC,spaceTime);
+  //DECLARE_COMPONENT(SpaceTime,int64_t,DYNAMIC,spaceTime);
+  DECLARE_COMPONENT(SpaceTime,int,DYNAMIC,spaceTime);
 }
 
 #endif
