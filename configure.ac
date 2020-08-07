@@ -139,6 +139,11 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([],[])],
 
 AX_SUBPACKAGE(eigen,Eigen/Dense,,,EIGEN,".",".")
 
+#check demangle
+AC_CHECK_HEADERS(cxxabi.h)
+SUMMARY_RESULT="$SUMMARY_RESULT
+demangle enabled    : $ac_cv_header_cxxabi_h"
+
 #check immintrin.h
 AC_CHECK_HEADER(immintrin.h,
 	simd_inst_set_default=avx,
@@ -180,7 +185,7 @@ then
 fi
 
 SUMMARY_RESULT="$SUMMARY_RESULT
-Simd Inst set      : $with_simd_inst_set"
+simd Inst set       : $with_simd_inst_set"
 AC_MSG_RESULT(with SIMD insttruction set ... ${with_simd_inst_set})
 AC_DEFINE_UNQUOTED([SIMD_INST_SET],[$SIMD_INST_SET],[Instruction set to be used])
 

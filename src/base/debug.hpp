@@ -20,6 +20,11 @@
 
 #include <chrono>
 
+#ifdef HAVE_CXXABI_H
+# include <memory>
+# include <cxxabi.h>
+#endif
+
 #include <base/preprocessor.hpp>
 #include <base/logger.hpp>
 #include <base/metaProgramming.hpp>
@@ -154,26 +159,41 @@ namespace ciccios
   
   /////////////////////////////////////////////////////////////////
   
+  PROVIDE_HAS_MEMBER(nameOfType);
+  
   /// Generic call to related method for a class type
   template <typename T,
-	    SFINAE_ON_TEMPLATE_ARG(std::is_class<T>::value)>
+	    SFINAE_ON_TEMPLATE_ARG(not hasMember_nameOfType<T>)>
   std::string nameOfType(T*)
   {
-    return T::nameOfType();
+    /// Mangled name
+    const char* name=
+      typeid(T).name();
+    
+#ifdef HAVE_CXXABI_H
+    
+    /// Status returned
+    int status=0;
+    
+    std::unique_ptr<char,void(*)(void*)> res{abi::__cxa_demangle(name,NULL,NULL,&status),std::free};
+    
+    return (status==0)
+      ?res.get()
+      :name;
+    
+#else
+    
+    return name;
+    
+#endif
   }
   
-  /// Return "double"
-  ///
-  /// \todo All type traits into a struct
-  INLINE_FUNCTION const char* nameOfType(double*)
+  /// Generic call to related method for a class type
+  template <typename T,
+	    SFINAE_ON_TEMPLATE_ARG(hasMember_nameOfType<T>)>
+  std::string nameOfType(T*)
   {
-    return "double";
-  }
-  
-  /// Return "float"
-  INLINE_FUNCTION const char* nameOfType(float*)
-  {
-    return "float";
+    return std::decay_t<T>::nameOfType();
   }
   
   /// Returns the name of a type
