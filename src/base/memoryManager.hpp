@@ -34,7 +34,8 @@ namespace ciccios
   };
   
   /// Type used for size
-  using Size=long int;
+  using Size=
+    long int;
   
   /// Minimal alignment
 #define DEFAULT_ALIGNMENT 64
