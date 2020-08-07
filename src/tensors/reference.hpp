@@ -74,9 +74,9 @@ namespace ciccios
     /*! Operator to take a const reference to a given component */	\
     template <typename C,						\
 	      typename Cp=Comps,					\
-	      SFINAE_ON_TEMPLATE_ARG((std::tuple_size<Cp>::value>1) and \
-				     TupleHasType<C,Cp>)>		\
-    CUDA_HOST_DEVICE INLINE_FUNCTION							\
+	      ENABLE_TEMPLATE_IF((std::tuple_size<Cp>::value>1) and	\
+				 TupleHasType<C,Cp>)>			\
+    CUDA_HOST_DEVICE INLINE_FUNCTION					\
     auto operator[](const TensCompFeat<IsTensComp,C>& cFeat) CONST_ATTR	\
     {									\
 									\
@@ -106,8 +106,8 @@ namespace ciccios
     /*! Operator to return direct access to data */			\
     template <typename C,						\
 	      typename Cp=Comps,					\
-	      SFINAE_ON_TEMPLATE_ARG(std::tuple_size<Cp>::value==1 and	\
-				     TupleHasType<C,Cp>)>		\
+	      ENABLE_TEMPLATE_IF(std::tuple_size<Cp>::value==1 and	\
+				 TupleHasType<C,Cp>)>			\
     CUDA_HOST_DEVICE INLINE_FUNCTION					\
     CONST_ATTR auto& operator[](const TensCompFeat<IsTensComp,C>& cFeat) CONST_ATTR \
     {									\

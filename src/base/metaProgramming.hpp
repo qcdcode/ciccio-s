@@ -24,10 +24,10 @@ namespace ciccios
   /// as in this example
   /// \code
   /// template <typename D,
-  ///           SFINAE_ON_TEMPLATE_ARG(std::is_same<D,int>::value)>
+  ///           ENABLE_TEMPLATE_IF(std::is_same<D,int>::value)>
   /// void foo(D i) {} // fails if D is not int
   /// \endcode
-#define SFINAE_ON_TEMPLATE_ARG(...)	\
+#define ENABLE_TEMPLATE_IF(...)	\
   std::enable_if_t<(__VA_ARGS__),void*> =nullptr
   
   /////////////////////////////////////////////////////////////////
@@ -146,7 +146,7 @@ namespace ciccios
   
   /// Remove \c const qualifier from any reference
   template <typename T,
-	    SFINAE_ON_TEMPLATE_ARG(not std::is_pointer<T>::value)>
+	    ENABLE_TEMPLATE_IF(not std::is_pointer<T>::value)>
   constexpr T& asMutable(const T& v) noexcept
   {
     return const_cast<T&>(v);
@@ -214,41 +214,6 @@ namespace ciccios
   _PROVIDE_ALSO_NON_CONST_METHOD_BEGIN					\
   CUDA_HOST_DEVICE							\
   _PROVIDE_ALSO_NON_CONST_METHOD_BODY(NAME)
-  
-  /// Implements a feature through the CRTP pattern
-  ///
-  /// This class must be inherited by any class representing a featrue
-  // template <typename T>
-  // struct Feature
-  // {
-    // /// Cast to the base type, with const attribute
-    // CUDA_HOST_DEVICE
-    // operator const T&() const
-    // {
-    //   return *static_cast<const T*>(this);
-    // }
-    
-    // /// Cast to the base type
-    // ///
-    // /// Cannot be achieved with the preprocessor macro, since the name
-    // /// of the method is weird
-    // CUDA_HOST_DEVICE
-    // operator T&()
-    // {
-    //   return *static_cast<T*>(this);
-    // }
-    
-    // /// Cast to the featuring class
-    // ///
-    // /// This is customarily done by ~ operator, but I don't like it
-    // CUDA_HOST_DEVICE
-    // const T& deFeat() const
-    // {
-    //   return *this;
-    // }
-    
-    // PROVIDE_ALSO_NON_CONST_METHOD_GPU(defeat);
-  // };
   
   /// Introduces the body of a loop
 #if defined USE_CUDA

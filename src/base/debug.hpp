@@ -1,6 +1,10 @@
 #ifndef _DEBUG_HPP
 #define _DEBUG_HPP
 
+#ifdef HAVE_CONFIG_H
+ #include "config.hpp"
+#endif
+
 /// \file debug.hpp
 ///
 /// \brief Backtrace, assembly bookkeeping, crasher, etc
@@ -21,8 +25,7 @@
 #include <chrono>
 
 #ifdef HAVE_CXXABI_H
-# include <memory>
-# include <cxxabi.h>
+ #include <cxxabi.h>
 #endif
 
 #include <base/preprocessor.hpp>
@@ -152,9 +155,11 @@ namespace ciccios
   }
   
   /// Difference between two instants
-  inline double timeDiffInSec(const Instant& end,const Instant& start)
+  inline double timeDiffInSec(const Instant& end,   ///< Starting moment
+			      const Instant& start) ///< Ending moment
   {
-    return std::chrono::duration<double>(end-start).count();
+    return
+      std::chrono::duration<double>(end-start).count();
   }
   
   /////////////////////////////////////////////////////////////////
@@ -163,11 +168,11 @@ namespace ciccios
   
   /// Generic call to related method for a class type
   template <typename T,
-	    SFINAE_ON_TEMPLATE_ARG(not hasMember_nameOfType<T>)>
+	    ENABLE_TEMPLATE_IF(not hasMember_nameOfType<T>)>
   std::string nameOfType(T*)
   {
     /// Mangled name
-    const char* name=
+    std::string name=
       typeid(T).name();
     
 #ifdef HAVE_CXXABI_H
@@ -175,22 +180,24 @@ namespace ciccios
     /// Status returned
     int status=0;
     
-    std::unique_ptr<char,void(*)(void*)> res{abi::__cxa_demangle(name,NULL,NULL,&status),std::free};
+    /// Demangled name
+    char* demangled=
+      abi::__cxa_demangle(name.c_str(),nullptr,nullptr,&status);
     
-    return (status==0)
-      ?res.get()
-      :name;
+    if(status==0)
+      name=demangled;
     
-#else
-    
-    return name;
+    if(status!=-1)
+      free(demangled);
     
 #endif
+    
+    return name;
   }
   
   /// Generic call to related method for a class type
   template <typename T,
-	    SFINAE_ON_TEMPLATE_ARG(hasMember_nameOfType<T>)>
+	    ENABLE_TEMPLATE_IF(hasMember_nameOfType<T>)>
   std::string nameOfType(T*)
   {
     return std::decay_t<T>::nameOfType();
