@@ -65,7 +65,7 @@ namespace ciccios
   for(int I=0;I<N;I++)				\
     {
   
- #define UNROLLED_FOR_END			\
+# define UNROLLED_FOR_END			\
   }
   
 #else
@@ -73,11 +73,11 @@ namespace ciccios
   /// Create an unrolled for
   ///
   /// Hides the complexity
- #define UNROLLED_FOR(I,N)			\
+# define UNROLLED_FOR(I,N)			\
   unrolledFor<N>([&](const auto& I) INLINE_ATTRIBUTE {
   
   /// Finish an unrolled for
- #define UNROLLED_FOR_END })
+# define UNROLLED_FOR_END })
   
 #endif
   

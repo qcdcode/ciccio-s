@@ -217,10 +217,10 @@ namespace ciccios
   
   /// Introduces the body of a loop
 #if defined USE_CUDA
- #define KERNEL_LAMBDA_BODY(A)			\
+# define KERNEL_LAMBDA_BODY(A)			\
   [=] CUDA_HOST_DEVICE (A) mutable
 #else
-  #define KERNEL_LAMBDA_BODY(A)\
+ # define KERNEL_LAMBDA_BODY(A)\
   [&] (A) __attribute__((always_inline))
 #endif
 

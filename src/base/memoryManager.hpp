@@ -9,7 +9,7 @@
 #include <vector>
 
 #ifdef USE_CUDA
- #include <cuda_runtime.h>
+# include <cuda_runtime.h>
 #endif
 
 #include <base/debug.hpp>
@@ -22,10 +22,10 @@
 namespace ciccios
 {
 #ifndef EXTERN_MEMORY_MANAGER
- #define EXTERN_MEMORY_MANAGER extern
+# define EXTERN_MEMORY_MANAGER extern
 #define INIT_MEMORY_MANAGER_TO(...)
 #else
- #define INIT_MEMORY_MANAGER_TO(...) (__VA_ARGS__)
+# define INIT_MEMORY_MANAGER_TO(...) (__VA_ARGS__)
 #endif
   
   /// Type of memory
@@ -400,7 +400,8 @@ namespace ciccios
 	return "CPU";
 	break;
       case StorLoc::ON_GPU:
-	return "CPU";
+      default:
+	return "GPU";
 	break;
       }
   }

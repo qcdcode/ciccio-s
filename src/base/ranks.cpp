@@ -1,11 +1,11 @@
 #ifdef HAVE_CONFIG_H
- #include "config.hpp"
+# include "config.hpp"
 #endif
 
 /// \file ranks.cpp
 
 #define EXTERN_RANK
- #include "base/ranks.hpp"
+# include "base/ranks.hpp"
 
 #include <iostream>
 

@@ -1,5 +1,5 @@
 #ifdef HAVE_CONFIG_H
- #include "config.hpp"
+# include "config.hpp"
 #endif
 
 /// \file cuda.cpp
@@ -7,7 +7,7 @@
 /// \brief Implements the main initialization of cuda
 
 #define EXTERN_CUDA
- #include <gpu/cuda.hpp>
+# include <gpu/cuda.hpp>
 
 #include <base/debug.hpp>
 

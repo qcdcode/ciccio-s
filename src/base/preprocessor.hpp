@@ -62,10 +62,10 @@
   
 /// Force unroll
 #ifdef __GNUC__
- #define UNROLL(N) \
+# define UNROLL(N) \
   PRAGMA(GCC unroll N)
 #elif defined  __clang__
- #define UNROLL(N) \
+# define UNROLL(N) \
   PRAGMA(unroll)
 #endif
  

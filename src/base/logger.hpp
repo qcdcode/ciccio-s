@@ -6,10 +6,10 @@
 /// \brief Header file for routines to report on the console
 
 #ifndef EXTERN_LOGGER
- #define EXTERN_LOGGER extern
+# define EXTERN_LOGGER extern
 #define INIT_LOGGER_TO(...)
 #else
- #define INIT_LOGGER_TO(...) (__VA_ARGS__)
+# define INIT_LOGGER_TO(...) (__VA_ARGS__)
 #endif
 
 #include <fstream>

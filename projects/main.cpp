@@ -1,9 +1,9 @@
 #ifdef HAVE_CONFIG_H
- #include "config.hpp"
+# include "config.hpp"
 #endif
 
 #ifdef USE_EIGEN
- #include <eigen3/Eigen/Dense>
+# include <eigen3/Eigen/Dense>
 #endif
 
 #include <iostream>
@@ -305,7 +305,7 @@ INLINE_FUNCTION void su3FieldsSumProd(TensFeat<IsTens,F1>& _field1,const TensFea
 /// Allocates three copies of the field, and pass to the kernel
 template <typename Field,
 	  typename Fund>
-void test2(Tens<SU3FieldComps,Fund>& field,const int64_t nIters)
+void test2(Tens<SU3FieldComps,Fund,StorLoc::ON_CPU>& field,const int64_t nIters)
 {
   /// Number of flops per site
   const double nFlopsPerSite=8.0*NCOL*NCOL*NCOL;

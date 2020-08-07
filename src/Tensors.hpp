@@ -6,7 +6,7 @@
 /// \brief Topical header for all tensors stuff
 
 #ifdef HAVE_CONFIG_H
- #include "config.hpp"
+# include "config.hpp"
 #endif
 
 #include <tensors/component.hpp>

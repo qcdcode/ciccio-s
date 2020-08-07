@@ -1,5 +1,5 @@
 #ifdef HAVE_CONFIG_H
- #include "config.hpp"
+# include "config.hpp"
 #endif
 
 /// \file pool.cpp
@@ -7,7 +7,7 @@
 /// \brief Implements the start and stop, and pool loop
 
 #define EXTERN_POOL
- #include "threads/pool.hpp"
+# include "threads/pool.hpp"
 
 namespace ciccios
 {

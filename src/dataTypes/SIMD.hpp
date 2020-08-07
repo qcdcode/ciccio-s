@@ -8,11 +8,11 @@
 /// \todo Rename Simd into something more appropriate
 
 #ifdef HAVE_CONFIG_H
- #include "config.hpp"
+# include "config.hpp"
 #endif
 
 #ifndef DISABLE_X86_INTRINSICS
- #include <immintrin.h>
+# include <immintrin.h>
 #endif
 
 #include <cstring>

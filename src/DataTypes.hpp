@@ -1,7 +1,7 @@
 #ifndef _DATATYPES_HPP
 #define _DATATYPES_HPP
 
-/// \file dataTypes.hpp
+/// \file DataTypes.hpp
 ///
 /// \brief Topical header for all data types
 

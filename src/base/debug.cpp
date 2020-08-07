@@ -1,18 +1,18 @@
 #ifdef HAVE_CONFIG_H
- #include "config.hpp"
+# include "config.hpp"
 #endif
 
 /// \file debug.hpp
 
 #define EXTERN_DEBUG
- #include <base/debug.hpp>
+# include <base/debug.hpp>
 
 #include <execinfo.h>
 #include <unistd.h>
 #include <cstdarg>
 
 #ifdef USE_CUDA
- #include <cuda_runtime.h>
+# include <cuda_runtime.h>
 #endif
 
 #include <git_info.hpp>

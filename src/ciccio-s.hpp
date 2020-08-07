@@ -6,7 +6,7 @@
 /// \brief Main header for the library
 
 #ifdef HAVE_CONFIG_H
- #include "config.hpp"
+# include "config.hpp"
 #endif
 
 #include <Base.hpp>

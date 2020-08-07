@@ -1,5 +1,5 @@
 #ifdef HAVE_CONFIG_H
- #include "config.hpp"
+# include "config.hpp"
 #endif
 
 /// \file environment.cpp
@@ -8,7 +8,7 @@
 /// environment variables
 
 #define EXTERN_ENVIRONMENT
- #include <base/environment.hpp>
+# include <base/environment.hpp>
 
 #include <sstream>
 

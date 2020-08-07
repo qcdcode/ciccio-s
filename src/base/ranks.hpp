@@ -8,10 +8,10 @@
 #include <mpi.h>
 
 #ifndef EXTERN_RANK
- #define EXTERN_RANK extern
+# define EXTERN_RANK extern
 #define INIT_RANK_TO(...)
 #else
- #define INIT_RANK_TO(...) (__VA_ARGS__)
+# define INIT_RANK_TO(...) (__VA_ARGS__)
 #endif
 
 namespace ciccios

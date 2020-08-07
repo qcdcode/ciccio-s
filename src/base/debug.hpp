@@ -2,7 +2,7 @@
 #define _DEBUG_HPP
 
 #ifdef HAVE_CONFIG_H
- #include "config.hpp"
+# include "config.hpp"
 #endif
 
 /// \file debug.hpp
@@ -14,18 +14,18 @@
  /// Make external if put in front of a variable
  ///
  /// Actual allocation is done in the cpp file
- #define EXTERN_DEBUG extern
+# define EXTERN_DEBUG extern
  
 #endif
 
 #ifdef USE_CUDA
- #include <cuda_runtime.h>
+# include <cuda_runtime.h>
 #endif
 
 #include <chrono>
 
 #ifdef HAVE_CXXABI_H
- #include <cxxabi.h>
+# include <cxxabi.h>
 #endif
 
 #include <base/preprocessor.hpp>
@@ -65,7 +65,8 @@ namespace ciccios
     {
       errLogger()<<std::forward<T>(t);
       
-      return *this;
+      return
+	*this;
     }
     
     /// Overload calling with a function, to capure endl
@@ -73,7 +74,8 @@ namespace ciccios
     {
       errLogger()<<p;
       
-      return *this;
+      return
+	*this;
     }
     
     /// Destroy exiting
@@ -91,11 +93,11 @@ namespace ciccios
 #ifdef COMPILING_FOR_DEVICE
  
   /// Symbol to be used to begin an assembler comment, different in nvcc
- #define _ASM_BOOKMARK_SYMBOL "//"
+# define _ASM_BOOKMARK_SYMBOL "//"
  
 #else
  
- #define _ASM_BOOKMARK_SYMBOL "#"
+# define _ASM_BOOKMARK_SYMBOL "#"
  
 #endif
   
@@ -139,19 +141,31 @@ namespace ciccios
   void printVersionAndCompileFlags(std::ofstream& out);
   
 #ifdef USE_CUDA
- #define DECRYPT_CUDA_ERROR(...)  internalDecryptCudaError(__LINE__,__FILE__,__FUNCTION__,__VA_ARGS__)
-  void internalDecryptCudaError(const int lineNo,const char *fileName,const char* function,const cudaError_t rc,const char *templ,...);
+  
+  /// Put line, file and function in the actual call
+#  define DECRYPT_CUDA_ERROR(...) \
+  internalDecryptCudaError(__LINE__,__FILE__,__FUNCTION__,__VA_ARGS__)
+  
+  /// Crash with a cuda error
+  void internalDecryptCudaError(const int lineNo,        ///< Line of error
+				const char *fileName,    ///< Filename
+				const char* function,    ///< Function where the error occurred
+				const cudaError_t rc,    ///< Error code
+				const char *templ,...);  ///< Message template
+
 #endif
   
   /////////////////////////////////////////////////////////////////
   
   /// Measure time
-  using Instant=std::chrono::time_point<std::chrono::steady_clock>;
+  using Instant=
+    std::chrono::time_point<std::chrono::steady_clock>;
   
   /// Returns the current time
   inline Instant takeTime()
   {
-    return std::chrono::steady_clock::now();
+    return
+      std::chrono::steady_clock::now();
   }
   
   /// Difference between two instants
@@ -192,7 +206,8 @@ namespace ciccios
     
 #endif
     
-    return name;
+    return
+      name;
   }
   
   /// Generic call to related method for a class type
@@ -200,7 +215,8 @@ namespace ciccios
 	    ENABLE_TEMPLATE_IF(hasMember_nameOfType<T>)>
   std::string nameOfType(T*)
   {
-    return std::decay_t<T>::nameOfType();
+    return
+      std::decay_t<T>::nameOfType();
   }
   
   /// Returns the name of a type

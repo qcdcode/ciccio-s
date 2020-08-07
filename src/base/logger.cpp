@@ -1,5 +1,5 @@
 #ifdef HAVE_CONFIG_H
- #include "config.hpp"
+# include "config.hpp"
 #endif
 
 /// \file logger.hpp
@@ -7,7 +7,7 @@
 /// \brief Implement the banner
 
 #define EXTERN_LOGGER
- #include <base/logger.hpp>
+# include <base/logger.hpp>
 
 #include <unistd.h>
 #include <sys/ioctl.h>

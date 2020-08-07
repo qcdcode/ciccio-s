@@ -6,7 +6,7 @@
 /// \brief Implement thread pool
 
 #ifdef HAVE_CONFIG_H
- #include "config.hpp"
+# include "config.hpp"
 #endif
 
 #include <atomic>
@@ -21,10 +21,10 @@
 //#include <external/inplace_function.h>
 
 #ifndef EXTERN_POOL
- #define EXTERN_POOL extern
+# define EXTERN_POOL extern
 #define INIT_POOL_TO(...)
 #else
- #define INIT_POOL_TO(...) (__VA_ARGS__)
+# define INIT_POOL_TO(...) (__VA_ARGS__)
 #endif
 
 namespace ciccios
@@ -194,7 +194,7 @@ namespace ciccios
       else
 	{
 	  LOGGER<<"Not attached pool"<<endl;
-	  #pragma omp parallel
+#pragma omp parallel
 	  {
 	    /// Get current thread
 	    const int threadId=getThreadId();

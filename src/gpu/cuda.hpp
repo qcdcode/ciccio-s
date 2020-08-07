@@ -6,7 +6,7 @@
 /// \brief Implements an intermediate layout in front of cuda
 
 #ifdef HAVE_CONFIG_H
- #include "config.hpp"
+# include "config.hpp"
 #endif
 
 #ifndef EXTERN_CUDA
@@ -14,12 +14,12 @@
  /// Make external if put in front of a variable
  ///
  /// Actual allocation is done in the cpp file
- #define EXTERN_CUDA extern
- #define INIT_CUDA_TO(...)
+# define EXTERN_CUDA extern
+# define INIT_CUDA_TO(...)
 
 #else
 
- #define INIT_CUDA_TO(...) (__VA_ARGS__)
+# define INIT_CUDA_TO(...) (__VA_ARGS__)
 
 #endif
 

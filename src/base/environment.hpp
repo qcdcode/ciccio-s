@@ -10,14 +10,14 @@
  /// Make external if put in front of a variable
  ///
  /// Actual allocation is done in the cpp file
- #define EXTERN_ENVIRONMENT extern
+# define EXTERN_ENVIRONMENT extern
  
  /// Defines the list of argument in the cpp, or make it external in the hpp
- #define FLAG_LIST(ARGS...) extern const decltype(ARGS) flagList
+# define FLAG_LIST(ARGS...) extern const decltype(ARGS) flagList
  
 #else
 
- #define FLAG_LIST(ARGS...) const auto flagList=ARGS
+# define FLAG_LIST(ARGS...) const auto flagList=ARGS
 
 #endif
 
