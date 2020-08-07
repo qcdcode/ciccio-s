@@ -1,6 +1,10 @@
 #ifndef _TUPLE_HPP
 #define _TUPLE_HPP
 
+/// \file tuple.hpp
+///
+/// \brief Functionalities on top of std::tuple
+
 #include <tuple>
 
 #include <utilities/math.hpp>
@@ -144,6 +148,49 @@ namespace ciccios
 	    typename TupleBeingSearched>
   using TupleCommonTypes=
     TupleFilter<impl::TypeIsInList<1,TupleToSearch>::template t,TupleBeingSearched>;
+  
+  /////////////////////////////////////////////////////////////////
+  
+  namespace impl
+  {
+    template <typename T>
+    /// Returns a tuple filled with a list of arguments
+    ///
+    /// Internal implementation, no more arguments to parse
+    void fillTuple(T&)
+    {
+    }
+    
+    /// Returns a tuple filled with a list of arguments
+    ///
+    /// Internal implementation, calls recursively
+    template <typename T,
+	      typename Head,
+	      typename...Tail>
+    void fillTuple(T& t,                ///< Tuple to fill
+		   const Head& head,    ///< Argument to fill
+		   const Tail&...tail)  ///< Next arguments, filled recursively
+    {
+      std::get<Head>(t)=head;
+      
+      fillTuple(t,tail...);
+    }
+  }
+  
+  /// Returns a tuple filled woth the arguments of another tuple
+  ///
+  /// The arguments not passed are null-initialized
+  template <typename T,     ///< Tuple type to be returned, to be provided
+	    typename...Tp>  ///< Tuple arguments to be filled in
+  T fillTuple(const std::tuple<Tp...>& in) ///< Tuple containing the arguments to be passed
+  {
+    /// Returned tuple
+    T t{};
+    
+    impl::fillTuple(t,std::get<Tp>(in)...);
+    
+    return t;
+  }
 }
 
 #endif

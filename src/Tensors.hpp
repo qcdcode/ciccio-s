@@ -12,5 +12,6 @@
 #include <tensors/component.hpp>
 #include <tensors/reference.hpp>
 #include <tensors/tensor.hpp>
+#include <tensors/tensorImpl.hpp>
 
 #endif

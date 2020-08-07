@@ -10,6 +10,7 @@
 #include <tensors/component.hpp>
 #include <tensors/componentsList.hpp>
 #include <tensors/tensFeat.hpp>
+#include <tensors/tensor.hpp>
 #include <utilities/tuple.hpp>
 
 namespace ciccios
@@ -63,7 +64,7 @@ namespace ciccios
     const SubsComps subsComps;
     
     /// Returns the reference
-    OrigTens& deRef() const
+    ConstIf<IsConst,OrigTens>& deRef() const
     {
       return t;
     }
@@ -75,7 +76,7 @@ namespace ciccios
 	      typename Cp=Comps,					\
 	      SFINAE_ON_TEMPLATE_ARG((std::tuple_size<Cp>::value>1) and \
 				     TupleHasType<C,Cp>)>		\
-    CUDA_HOST_DEVICE							\
+    CUDA_HOST_DEVICE INLINE_FUNCTION							\
     auto operator[](const TensCompFeat<IsTensComp,C>& cFeat) CONST_ATTR	\
     {									\
 									\
@@ -107,7 +108,7 @@ namespace ciccios
 	      typename Cp=Comps,					\
 	      SFINAE_ON_TEMPLATE_ARG(std::tuple_size<Cp>::value==1 and	\
 				     TupleHasType<C,Cp>)>		\
-    CUDA_HOST_DEVICE							\
+    CUDA_HOST_DEVICE INLINE_FUNCTION					\
     CONST_ATTR auto& operator[](const TensCompFeat<IsTensComp,C>& cFeat) CONST_ATTR \
     {									\
       return								\
@@ -124,6 +125,24 @@ namespace ciccios
     TensRef(const TensFeat<IsTens,T>& t,
 	    const SubsComps& subsComps) : t(t.deFeat()),subsComps(subsComps)
     {
+    }
+    
+    CUDA_HOST_DEVICE INLINE_FUNCTION constexpr
+    auto carryOver() const
+    {
+      constexpr int nDynComps=
+	std::tuple_size<TupleFilter<SizeIsKnownAtCompileTime<false>::t,Comps>>::value;
+      
+      static_assert(nDynComps==0,"Not supported if residual dynamic components are present");
+      
+      const auto offset=
+	t.index(fillTuple<OrigComps>(subsComps));
+      
+      auto carriedData=
+	t.getDataPtr()+
+	offset;
+      
+      return Tens<Comps,typename T::Fund,T::storLoc,Stackable::CANNOT_GO_ON_STACK>(carriedData);
     }
   };
   

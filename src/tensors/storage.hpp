@@ -7,6 +7,9 @@
 
 namespace ciccios
 {
+  /// Stackability
+  enum class Stackable{CANNOT_GO_ON_STACK,MIGHT_GO_ON_STACK};
+  
   /// Basic storage, to use to detect storage
   template <typename T>
   struct BaseTensStorage
@@ -18,7 +21,8 @@ namespace ciccios
   template <typename Fund,            // Fundamental type
 	    Size StaticSize,          // Size konwn at compile time
 	    StorLoc SL,               // Location where to store data
-	    bool MightGoOnStack=true> // Select if can go or not on stack
+	    Stackable IsStackable=    // Select if can go or not on stack
+	    Stackable::MIGHT_GO_ON_STACK>
   struct TensStorage
   {
     /// Structure to hold dynamically allocated data
@@ -51,6 +55,14 @@ namespace ciccios
       DynamicStorage(const DynamicStorage& oth) :
 	isRef(true),
 	data(oth.data)
+      {
+      }
+      
+      /// Create a reference starting from a pointer
+      CUDA_HOST_DEVICE
+      DynamicStorage(Fund* oth) :
+	isRef(true),
+	data(oth)
       {
       }
       
@@ -112,7 +124,7 @@ namespace ciccios
     static constexpr
     bool stackAllocated=
       (StaticSize!=DYNAMIC) and
-      MightGoOnStack and
+      (IsStackable==Stackable::MIGHT_GO_ON_STACK) and
       (StaticSize*sizeof(Fund)<=MAX_STACK_SIZE) and
       ((CompilingForDevice==true  and SL==StorLoc::ON_GPU) or
        (CompilingForDevice==false and SL==StorLoc::ON_CPU));
@@ -137,6 +149,14 @@ namespace ciccios
     TensStorage(const Size& size) ///< Size to allocate
       : data(size)
     {
+    }
+    
+    /// Creates starting from a reference
+    CUDA_HOST_DEVICE
+    TensStorage(Fund* oth) :
+      data(oth)
+    {
+      static_assert(stackAllocated==false,"Only dynamic allocation is possible when creating a reference");
     }
     
     /// Construct taking the size to allocate
