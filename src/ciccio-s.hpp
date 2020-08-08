@@ -12,6 +12,7 @@
 #include <Base.hpp>
 #include <Gpu.hpp>
 #include <DataTypes.hpp>
+#include <Fields.hpp>
 #include <Tensors.hpp>
 #include <Threads.hpp>
 

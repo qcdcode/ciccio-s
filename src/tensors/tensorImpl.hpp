@@ -14,7 +14,7 @@
 namespace ciccios
 {
   /// Short name for the tensor
- # define THIS \
+#  define THIS \
     Tens<TensComps<TC...>,F,SL,IsStackable>
   
   /// Tensor

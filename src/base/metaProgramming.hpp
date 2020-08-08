@@ -220,10 +220,10 @@ namespace ciccios
 # define KERNEL_LAMBDA_BODY(A)			\
   [=] CUDA_HOST_DEVICE (A) mutable
 #else
- # define KERNEL_LAMBDA_BODY(A)\
+# define KERNEL_LAMBDA_BODY(A)			\
   [&] (A) __attribute__((always_inline))
 #endif
-
+  
   /// Dummy type that eats any argument
   template <typename...>
   struct DummyType

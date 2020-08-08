@@ -90,7 +90,8 @@ namespace ciccios
       VERB_LOGGER(3)<<"Popping from used "<<ptr<<endl;
       
       /// Iterator to search result
-      auto el=used.find(ptr);
+      auto el=
+	used.find(ptr);
       
       if(el==used.end())
 	CRASHER<<"Unable to find dinamically allocated memory "<<ptr<<endl;
@@ -102,7 +103,8 @@ namespace ciccios
       
       used.erase(el);
       
-      return size;
+      return
+	size;
     }
     
     /// Adds a memory to cache
@@ -120,7 +122,8 @@ namespace ciccios
     static bool isAligned(const void* ptr,
 			  const Size alignment)
     {
-      return reinterpret_cast<uintptr_t>(ptr)%alignment==0;
+      return
+	reinterpret_cast<uintptr_t>(ptr)%alignment==0;
     }
     
     /// Pop from the cache, returning to use
@@ -130,7 +133,8 @@ namespace ciccios
       VERB_LOGGER(3)<<"Try to popping from cache "<<size<<endl;
       
       /// List of memory with searched size
-      auto cachedIt=cached.find(size);
+      auto cachedIt=
+	cached.find(size);
       
       if(cachedIt==cached.end())
 	return nullptr;
@@ -150,7 +154,8 @@ namespace ciccios
 	  else
 	    {
 	      /// Returned pointer, copied here before erasing
-	      void* ptr=*it;
+	      void* ptr=
+		*it;
 	      
 	      list.erase(it);
 	      
@@ -170,7 +175,8 @@ namespace ciccios
       VERB_LOGGER(3)<<"Moving to cache "<<ptr<<endl;
       
       /// Size of pointed memory
-      const Size size=popFromUsed(ptr);
+      const Size size=
+	popFromUsed(ptr);
       
       pushToCache(ptr,size);
     }
@@ -186,7 +192,8 @@ namespace ciccios
     /// Disable cache usage
     void disableCache()
     {
-      useCache=false;
+      useCache=
+	false;
       
       clearCache();
     }
@@ -197,17 +204,20 @@ namespace ciccios
 	       const Size alignment=DEFAULT_ALIGNMENT)
     {
       /// Total size to allocate
-      const Size size=sizeof(T)*nel;
+      const Size size=
+	sizeof(T)*nel;
       
       /// Allocated memory
       void* ptr;
       
       // Search in the cache
-      ptr=popFromCache(size,alignment);
+      ptr=
+	popFromCache(size,alignment);
       
       // If not found in the cache, allocate new memory
       if(ptr==nullptr)
-	ptr=this->deFeat().allocateRaw(size,alignment);
+	ptr=
+	  this->deFeat().allocateRaw(size,alignment);
       else
 	nCachedReused++;
       
@@ -230,7 +240,8 @@ namespace ciccios
 	  this->deFeat().deAllocateRaw(static_cast<void*>(ptr));
 	}
       
-      ptr=nullptr;
+      ptr=
+	nullptr;
     }
     
     /// Release all used memory
@@ -260,15 +271,18 @@ namespace ciccios
       VERB_LOGGER(3)<<"Clearing cache"<<endl;
       
       /// Iterator to elements of the cached memory list
-      auto el=cached.begin();
+      auto el=
+	cached.begin();
       
       while(el!=cached.end())
 	{
 	  /// Number of elements to free
-	  const Size n=el->second.size();
+	  const Size n=
+	    el->second.size();
 	  
 	  /// Size to be removed
-	  const Size size=el->first;
+	  const Size size=
+	    el->first;
 	  
 	  // Increment before erasing
 	  el++;
@@ -278,7 +292,8 @@ namespace ciccios
 	      VERB_LOGGER(3)<<"Removing from cache size  "<<el->first<<endl;
 	      
 	      /// Memory to free
-	      void* ptr=popFromCache(size,DEFAULT_ALIGNMENT);
+	      void* ptr=
+		popFromCache(size,DEFAULT_ALIGNMENT);
 	      
 	      VERB_LOGGER(3)<<"ptr: "<<ptr<<endl;
 	      this->deFeat().deAllocateRaw(ptr);
@@ -289,7 +304,12 @@ namespace ciccios
     /// Print to a stream
     void printStatistics()
     {
-      LOGGER<<"Maximal memory used: "<<usedSize.extreme()<<" bytes, currently used: "<<(Size)usedSize<<" bytes, maxcached: "<<cachedSize.extreme()<<" bytes, currently cached: "<<(Size)cachedSize<<" bytes, number of reused: "<<nCachedReused<<endl;
+      LOGGER<<
+	"Maximal memory used: "<<usedSize.extreme()<<" bytes, "
+	"currently used: "<<(Size)usedSize<<" bytes, "
+	"maxcached: "<<cachedSize.extreme()<<" bytes, "
+	"currently cached: "<<(Size)cachedSize<<" bytes, "
+	"number of reused: "<<nCachedReused<<endl;
     }
     
     /// Create the memory manager
@@ -327,8 +347,10 @@ namespace ciccios
       
       /// Returned condition
       VERB_LOGGER(3)<<"Allocating size "<<size<<" on CPU"<<endl;
-      int rc=posix_memalign(&ptr,alignment,size);
-      if(rc) CRASHER<<"Failed to allocate "<<size<<" CPU memory with alignement "<<alignment<<endl;
+      int rc=
+	posix_memalign(&ptr,alignment,size);
+      if(rc)
+	CRASHER<<"Failed to allocate "<<size<<" CPU memory with alignement "<<alignment<<endl;
       VERB_LOGGER(3)<<"ptr: "<<ptr<<endl;
       
       nAlloc++;

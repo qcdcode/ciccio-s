@@ -105,7 +105,7 @@ namespace ciccios
     }
   };
   
- # undef THIS
+#  undef THIS
   
   /// Promotes the argument i to a COMPONENT, through a function with given NAME
 #define DECLARE_COMPONENT_FACTORY(NAME,COMPONENT...)		\
