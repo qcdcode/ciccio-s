@@ -24,10 +24,10 @@ namespace ciccios
   /// as in this example
   /// \code
   /// template <typename D,
-  ///           ENABLE_TEMPLATE_IF(std::is_same<D,int>::value)>
+  ///           ENABLE_THIS_TEMPLATE_IF(std::is_same<D,int>::value)>
   /// void foo(D i) {} // fails if D is not int
   /// \endcode
-#define ENABLE_TEMPLATE_IF(...)	\
+#define ENABLE_THIS_TEMPLATE_IF(...)	\
   std::enable_if_t<(__VA_ARGS__),void*> =nullptr
   
   /////////////////////////////////////////////////////////////////
@@ -146,7 +146,7 @@ namespace ciccios
   
   /// Remove \c const qualifier from any reference
   template <typename T,
-	    ENABLE_TEMPLATE_IF(not std::is_pointer<T>::value)>
+	    ENABLE_THIS_TEMPLATE_IF(not std::is_pointer<T>::value)>
   constexpr T& asMutable(const T& v) noexcept
   {
     return const_cast<T&>(v);

@@ -62,7 +62,7 @@ namespace ciccios
     ///
     /// Case in which the component size is knwon at compile time
     template <typename Tv,
-	      ENABLE_TEMPLATE_IF(Tv::SizeIsKnownAtCompileTime)>
+	      ENABLE_THIS_TEMPLATE_IF(Tv::SizeIsKnownAtCompileTime)>
     CUDA_HOST_DEVICE INLINE_FUNCTION
     constexpr auto compSize() const
     {
@@ -74,7 +74,7 @@ namespace ciccios
     ///
     /// Case in which the component size is not knwon at compile time
     template <typename Tv,
-	      ENABLE_TEMPLATE_IF(not Tv::SizeIsKnownAtCompileTime)>
+	      ENABLE_THIS_TEMPLATE_IF(not Tv::SizeIsKnownAtCompileTime)>
     constexpr CUDA_HOST_DEVICE INLINE_FUNCTION
     const auto& compSize() const
     {
@@ -193,7 +193,7 @@ namespace ciccios
     
     /// Initialize the tensor with the knowledge of the dynamic size
     template <typename...TD,
-	      ENABLE_TEMPLATE_IF(sizeof...(TD)>=1)>
+	      ENABLE_THIS_TEMPLATE_IF(sizeof...(TD)>=1)>
     Tens(const TensCompFeat<IsTensComp,TD>&...tdFeat) :
       dynamicSizes{initializeDynSizes((DynamicComps*)nullptr,tdFeat.deFeat()...)},
       data(staticSize*productAll<Size>(tdFeat.deFeat()...))
@@ -202,7 +202,7 @@ namespace ciccios
     
     /// Initialize the tensor when no dynamic component is present
     template <typename...TD,
-	      ENABLE_TEMPLATE_IF(sizeof...(TD)==0 and sizeof...(TC)==0)>
+	      ENABLE_THIS_TEMPLATE_IF(sizeof...(TD)==0 and sizeof...(TC)==0)>
     CUDA_HOST_DEVICE
     Tens() :
       dynamicSizes{}
@@ -250,7 +250,7 @@ namespace ciccios
     /*! Operator to take a const reference to a given component */	\
     template <typename C,						\
 	      typename Cp=Comps,					\
-	      ENABLE_TEMPLATE_IF(std::tuple_size<Cp>::value>1 and	\
+	      ENABLE_THIS_TEMPLATE_IF(std::tuple_size<Cp>::value>1 and	\
 				 TupleHasType<C,Comps>)>		\
     CUDA_HOST_DEVICE INLINE_FUNCTION					\
     auto operator[](const TensCompFeat<IsTensComp,C>& cFeat) CONST_ATTR	\
@@ -273,7 +273,7 @@ namespace ciccios
     /*! Operator to return direct access to data */			\
     template <typename C,						\
 	      typename Cp=Comps,					\
-	      ENABLE_TEMPLATE_IF(std::tuple_size<Cp>::value==1 and	\
+	      ENABLE_THIS_TEMPLATE_IF(std::tuple_size<Cp>::value==1 and	\
 				 TupleHasType<C,Comps>)>		\
     CUDA_HOST_DEVICE INLINE_FUNCTION CONST_ATTR				\
     Fund& operator[](const TensCompFeat<IsTensComp,C>& cFeat) CONST_ATTR \

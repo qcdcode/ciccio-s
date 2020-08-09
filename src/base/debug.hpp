@@ -182,7 +182,7 @@ namespace ciccios
   
   /// Generic call to related method for a class type
   template <typename T,
-	    ENABLE_TEMPLATE_IF(not hasMember_nameOfType<T>)>
+	    ENABLE_THIS_TEMPLATE_IF(not hasMember_nameOfType<T>)>
   std::string nameOfType(T*)
   {
     /// Mangled name
@@ -212,7 +212,7 @@ namespace ciccios
   
   /// Generic call to related method for a class type
   template <typename T,
-	    ENABLE_TEMPLATE_IF(hasMember_nameOfType<T>)>
+	    ENABLE_THIS_TEMPLATE_IF(hasMember_nameOfType<T>)>
   std::string nameOfType(T*)
   {
     return
