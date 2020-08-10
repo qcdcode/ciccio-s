@@ -34,8 +34,8 @@ namespace ciccios
   
   /// Field: a tensor with spacetime tipe
   template <typename SPComp,
-	    typename Comps,
-	    typename Fund=double,
+	    typename TC,
+	    typename F=double,
 	    StorLoc SL=DefaultStorage,
 	    FieldLayout FL=DefaultFieldLayout>
   struct Field;
