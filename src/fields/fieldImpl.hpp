@@ -30,20 +30,13 @@ namespace ciccios
   {
     /// Construct from sizes
     template <typename...TD,
-	      ENABLE_THIS_TEMPLATE_IF(sizeof...(TD)==
+	      ENABLE_THIS_TEMPLATE_IF(sizeof...(TD)+1==
 				      std::tuple_size<typename FieldTensProvider<SPComp,TC,F,SL,FL>::T::DynamicComps>::value)>
     Field(const TensCompFeat<IsTensComp,SPComp>& spaceTime,
 	  const TensCompFeat<IsTensComp,TD>&...dynCompSize) :
       FieldTensProvider<SPComp,TC,F,SL,FL>(spaceTime.deFeat(),dynCompSize.deFeat()...)
     {
     }
-    
-    // /// Tensor type implementing the field
-    // using T=
-    //   Tens<Comps,Fund,SL,Stackable::CANNOT_GO_ON_STACK>;
-    
-    /// Tensor
-    //T t;
   };
   
 #undef THIS

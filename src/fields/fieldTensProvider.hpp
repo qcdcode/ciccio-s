@@ -9,13 +9,13 @@
 # include "config.hpp"
 #endif
 
+#include <base/debug.hpp>
 #include <dataTypes/SIMD.hpp>
 #include <fields/field.hpp>
 #include <tensors/component.hpp>
 
 namespace ciccios
 {
-    
   /// Components for a given layout
   template <typename SPComp,
 	    typename TC,
@@ -43,12 +43,16 @@ namespace ciccios
     using T=
       Tens<Comps,Fund,SL,Stackable::CANNOT_GO_ON_STACK>;
     
+    /// Tensor
+    T t;
+    
     /// Create from the components sizes
     template <typename...TD,
-	      ENABLE_THIS_TEMPLATE_IF(sizeof...(TD)==
+	      ENABLE_THIS_TEMPLATE_IF(sizeof...(TD)+1==
 				      std::tuple_size<typename T::DynamicComps>::value)>
     FieldTensProvider(const TensCompFeat<IsTensComp,SPComp>& spaceTime,
-		      const TensCompFeat<IsTensComp,TD>&...dynCompSize) : T(spaceTime.deFeat(),dynCompSize.dFeat()...)
+		      const TensCompFeat<IsTensComp,TD>&...dynCompSize) :
+      t(spaceTime.deFeat(),dynCompSize.dFeat()...)
     {
     }
   };
@@ -104,6 +108,21 @@ namespace ciccios
     /// Tensor type
     using T=
       Tens<Comps,Fund,SL,Stackable::CANNOT_GO_ON_STACK>;
+    
+    /// Tensor
+    T t;
+    
+    /// Create from the components sizes
+    template <typename...TD,
+	      ENABLE_THIS_TEMPLATE_IF(sizeof...(TD)+1==
+				      std::tuple_size<typename T::DynamicComps>::value)>
+    FieldTensProvider(const TensCompFeat<IsTensComp,SPComp>& spaceTime,
+		      const TensCompFeat<IsTensComp,TD>&...dynCompSize) :
+      t(UnFusedComp(spaceTime.deFeat()/simdLength<F>),dynCompSize.dFeat()...)
+    {
+      if(spaceTime.deFeat()%simdLength<F>)
+	CRASHER<<"SpaceTime "<<spaceTime.deFeat()<<" is not a multiple of simdLength for type "<<nameOfType((F*)nullptr)<<" "<<simdLength<F><<endl;
+    }
   };
 }
 
