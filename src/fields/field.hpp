@@ -24,7 +24,8 @@ namespace ciccios
 #ifdef USE_CUDA
     GPU_LAYOUT
 #else
-    SIMD_LAYOUT
+    CPU_LAYOUT
+    //SIMD_LAYOUT
 #endif
     ;
   
@@ -32,7 +33,7 @@ namespace ciccios
   
   DEFINE_FEATURE_GROUP(FieldFeat);
   
-  /// Field: a tensor with spacetime tipe
+  /// Field: a tensor with spacetime type
   template <typename SPComp,
 	    typename TC,
 	    typename F=double,

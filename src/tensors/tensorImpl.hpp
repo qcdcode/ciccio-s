@@ -14,7 +14,7 @@
 namespace ciccios
 {
   /// Short name for the tensor
-#  define THIS \
+#define THIS					\
     Tens<TensComps<TC...>,F,SL,IsStackable>
   
   /// Tensor
@@ -222,6 +222,8 @@ namespace ciccios
     }
     
     /// HACK
+    ///
+    /// \todo Why is a hack?
     CUDA_HOST_DEVICE
     Tens(Fund* oth) : dynamicSizes(),data(oth)
     {

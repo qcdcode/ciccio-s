@@ -10,7 +10,7 @@
 #endif
 
 #include <fields/field.hpp>
-#include <fields/fieldComponents.hpp>
+#include <fields/fieldTensProvider.hpp>
 
 namespace ciccios
 {
@@ -25,22 +25,25 @@ namespace ciccios
 	    StorLoc SL,
 	    FieldLayout FL>
   struct Field : public
-    FieldFeat<IsField,THIS>
+  FieldFeat<IsField,THIS>,
+    FieldTensProvider<SPComp,TC,F,SL,FL>
   {
-    /// Fundamental type
-    using Fund=
-      typename FieldComponents<FL,SPComp,TC,F>::Fund;
+    /// Construct from sizes
+    template <typename...TD,
+	      ENABLE_THIS_TEMPLATE_IF(sizeof...(TD)==
+				      std::tuple_size<typename FieldTensProvider<SPComp,TC,F,SL,FL>::T::DynamicComps>::value)>
+    Field(const TensCompFeat<IsTensComp,SPComp>& spaceTime,
+	  const TensCompFeat<IsTensComp,TD>&...dynCompSize) :
+      FieldTensProvider<SPComp,TC,F,SL,FL>(spaceTime.deFeat(),dynCompSize.deFeat()...)
+    {
+    }
     
-    /// Components
-    using Comps=
-      typename FieldComponents<FL,SPComp,TC,F>::Comps;
-    
-    /// Tensor type implementing the field
-    using T=
-      Tens<Comps,Fund,SL,Stackable::CANNOT_GO_ON_STACK>;
+    // /// Tensor type implementing the field
+    // using T=
+    //   Tens<Comps,Fund,SL,Stackable::CANNOT_GO_ON_STACK>;
     
     /// Tensor
-    T t;
+    //T t;
   };
   
 #undef THIS

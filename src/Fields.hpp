@@ -6,7 +6,7 @@
 /// \brief Topical file for all fields functionalities
 
 #include <fields/field.hpp>
-#include <fields/fieldComponents.hpp>
+#include <fields/fieldTensProvider.hpp>
 #include <fields/fieldImpl.hpp>
 
 #endif
