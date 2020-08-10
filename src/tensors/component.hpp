@@ -39,7 +39,8 @@ namespace ciccios
   struct TensComp : public TensCompFeat<IsTensComp,THIS>
   {
     /// Transposed type of component
-    static constexpr RwCl TranspRC=
+    static constexpr
+    RwCl TranspRC=
       (RC==ANY)?ANY:((RC==CLN)?ROW:CLN);
     
     /// Transposed component
@@ -47,7 +48,8 @@ namespace ciccios
       TensComp<S,TranspRC,Which>;
     
     /// Base type
-    using Base=S;
+    using Base=
+      S;
     
     /// Value type
     using Index=
@@ -55,6 +57,16 @@ namespace ciccios
     
     /// Value
     Index i;
+    
+    /// Row or column
+    static constexpr
+    RwCl rC=
+      RC;
+    
+    /// Index of the component
+    static constexpr
+    int which=
+      Which;
     
     /// Check if the size is known at compile time
     static constexpr

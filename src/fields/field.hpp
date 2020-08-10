@@ -14,6 +14,20 @@
 
 namespace ciccios
 {
+  /// List the various kind of layouts for a field
+  enum class FieldLayout{CPU_LAYOUT,GPU_LAYOUT,SIMD_LAYOUT};
+  
+  /// Default layout to be used for all fields
+  static constexpr
+  FieldLayout DefaultFieldLayout=
+    FieldLayout::
+#ifdef USE_CUDA
+    GPU_LAYOUT
+#else
+    SIMD_LAYOUT
+#endif
+    ;
+  
   DEFINE_FEATURE(IsField);
   
   DEFINE_FEATURE_GROUP(FieldFeat);
@@ -22,24 +36,9 @@ namespace ciccios
   template <typename SPComp,
 	    typename Comps,
 	    typename Fund=double,
-	    StorLoc SL=DefaultStorage>
+	    StorLoc SL=DefaultStorage,
+	    FieldLayout FL=DefaultFieldLayout>
   struct Field;
-  
-  /// Short name for the field
-#  define THIS					\
-  Field<TensComps<TC...>,SPComp,Fund,SL>
-  
-  /// Field
-  template <typename SPComp,
-	    typename...TC,
-	    typename Fund,
-	    StorLoc SL>
-  struct THIS : public
-    FieldFeat<IsField,THIS>
-  {
-  };
-  
-#undef THIS
 }
 
 #endif

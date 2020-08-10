@@ -63,7 +63,8 @@ namespace ciccios
     
     /// Actual intinsic to be used
     template <typename Fund>
-    using ActualSimd=typename resources::Simd<SIMD_INST_SET,Fund>::Type;
+    using ActualSimd=
+      typename resources::Simd<SIMD_INST_SET,Fund>::Type;
   }
   
   /// Length of a SIMD vector
