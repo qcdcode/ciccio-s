@@ -31,6 +31,10 @@ namespace ciccios
     /// Components
     using Comps=
       TensComps<TC...,SPComp>;
+    
+    /// Fundamenal type is unchanged
+    using Fund=
+      F;
   };
   
   /// Components for the GPU layout
@@ -42,6 +46,10 @@ namespace ciccios
     /// Components
     using Comps=
       TensComps<SPComp,TC...>;
+    
+    /// Fundamenal type is unchanged
+    using Fund=
+      F;
   };
   
   /////////////////////////////////////////////////////////////////
@@ -63,19 +71,6 @@ namespace ciccios
     /// Unfused component
     using UnFusedComp=
       TensComp<UnFusedCompSignature,SPComp::rC,SPComp::which>;
-    
-    /// Signature of the fused site component
-    struct FusedCompSignature :
-      public TensCompSize<int,simdLength<F>>
-    {
-      /// Type used for the index
-      using Index=
-       int;
-    };
-    
-    /// Fused component
-    using FusedComp=
-      TensComp<FusedCompSignature,SPComp::rC,SPComp::which>;
   };
   
   /// Provides the components for the field
@@ -87,8 +82,11 @@ namespace ciccios
     /// Components of the field
     using Comps=
       TensComps<typename SIMDSPComp<SPComp,F>::UnFusedComp,
-		TC...,
-		typename SIMDSPComp<SPComp,F>::FusedComp>;
+		TC...>;
+    
+    /// Fundamental type is the SIMD version of F
+    using Fund=
+      Simd<F>;
   };
 }
 
