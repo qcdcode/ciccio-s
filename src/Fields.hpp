@@ -8,5 +8,6 @@
 #include <fields/field.hpp>
 #include <fields/fieldTensProvider.hpp>
 #include <fields/fieldImpl.hpp>
+#include <fields/fieldTraits.hpp>
 
 #endif
