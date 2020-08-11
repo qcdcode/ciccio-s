@@ -12,7 +12,7 @@
 
 namespace ciccios
 {
-  /// Componets and fundamental type of a field
+  /// Components and fundamental type of a field
   template <typename SPComp,
 	    typename TC,
 	    typename F,
@@ -34,9 +34,6 @@ namespace ciccios
     using Comps=
       TensComps<SPComp,Tc...>;
     
-    /// Fundamental type is unchanged
-    using Fund=
-      F;
     
     /// Return the size, unchanged
     INLINE_FUNCTION static constexpr
@@ -61,10 +58,6 @@ namespace ciccios
     /// Spacetime runs faster than all the rest
     using Comps=
       TensComps<Tc...,SPComp>;
-    
-    /// Fundamental type is unchanged
-    using Fund=
-      F;
     
     /// Return the size, unchanged
     INLINE_FUNCTION static constexpr
@@ -95,17 +88,26 @@ namespace ciccios
 	typename SPComp::Index;
     };
     
+    /// Signature of the fused site component
+    struct FusedSPCompSignature :
+      public TensCompSize<int,simdLength<F>>
+    {
+      /// Type used for the index
+      using Index=
+	int;
+    };
+    
     /// Unfused component
     using UnFusedSPComp=
       TensComp<UnFusedSPCompSignature,SPComp::rC,SPComp::which>;
     
+    /// Fused component
+    using FusedSPComp=
+      TensComp<FusedSPCompSignature,SPComp::rC,SPComp::which>;
+    
     /// Components: Spacetime is replaced with the unfused part
     using Comps=
-      TensComps<UnFusedSPComp,Tc...>;
-    
-    /// Fundamental type: SIMD vector
-    using Fund=
-      Simd<F>;
+      TensComps<UnFusedSPComp,Tc...,FusedSPComp>;
     
     /// Return the size, dividing by simd size
     INLINE_FUNCTION static constexpr
@@ -114,7 +116,7 @@ namespace ciccios
       CRASHER<<"SpaceTime "<<in<<" is not a multiple of simdLength for type "<<nameOfType((F*)nullptr)<<" "<<simdLength<F><<endl;
       
       return
-	in/simdLength<F>;
+	UnFusedSPComp{in/simdLength<F>};
     }
     
   };

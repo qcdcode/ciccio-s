@@ -22,21 +22,17 @@ namespace ciccios
 	    FieldLayout FL>
   struct FieldTensProvider
   {
-    /// Field components
-    using FC=
+    /// Field traits
+    using FT=
       FieldTraits<SPComp,TC,F,FL>;
     
     /// Components
     using Comps=
-      typename FC::Comps;
-    
-    /// Fundamenal type
-    using Fund=
-      typename FC::Fund;
+      typename FT::Comps;
     
     /// Tensor type
     using T=
-      Tens<Comps,Fund,SL,Stackable::CANNOT_GO_ON_STACK>;
+      Tens<Comps,F,SL,Stackable::CANNOT_GO_ON_STACK>;
     
     /// Tensor
     T t;
@@ -64,7 +60,7 @@ namespace ciccios
 				      std::tuple_size<typename T::DynamicComps>::value)>
     FieldTensProvider(const TensCompFeat<IsTensComp,SPComp>& spaceTime,
 		      const TensCompFeat<IsTensComp,TD>&...dynCompSize) :
-      t(FC::adaptSpaceTime(spaceTime.deFeat()),dynCompSize.dFeat()...)
+      t(FT::adaptSpaceTime(spaceTime.deFeat()),dynCompSize.dFeat()...)
     {
     }
   };

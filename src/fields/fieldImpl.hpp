@@ -37,6 +37,36 @@ namespace ciccios
       FieldTensProvider<SPComp,TC,F,SL,FL>(spaceTime.deFeat(),dynCompSize.deFeat()...)
     {
     }
+    
+    /// Copy from a non-simd layout to a simd layout
+    template <typename OF,
+	      FieldLayout TFL=FL,
+	      ENABLE_THIS_TEMPLATE_IF(TFL==FieldLayout::SIMD_LAYOUT)>
+    Field& operator=(const Field<SPComp,TC,OF,SL,FieldLayout::CPU_LAYOUT>& oth)
+    {
+      /// Get volume
+      const SPComp& fieldVol=
+	this->t.template compSize<SPComp>();
+      
+      /// Traits of the field
+      using FT=
+	typename FieldTensProvider<SPComp,TC,F,SL,FL>::FT;
+      
+      for(SPComp spComp{0};spComp<fieldVol;spComp++)
+	{
+	  typename FT::UnFusedSPComp unFusedSPComp
+	    {spComp/simdLength<F>};
+	  
+	  typename FT::FusedSPComp fusedSPComp
+	    {spComp%simdLength<F>};
+	  
+	  this->t[unFusedSPComp][fusedSPComp]=
+	    oth[spComp];
+	}
+      
+      return
+	*this;
+    }
   };
   
 #undef THIS
