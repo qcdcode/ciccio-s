@@ -3,7 +3,8 @@
 
 /// \file fieldTensProvider.hpp
 ///
-/// \brief Implements the remapping of field components into tensor, constructor etc
+/// \brief Implements the remapping of field components into tensor,
+/// constructor etc
 
 #ifdef HAVE_CONFIG_H
 # include "config.hpp"
@@ -24,12 +25,38 @@ namespace ciccios
 	    FieldLayout FL>
   struct FieldTensProvider;
   
+  /// Include Subscribe operator
+  template <typename T>
+  struct BaseFieldTensProvider
+  {
+    PROVIDE_DEFEAT_METHOD(T);
+    
+    /// Provide subscribe method
+#define PROVIDE_SUBSCRIBE_OPERATOR(CONST_ATTR)				\
+    /*! Subscribe a component via CRTP */				\
+    template <typename TC>						\
+    decltype(auto) operator[](const TensCompFeat<IsTensComp,TC>& tc) CONST_ATTR	\
+    {									\
+      return								\
+	this->deFeat().t[tc.deFeat()];					\
+    }
+    
+    PROVIDE_SUBSCRIBE_OPERATOR(/* non const*/);
+    PROVIDE_SUBSCRIBE_OPERATOR(const);
+    
+#undef PROVIDE_SUBSCRIBE_OPERATOR
+  };
+  
+  /// CPU layout
+#define THIS								\
+  FieldTensProvider<SPComp,TensComps<TC...>,F,SL,FieldLayout::CPU_LAYOUT>
+  
   /// Components for the CPU layout
   template <typename SPComp,
 	    typename...TC,
 	    typename F,
 	    StorLoc SL>
-  struct FieldTensProvider<SPComp,TensComps<TC...>,F,SL,FieldLayout::CPU_LAYOUT>
+  struct THIS : BaseFieldTensProvider<THIS>
   {
     /// Components
     using Comps=
@@ -57,12 +84,18 @@ namespace ciccios
     }
   };
   
+#undef THIS
+  
+  /// GPU layout
+#define THIS								\
+  FieldTensProvider<SPComp,TensComps<TC...>,F,SL,FieldLayout::GPU_LAYOUT>
+  
   /// Components for the GPU layout
   template <typename SPComp,
 	    typename...TC,
 	    typename F,
 	    StorLoc SL>
-  struct FieldTensProvider<SPComp,TensComps<TC...>,F,SL,FieldLayout::GPU_LAYOUT>
+  struct THIS : public BaseFieldTensProvider<THIS>
   {
     /// Components
     using Comps=
@@ -77,12 +110,18 @@ namespace ciccios
       Tens<Comps,Fund,SL,Stackable::CANNOT_GO_ON_STACK>;
   };
   
+#undef THIS
+  
+  /// SIMD layout
+#define THIS								\
+  FieldTensProvider<SPComp,TensComps<TC...>,F,SL,FieldLayout::SIMD_LAYOUT>
+  
   /// Provides the tensor for a SIMD layout
   template <typename SPComp,
 	    typename...TC,
 	    typename F,
 	    StorLoc SL>
-  struct FieldTensProvider<SPComp,TensComps<TC...>,F,SL,FieldLayout::SIMD_LAYOUT>
+  struct THIS : public BaseFieldTensProvider<THIS>
   {
     /// Signature of the non-fused site component
     struct UnFusedCompSignature :
@@ -124,6 +163,8 @@ namespace ciccios
 	CRASHER<<"SpaceTime "<<spaceTime.deFeat()<<" is not a multiple of simdLength for type "<<nameOfType((F*)nullptr)<<" "<<simdLength<F><<endl;
     }
   };
+  
+#undef THIS
 }
 
 #endif

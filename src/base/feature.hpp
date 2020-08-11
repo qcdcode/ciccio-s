@@ -26,7 +26,8 @@ namespace ciccios
   CUDA_HOST_DEVICE					\
   operator const T&() const				\
   {							\
-    return *static_cast<const T*>(this);		\
+    return						\
+      *static_cast<const T*>(this);			\
   }							\
   							\
   /*! Cast to the base type */						\

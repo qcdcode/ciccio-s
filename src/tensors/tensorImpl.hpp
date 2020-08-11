@@ -232,7 +232,8 @@ namespace ciccios
     /// Provide trivial access to the fundamental data
     const Fund& trivialAccess(const Size& i) const
     {
-      return data[i];
+      return
+	data[i];
     }
     
     PROVIDE_ALSO_NON_CONST_METHOD(trivialAccess);
@@ -240,7 +241,8 @@ namespace ciccios
     /// Gets access to the inner data
     const Fund* getRawAccess() const
     {
-      return &trivialAccess(0);
+      return
+	&trivialAccess(0);
     }
     
     PROVIDE_ALSO_NON_CONST_METHOD(getRawAccess);
@@ -253,7 +255,7 @@ namespace ciccios
     template <typename C,						\
 	      typename Cp=Comps,					\
 	      ENABLE_THIS_TEMPLATE_IF(std::tuple_size<Cp>::value>1 and	\
-				 TupleHasType<C,Comps>)>		\
+				      TupleHasType<C,Comps>)>		\
     CUDA_HOST_DEVICE INLINE_FUNCTION					\
     auto operator[](const TensCompFeat<IsTensComp,C>& cFeat) CONST_ATTR	\
     {									\
@@ -276,7 +278,7 @@ namespace ciccios
     template <typename C,						\
 	      typename Cp=Comps,					\
 	      ENABLE_THIS_TEMPLATE_IF(std::tuple_size<Cp>::value==1 and	\
-				 TupleHasType<C,Comps>)>		\
+				      TupleHasType<C,Comps>)>		\
     CUDA_HOST_DEVICE INLINE_FUNCTION CONST_ATTR				\
     Fund& operator[](const TensCompFeat<IsTensComp,C>& cFeat) CONST_ATTR \
     {									\
