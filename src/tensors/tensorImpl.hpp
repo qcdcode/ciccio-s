@@ -54,9 +54,9 @@ namespace ciccios
     
     /// Static size
     static constexpr Index staticSize=
-      productAll<Size>((TC::SizeIsKnownAtCompileTime?
-			TC::Base::sizeAtCompileTime:
-			1)...);
+      productAll<Index>((TC::SizeIsKnownAtCompileTime?
+			 TC::Base::sizeAtCompileTime:
+			 1)...);
     
     /// Size of the Tv component
     ///

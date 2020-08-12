@@ -49,7 +49,7 @@ namespace ciccios
     auto operator+=(const Product<U1,U2>& u) const
     {
       return
-	*this;
+	this->deFeat();
     }
     
     template <typename U1,
