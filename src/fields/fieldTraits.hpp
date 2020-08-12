@@ -70,22 +70,26 @@ namespace ciccios
   
   /////////////////////////////////////////////////////////////////
   
-  /// SIMD field layout
-  template <typename SPComp,
-	    typename...Tc,
+  /// Split a component
+  ///
+  /// \todo rename, move
+  template <typename T,
 	    typename F>
-  struct FieldTraits<SPComp,
-		     TensComps<Tc...>,
-		     F,
-		     FieldLayout::SIMD_LAYOUT>
+  struct SIMDSplitter;
+  
+  template <typename Signature,
+	    RwCl RC,
+	    int Which,
+	    typename F>
+  struct SIMDSplitter<TensComp<Signature,RC,Which>,F>
   {
     /// Signature of the non-fused site component
     struct UnFusedSPCompSignature :
-      public TensCompSize<typename SPComp::Index,DYNAMIC>
+      public TensCompSize<typename Signature::Index,DYNAMIC>
     {
       /// Type used for the index
       using Index=
-	typename SPComp::Index;
+	typename Signature::Index;
     };
     
     /// Signature of the fused site component
@@ -99,21 +103,42 @@ namespace ciccios
     
     /// Unfused component
     using UnFusedSPComp=
-      TensComp<UnFusedSPCompSignature,SPComp::rC,SPComp::which>;
+      TensComp<UnFusedSPCompSignature,RC,Which>;
     
     /// Fused component
     using FusedSPComp=
-      TensComp<FusedSPCompSignature,SPComp::rC,SPComp::which>;
+      TensComp<FusedSPCompSignature,RC,Which>;
+    
+    
+  };
+  
+  /// SIMD field layout
+  template <typename SPComp,
+	    typename...Tc,
+	    typename F>
+  struct FieldTraits<SPComp,
+		     TensComps<Tc...>,
+		     F,
+		     FieldLayout::SIMD_LAYOUT>
+  {
+    using UnFusedSPComp=
+      typename SIMDSplitter<SPComp,F>::UnFusedSPComp;
+    
+    using FusedSPComp=
+      typename SIMDSplitter<SPComp,F>::FusedSPComp;
     
     /// Components: Spacetime is replaced with the unfused part
     using Comps=
-      TensComps<UnFusedSPComp,Tc...,FusedSPComp>;
+      TensComps<UnFusedSPComp,
+		Tc...,
+		FusedSPComp>;
     
     /// Return the size, dividing by simd size
     INLINE_FUNCTION static constexpr
     UnFusedSPComp adaptSpaceTime(const SPComp& in)
     {
-      CRASHER<<"SpaceTime "<<in<<" is not a multiple of simdLength for type "<<nameOfType((F*)nullptr)<<" "<<simdLength<F><<endl;
+      if(in%simdLength<F>!=0)
+	CRASHER<<"SpaceTime "<<in<<" is not a multiple of simdLength for type "<<nameOfType((F*)nullptr)<<" "<<simdLength<F><<endl;
       
       return
 	UnFusedSPComp{in/simdLength<F>};

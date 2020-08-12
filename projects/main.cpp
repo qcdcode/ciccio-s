@@ -10,7 +10,7 @@
 #include <chrono>
 #include <omp.h>
 
-#include "ciccio-s.hpp"
+#include <ciccio-s.hpp>
 
 using namespace ciccios;
 

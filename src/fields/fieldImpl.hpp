@@ -9,6 +9,7 @@
 # include "config.hpp"
 #endif
 
+#include <expr/expr.hpp>
 #include <fields/field.hpp>
 #include <fields/fieldTensProvider.hpp>
 
@@ -38,6 +39,15 @@ namespace ciccios
     {
     }
     
+    /// Get components size from the tensor
+    template <typename C>
+    INLINE_FUNCTION constexpr
+    decltype(auto) compSize() const
+    {
+      return
+	this->t.template compSize<C>();
+    }
+    
     /// Copy from a non-simd layout to a simd layout
     template <typename OF,
 	      FieldLayout TFL=FL,
@@ -46,7 +56,7 @@ namespace ciccios
     {
       /// Get volume
       const SPComp& fieldVol=
-	this->t.template compSize<SPComp>();
+	oth.template compSize<SPComp>();
       
       /// Traits of the field
       using FT=
@@ -66,6 +76,17 @@ namespace ciccios
       
       return
 	*this;
+    }
+    
+    /// Create SIMD from non simd
+    template <typename OF,
+	      FieldLayout TFL=FL,
+	      ENABLE_THIS_TEMPLATE_IF(TFL==FieldLayout::SIMD_LAYOUT)>
+    explicit Field(const Field<SPComp,TC,OF,SL,FieldLayout::CPU_LAYOUT>& oth) :
+      Field(oth.template compSize<SPComp>())
+    {
+      (*this)=
+	oth;
     }
   };
   

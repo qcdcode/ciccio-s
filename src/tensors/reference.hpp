@@ -7,6 +7,7 @@
 
 #include <base/feature.hpp>
 #include <base/metaProgramming.hpp>
+#include <expr/expr.hpp>
 #include <tensors/component.hpp>
 #include <tensors/componentsList.hpp>
 #include <tensors/tensFeat.hpp>
@@ -36,14 +37,19 @@ namespace ciccios
 	    typename T,    // Tensor
 	    typename...Sc> // Subscribed components
   struct THIS : public
+    Expr<THIS>,
     TensRefFeat<IsTensRef,THIS>
   {
+    /// Import assignement from Expr class
+    using Expr<THIS>::operator=;
+    
     /// Holds info on whether the reference is constant
     static constexpr bool IsConst=
       Const;
     
     /// Original tensor to which we refer
-    using OrigTens=T;
+    using OrigTens=
+      T;
     
     /// Original components
     using OrigComps=
@@ -67,6 +73,15 @@ namespace ciccios
     ConstIf<IsConst,OrigTens>& deRef() const
     {
       return t;
+    }
+    
+    /// Get components size from the tensor
+    template <typename C>
+    INLINE_FUNCTION constexpr
+    decltype(auto) compSize() const
+    {
+      return
+	this->t.template compSize<C>();
     }
     
     /// Provide subscribe operator when returning a reference
@@ -142,7 +157,8 @@ namespace ciccios
 	t.getDataPtr()+
 	offset;
       
-      return Tens<Comps,typename T::Fund,T::storLoc,Stackable::CANNOT_GO_ON_STACK>(carriedData);
+      return
+	Tens<Comps,typename T::Fund,T::storLoc,Stackable::CANNOT_GO_ON_STACK>(carriedData);
     }
   };
   
