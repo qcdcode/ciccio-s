@@ -96,7 +96,8 @@ namespace ciccios
       struct Filter
       {
 	/// Predicate result, counting whether the type match
-	static constexpr bool value=(sumAll<int>(std::is_same<T,Fs>::value...)==0);
+	static constexpr bool value=
+	  (sumAll<int>(std::is_same<T,Fs>::value...)==0);
       };
       
       /// Returned type
@@ -177,7 +178,7 @@ namespace ciccios
     }
   }
   
-  /// Returns a tuple filled woth the arguments of another tuple
+  /// Returns a tuple filled with the arguments of another tuple
   ///
   /// The arguments not passed are null-initialized
   template <typename T,     ///< Tuple type to be returned, to be provided
@@ -185,12 +186,32 @@ namespace ciccios
   T fillTuple(const std::tuple<Tp...>& in) ///< Tuple containing the arguments to be passed
   {
     /// Returned tuple
-    T t{};
+    T t;
     
     impl::fillTuple(t,std::get<Tp>(in)...);
     
-    return t;
+    return
+      t;
   }
+  
+  namespace impl
+  {
+    template <typename I,
+	      typename T>
+    struct TupleElOfList;
+    
+    template <std::size_t...Is,
+	      typename T>
+    struct TupleElOfList<std::index_sequence<Is...>,T>
+    {
+      using type=
+	std::tuple<std::tuple_element_t<Is,T>...>;
+    };
+  }
+  
+  template <typename Tp>
+  using TupleAllButLast=
+    typename impl::TupleElOfList<std::make_index_sequence<std::tuple_size<Tp>::value-1>,Tp>::type;
 }
 
 #endif
