@@ -19,6 +19,10 @@ namespace ciccios
 #define THIS					\
   Field<SPComp,TC,F,SL,FL>
   
+  /// Field tensor provider
+#define FTP					\
+  FieldTensProvider<SPComp,TC,F,SL,FL>
+  
   /// Field
   template <typename SPComp,
 	    typename TC,
@@ -27,17 +31,21 @@ namespace ciccios
 	    FieldLayout FL>
   struct Field : public
   FieldFeat<IsField,THIS>,
-    FieldTensProvider<SPComp,TC,F,SL,FL>
+    FTP
   {
     /// Construct from sizes
     template <typename...TD,
 	      ENABLE_THIS_TEMPLATE_IF(sizeof...(TD)+1==
-				      std::tuple_size<typename FieldTensProvider<SPComp,TC,F,SL,FL>::T::DynamicComps>::value)>
+				      std::tuple_size<typename FTP::T::DynamicComps>::value)>
     Field(const TensCompFeat<IsTensComp,SPComp>& spaceTime,
 	  const TensCompFeat<IsTensComp,TD>&...dynCompSize) :
-      FieldTensProvider<SPComp,TC,F,SL,FL>(spaceTime.deFeat(),dynCompSize.deFeat()...)
+      FTP(spaceTime.deFeat(),dynCompSize.deFeat()...)
     {
     }
+    
+    /// Determine whether this can be simdfified
+    static constexpr bool canBeSimdified=
+      FTP::T::canBeSimdified;
     
     /// Get components size from the tensor
     template <typename C>
@@ -48,7 +56,7 @@ namespace ciccios
 	this->t.template compSize<C>();
     }
     
-    /// Copy from a non-simd layout to a simd layout
+    /// Copy from a non-SIMD layout to a SIMD layout
     template <typename OF,
 	      FieldLayout TFL=FL,
 	      ENABLE_THIS_TEMPLATE_IF(TFL==FieldLayout::SIMD_LAYOUT)>
@@ -60,7 +68,7 @@ namespace ciccios
       
       /// Traits of the field
       using FT=
-	typename FieldTensProvider<SPComp,TC,F,SL,FL>::FT;
+	typename FTP::FT;
       
       for(SPComp spComp{0};spComp<fieldVol;spComp++)
 	{
@@ -78,12 +86,55 @@ namespace ciccios
 	*this;
     }
     
-    /// Create SIMD from non simd
+    /// Copy from a SIMD layout to a non-SIMD layout
+    template <typename OF,
+	      FieldLayout TFL=FL,
+	      ENABLE_THIS_TEMPLATE_IF(TFL==FieldLayout::CPU_LAYOUT)>
+    Field& operator=(const Field<SPComp,TC,OF,SL,FieldLayout::SIMD_LAYOUT>& oth)
+    {
+      /// Get volume
+      const SPComp& fieldVol=
+	this->template compSize<SPComp>();
+      
+      /// Traits of the field
+      using OFT=
+	FieldTraits<SPComp,TC,OF,FieldLayout::SIMD_LAYOUT>;
+      
+      for(SPComp spComp{0};spComp<fieldVol;spComp++)
+	{
+	  typename OFT::UnFusedSPComp unFusedSPComp
+	    {spComp/simdLength<F>};
+	  
+	  typename OFT::FusedSPComp fusedSPComp
+	    {spComp%simdLength<F>};
+	  
+	  this->t[spComp]=
+	    oth[unFusedSPComp][fusedSPComp];
+	}
+      
+      return
+	*this;
+    }
+    
+    /// Create SIMD from non-SIMD
     template <typename OF,
 	      FieldLayout TFL=FL,
 	      ENABLE_THIS_TEMPLATE_IF(TFL==FieldLayout::SIMD_LAYOUT)>
     explicit Field(const Field<SPComp,TC,OF,SL,FieldLayout::CPU_LAYOUT>& oth) :
       Field(oth.template compSize<SPComp>())
+    {
+      (*this)=
+	oth;
+    }
+    
+    /// Create non-SIMD from SIMD
+    template <typename OF,
+	      FieldLayout TFL=FL,
+	      typename OFT=FieldTraits<SPComp,TC,OF,FieldLayout::SIMD_LAYOUT>,
+	      ENABLE_THIS_TEMPLATE_IF(TFL==FieldLayout::CPU_LAYOUT)>
+    explicit Field(const Field<SPComp,TC,OF,SL,FieldLayout::SIMD_LAYOUT>& oth) :
+      Field((SPComp)(oth.template compSize<typename OFT::FusedSPComp>()*
+		     oth.template compSize<typename OFT::UnFusedSPComp>()))
     {
       (*this)=
 	oth;

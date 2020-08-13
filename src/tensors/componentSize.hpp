@@ -16,7 +16,8 @@ namespace ciccios
   struct TensCompSize
   {
     /// Value beyond end
-    static constexpr Size sizeAtCompileTime=SIZE;
+    static constexpr Size sizeAtCompileTime=
+      SIZE;
   };
   
   /// Predicate returning whether the size is known ow not at compile time
@@ -28,7 +29,8 @@ namespace ciccios
     struct t
     {
       /// Predicate result
-      static constexpr bool value=(T::SizeIsKnownAtCompileTime==Comp);
+      static constexpr bool value=
+	(T::SizeIsKnownAtCompileTime==Comp);
     };
   };
 }

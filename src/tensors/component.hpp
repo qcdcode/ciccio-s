@@ -17,6 +17,7 @@
 #include <base/inliner.hpp>
 #include <base/feature.hpp>
 #include <base/metaProgramming.hpp>
+#include <dataTypes/SIMD.hpp>
 #include <tensors/componentSize.hpp>
 #include <tensors/componentSignature.hpp>
 
@@ -73,16 +74,40 @@ namespace ciccios
     bool SizeIsKnownAtCompileTime=
       Base::sizeAtCompileTime!=DYNAMIC;
     
-    /// Init from value
-    template <typename T>
-    CUDA_HOST_DEVICE
-    explicit constexpr TensComp(T&& i) : i(i)
+    /// Determine if this type can be simdified
+    ///
+    /// Internal implementation when F is a type for which simd exists
+    template <typename F,
+	      ENABLE_THIS_TEMPLATE_IF(simdOfTypeExists<F>)>
+    static constexpr
+    bool _canBeSimdified()
     {
+      return
+	SizeIsKnownAtCompileTime and
+	((Base::sizeAtCompileTime%simdLength<F>)==0);
     }
     
-    /// Default constructor
+    /// Determine if this type can be simdified
+    ///
+    /// Internal implementation when F is not a type for which simd exists
+    template <typename F,
+	      ENABLE_THIS_TEMPLATE_IF(not simdOfTypeExists<F>)>
+    static constexpr
+    bool _canBeSimdified()
+    {
+      return
+	false;
+    };
+    
+    /// Determine if this type can be simdified
+    template <typename F>
+    static constexpr
+    bool canBeSimdified=
+      _canBeSimdified<F>();
+    
+    /// Init from value
     CUDA_HOST_DEVICE
-    TensComp()
+    explicit constexpr TensComp(const Index& i=0) : i(i)
     {
     }
     
@@ -90,30 +115,34 @@ namespace ciccios
     CUDA_HOST_DEVICE
     operator Index&()
     {
-      return i;
+      return
+	i;
     }
     
     /// Convert to actual value with const attribute
     CUDA_HOST_DEVICE
     operator const Index&() const
     {
-      return i;
+      return
+	i;
     }
     
     /// Transposed index
     CUDA_HOST_DEVICE
     auto transp() const
     {
-      return Transp{i};
+      return
+	Transp{i};
     }
     
     /// Assignment operator
-    CUDA_HOST_DEVICE
+    CUDA_HOST_DEVICE constexpr
     TensComp& operator=(const Index& oth)
     {
       i=oth;
       
-      return *this;
+      return
+	*this;
     }
   };
   

@@ -24,8 +24,7 @@ namespace ciccios
 #ifdef USE_CUDA
     GPU_LAYOUT
 #else
-    CPU_LAYOUT
-    //SIMD_LAYOUT
+    SIMD_LAYOUT
 #endif
     ;
   

@@ -142,17 +142,21 @@ namespace ciccios
     {
     }
     
+    /// Return a tensor pointing to the offsetted data, with the resulting component
     CUDA_HOST_DEVICE INLINE_FUNCTION constexpr
     auto carryOver() const
     {
+      /// Number of dynamic components must be zero
       constexpr int nDynComps=
 	std::tuple_size<TupleFilter<SizeIsKnownAtCompileTime<false>::t,Comps>>::value;
       
       static_assert(nDynComps==0,"Not supported if residual dynamic components are present");
       
+      /// Offset to data
       const auto offset=
 	t.index(fillTuple<OrigComps>(subsComps));
       
+      /// Data with offset
       auto carriedData=
 	t.getDataPtr()+
 	offset;

@@ -15,7 +15,7 @@ namespace ciccios
 {
   /// Short name for the tensor
 #define THIS					\
-    Tens<TensComps<TC...>,F,SL,IsStackable>
+  Tens<TensComps<TC...>,F,SL,IsStackable>
   
   /// Tensor
   template <typename F,
@@ -26,11 +26,65 @@ namespace ciccios
     TensFeat<IsTens,THIS>
   {
     /// Fundamental type
-    using Fund=F;
+    using Fund=
+      F;
     
     /// Components
     using Comps=
       TensComps<TC...>;
+    
+    /// Get the I-th component
+    template <int I>
+    using Comp=
+      std::tuple_element_t<I,Comps>;
+    
+    /// Last component type
+    using LastComp=
+      Comp<sizeof...(TC)-1>;
+    
+    /// Determine whether this can be simdfified
+    static constexpr bool canBeSimdified=
+      LastComp::template canBeSimdified<Fund>;
+    
+    /// Provide constant/not constant simdify method when not simdifiable
+#define PROVIDE_SIMDIFY(CONST_ATTR)					\
+    /*! Convert into simdified, CONST_ATTR case */			\
+    template <typename _F=F,						\
+	      ENABLE_THIS_TEMPLATE_IF					\
+	      (not LastComp::template canBeSimdified<_F>)>		\
+    decltype(auto) simdify()						\
+      CONST_ATTR							\
+    {									\
+      return								\
+	*this;								\
+    }
+    
+    PROVIDE_SIMDIFY(const);
+    PROVIDE_SIMDIFY(/* non const */);
+    
+#undef PROVIDE_SIMDIFY
+    
+    /// Provide constant/not constant simdify method when simdifiable
+    ///
+    //// Last component is of the same size of sidm_length
+#define PROVIDE_SIMDIFY(CONST_ATTR)					\
+    /*! Convert into simdified, CONST_ATTR case */			\
+    template <typename _F=F,						\
+	      ENABLE_THIS_TEMPLATE_IF					\
+	      (LastComp::template canBeSimdified<_F> and		\
+	       LastComp::Base::sizeAtCompileTime==simdLength<_F>)>	\
+    auto simdify()							\
+      CONST_ATTR							\
+    {									\
+	return								\
+	  Tens<TupleAllButLast<TensComps<TC...>>,Simd<F>,SL,IsStackable> \
+	  ((Simd<F>*)(this->getDataPtr()),dynamicSizes);		\
+      }
+    
+    PROVIDE_SIMDIFY(const);
+    PROVIDE_SIMDIFY(/* non const */);
+    
+#undef PROVIDE_SIMDIFY
     
     /// Storage Location
     static constexpr
@@ -60,11 +114,12 @@ namespace ciccios
     
     /// Size of the Tv component
     ///
-    /// Case in which the component size is knwon at compile time
+    /// Case in which the component size is known at compile time
     template <typename Tv,
 	      ENABLE_THIS_TEMPLATE_IF(Tv::SizeIsKnownAtCompileTime)>
     CUDA_HOST_DEVICE INLINE_FUNCTION
-    constexpr auto compSize() const
+    constexpr auto compSize()
+      const
     {
       return
 	Tv::Base::sizeAtCompileTime;
@@ -76,7 +131,8 @@ namespace ciccios
     template <typename Tv,
 	      ENABLE_THIS_TEMPLATE_IF(not Tv::SizeIsKnownAtCompileTime)>
     constexpr CUDA_HOST_DEVICE INLINE_FUNCTION
-    const auto& compSize() const
+    const auto& compSize()
+      const
     {
       return
 	std::get<Tv>(dynamicSizes);
@@ -84,7 +140,8 @@ namespace ciccios
     
     /// Calculate the index - no more components to parse
     constexpr CUDA_HOST_DEVICE INLINE_FUNCTION
-    Index orderedCompsIndex(Index outer) const ///< Value of all the outer components
+    Index orderedCompsIndex(Index outer) ///< Value of all the outer components
+      const
     {
       return
 	outer;
@@ -128,7 +185,8 @@ namespace ciccios
     /// Intermediate layer to reorder the passed components
     template <typename...T>
     constexpr CUDA_HOST_DEVICE INLINE_FUNCTION
-    Index index(const TensComps<T...>& comps) const
+    Index index(const TensComps<T...>& comps)
+      const
     {
       /// Build the index reordering the components
       return
@@ -152,7 +210,8 @@ namespace ciccios
     
     /// Returns the pointer to the data
     CUDA_HOST_DEVICE
-    decltype(auto) getDataPtr() const
+    decltype(auto) getDataPtr()
+      const
     {
       return
 	data.getDataPtr();
@@ -174,9 +233,11 @@ namespace ciccios
     Index initializeDynSize(const Ds& inputs, ///< Input sizes
 			    Out& out)         ///< Output size to set
     {
-      out=std::get<Out>(inputs);
+      out=
+	std::get<Out>(inputs);
       
-      return out;
+      return
+	out;
     }
     
     /// Compute the size needed to initialize the tensor and set it
@@ -224,13 +285,18 @@ namespace ciccios
     /// HACK
     ///
     /// \todo Why is a hack?
+    template <typename...Dyn>
     CUDA_HOST_DEVICE
-    Tens(Fund* oth) : dynamicSizes(),data(oth)
+    Tens(Fund* oth,
+	 const Dyn&...dynamicSizes) : dynamicSizes(dynamicSizes...),data(oth)
     {
     }
     
+    
+    
     /// Provide trivial access to the fundamental data
-    const Fund& trivialAccess(const Size& i) const
+    const Fund& trivialAccess(const Size& i)
+      const
     {
       return
 	data[i];
@@ -239,7 +305,8 @@ namespace ciccios
     PROVIDE_ALSO_NON_CONST_METHOD(trivialAccess);
     
     /// Gets access to the inner data
-    const Fund* getRawAccess() const
+    const Fund* getRawAccess()
+      const
     {
       return
 	&trivialAccess(0);
@@ -257,7 +324,8 @@ namespace ciccios
 	      ENABLE_THIS_TEMPLATE_IF(std::tuple_size<Cp>::value>1 and	\
 				      TupleHasType<C,Comps>)>		\
     CUDA_HOST_DEVICE INLINE_FUNCTION					\
-    auto operator[](const TensCompFeat<IsTensComp,C>& cFeat) CONST_ATTR	\
+    auto operator[](const TensCompFeat<IsTensComp,C>& cFeat)		\
+      CONST_ATTR							\
     {									\
       /*! Subscribed components */					\
       using SubsComps=							\
@@ -280,7 +348,8 @@ namespace ciccios
 	      ENABLE_THIS_TEMPLATE_IF(std::tuple_size<Cp>::value==1 and	\
 				      TupleHasType<C,Comps>)>		\
     CUDA_HOST_DEVICE INLINE_FUNCTION CONST_ATTR				\
-    Fund& operator[](const TensCompFeat<IsTensComp,C>& cFeat) CONST_ATTR \
+    Fund& operator[](const TensCompFeat<IsTensComp,C>& cFeat)		\
+      CONST_ATTR							\
     {									\
       return								\
 	data[cFeat.deFeat()];						\

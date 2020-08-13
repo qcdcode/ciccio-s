@@ -33,6 +33,11 @@ PROVIDE_ASM_DEBUG_HANDLE(sumProd,Tens<SU3FieldComps,double,StorLoc::ON_CPU>*);
 PROVIDE_ASM_DEBUG_HANDLE(sumProd,Tens<SU3FieldComps,Simd<float>,StorLoc::ON_CPU>*);
 PROVIDE_ASM_DEBUG_HANDLE(sumProd,Tens<SU3FieldComps,Simd<double>,StorLoc::ON_CPU>*);
 
+PROVIDE_ASM_DEBUG_HANDLE(sumProd,Field<SpaceTime,SU3Comps,float,StorLoc::ON_CPU,FieldLayout::CPU_LAYOUT>*);
+PROVIDE_ASM_DEBUG_HANDLE(sumProd,Field<SpaceTime,SU3Comps,double,StorLoc::ON_CPU,FieldLayout::CPU_LAYOUT>*);
+PROVIDE_ASM_DEBUG_HANDLE(sumProd,Field<SpaceTime,SU3Comps,float,StorLoc::ON_CPU,FieldLayout::SIMD_LAYOUT>*);
+PROVIDE_ASM_DEBUG_HANDLE(sumProd,Field<SpaceTime,SU3Comps,double,StorLoc::ON_CPU,FieldLayout::SIMD_LAYOUT>*);
+
 /// Compute a+=b*c
 ///
 /// Arguments are caught as generic \a SU3Field so allow for static
@@ -227,15 +232,14 @@ void test(const int vol,         ///< Volume to simulate
 template <typename F1,
 	  typename F2,
 	  typename F3>
-INLINE_FUNCTION void su3FieldsSumProd(TensFeat<IsTens,F1>& _field1,const TensFeat<IsTens,F2>& _field2,const TensFeat<IsTens,F3>& _field3)
+//INLINE_FUNCTION void su3FieldsSumProd(TensFeat<IsTens,F1>& _field1,const TensFeat<IsTens,F2>& _field2,const TensFeat<IsTens,F3>& _field3)
+INLINE_FUNCTION void su3FieldsSumProd(F1& field1,const F2& field2,const F3& field3)
 {
-  // Cast to the actual type
-  F1& field1=_field1;
-  const F2& field2=_field2;
-  const F3& field3=_field3;
+  using ST=
+    std::tuple_element_t<0,typename F2::Comps>;
   
-  ThreadPool::loopSplit(spaceTime(0),std::get<SpaceTime>(field1.dynamicSizes),
-			KERNEL_LAMBDA_BODY(const SpaceTime iSite)
+  ThreadPool::loopSplit((ST)0,field1.template compSize<ST>(),
+			KERNEL_LAMBDA_BODY(const ST iSite)
 			{
 			  // This puts a bookmark in the assembly to check
 			  // the compiler implementation
@@ -246,9 +250,9 @@ INLINE_FUNCTION void su3FieldsSumProd(TensFeat<IsTens,F1>& _field1,const TensFea
 			  /// index for each color components, and it has a
 			  /// clearer view which makes it easier to produce
 			  /// optimized code
-			  auto f1=field1[iSite].carryOver();
-			  auto f2=field2[iSite].carryOver();
-			  auto f3=field3[iSite].carryOver();
+			  auto f1=field1[iSite].carryOver().simdify();
+			  auto f2=field2[iSite].carryOver().simdify();
+			  auto f3=field3[iSite].carryOver().simdify();
 			  
 			  // Tens<SU3Comps,typename F1::Fund,StorLoc::ON_CPU,false> f1(&field1[iSite][clRow(0)][clCln(0)][complComp(RE)]);
 			  // const Tens<SU3Comps,typename F2::Fund,StorLoc::ON_CPU,false> f2(&field2[iSite][clRow(0)][clCln(0)][complComp(RE)]);
@@ -272,15 +276,15 @@ INLINE_FUNCTION void su3FieldsSumProd(TensFeat<IsTens,F1>& _field1,const TensFea
 			      auto& f1r=f1c[complComp(RE)];
 			      auto& f1i=f1c[complComp(IM)];
 			     
-			     /// First opeand, real and imaginary
+			     /// First operand, real and imaginary
 			     const auto f2c=f2[clRow(i)][clCln(k)];
-			     const auto f2r=f2c[complComp(RE)];
-			     const auto f2i=f2c[complComp(IM)];
+			     const auto& f2r=f2c[complComp(RE)];
+			     const auto& f2i=f2c[complComp(IM)];
 			     
 			     /// Second operand, real and imaginary
 			     const auto f3c=f3[clRow(k)][clCln(j)];
-			     const auto f3r=f3c[complComp(RE)];
-			     const auto f3i=f3c[complComp(IM)];
+			     const auto& f3r=f3c[complComp(RE)];
+			     const auto& f3i=f3c[complComp(IM)];
 			     
 			     // Adds the real part
 			     f1r+=f2r*f3r;
@@ -296,42 +300,30 @@ INLINE_FUNCTION void su3FieldsSumProd(TensFeat<IsTens,F1>& _field1,const TensFea
 		     
 		     // End of the bokkmarked assembly section
 		     BOOKMARK_END_sumProd((F1*){});
-		   }
+		}
     );
 }
 
 /// Perform the test using Field as intermediate type
 ///
 /// Allocates three copies of the field, and pass to the kernel
-template <typename Field,
+template <typename FieldToBeUsed,
 	  typename Fund>
-void test2(Tens<SU3FieldComps,Fund,StorLoc::ON_CPU>& field,const int64_t nIters)
+void test2(Field<SpaceTime,SU3Comps,Fund,StorLoc::ON_CPU,FieldLayout::CPU_LAYOUT>& field,const int64_t nIters)
 {
   /// Number of flops per site
   const double nFlopsPerSite=8.0*NCOL*NCOL*NCOL;
   
   /// Read back local volume
   const SpaceTime locVol=
-    std::get<SpaceTime>(field.dynamicSizes);
+    field.template compSize<SpaceTime>();
   
   /// Number of GFlops in total
-  const double gFlops=nFlopsPerSite*nIters*locVol/(1<<30);
+  const double gFlops=
+    nFlopsPerSite*nIters*locVol/(1<<30);
   
   /// Allocate three fields, and copy inside
-  Field field1(locVol),field2(locVol),field3(locVol);
-  
-  for(SpaceTime iSite{0};iSite<locVol;iSite++)
-    for(ColRow ic1{0};ic1<NColComp;ic1++)
-      for(ColCln ic2{0};ic2<NColComp;ic2++)
-	for(Compl ri{0};ri<2;ri++)
-	  field1[iSite][ic1][ic2][ri]=
-	      field2[iSite][ic1][ic2][ri]=
-	      field3[iSite][ic1][ic2][ri]=
-	      field[iSite][ic1][ic2][ri];
-  
-  // field1.deepCopy(field);
-  // field2.deepCopy(field);
-  // field3.deepCopy(field);
+  FieldToBeUsed field1(field),field2(field),field3(field);
   
   /// Takes note of starting moment
   const Instant start=takeTime();
@@ -344,19 +336,21 @@ void test2(Tens<SU3FieldComps,Fund,StorLoc::ON_CPU>& field,const int64_t nIters)
   const Instant end=takeTime();
   
   /// Compute time
-  const double timeInSec=timeDiffInSec(end,start);
+  const double timeInSec=
+    timeDiffInSec(end,start);
   
   // Copy back
-  // CpuSU3Field<Fund,StorLoc::ON_CPU> fieldRes(field.vol);
-  // fieldRes.deepCopy(field1);
+  Field<SpaceTime,SU3Comps,Fund,StorLoc::ON_CPU,FieldLayout::CPU_LAYOUT> fieldRes(field1);
   
-  auto& fieldRes=field1;
+  //auto& fieldRes=field1;
   
   /// Compute performances
   const double gFlopsPerSec=gFlops/timeInSec;
   LOGGER<<"Volume: "<<locVol<<" dataset: "<<3*(double)locVol*sizeof(SU3<Complex<Fund>>)/(1<<20) << " precision: " <<
-    NAME_OF_TYPE(Fund) << " field: " << NAME_OF_TYPE(Field)<<" \t GFlops/s: "<<
-    gFlopsPerSec<<"\t Check: "<<fieldRes.trivialAccess(0)<<" "<<fieldRes.trivialAccess(1)<<" time: "<<timeInSec<<endl;
+    NAME_OF_TYPE(Fund) << " field: " << NAME_OF_TYPE(FieldToBeUsed)<<" \t GFlops/s: "<<
+    gFlopsPerSec<<"\t Check: "<<fieldRes.t.trivialAccess(0)<<
+    " "<< fieldRes.t.trivialAccess(1)<<
+    " time: "<<timeInSec<<endl;
 }
 
 
@@ -369,7 +363,7 @@ void test2(const SpaceTime locVol, ///< Volume to simulate
   const int64_t nIters=400000000LL/locVol/workReducer;
   
   /// Prepare the field configuration in the CPU format
-  Tens<SU3FieldComps,Fund,StorLoc::ON_CPU> field(locVol);
+  Field<SpaceTime,SU3Comps,Fund,StorLoc::ON_CPU,FieldLayout::CPU_LAYOUT> field(locVol);
   
   /// Prepare the field configuration in the CPU format
   for(SpaceTime iSite{0};iSite<locVol;iSite++)
@@ -383,8 +377,8 @@ void test2(const SpaceTime locVol, ///< Volume to simulate
   
   // Loop over three different layout and storage
   forEachInTuple(std::tuple<
-		 //Tens<SU3FieldComps,Simd<Fund>,StorLoc::ON_CPU>*,
-		 Tens<SU3FieldComps,Fund,StorLoc::ON_CPU>*//,
+		 Field<SpaceTime,SU3Comps,Fund,StorLoc::ON_CPU,FieldLayout::SIMD_LAYOUT>*//,
+		 //Field<SpaceTime,SU3Comps,Fund,StorLoc::ON_CPU,FieldLayout::CPU_LAYOUT>*//,
 		 //Tens<SU3FieldComps,Fund,StorLoc::ON_GPU>*
 		 >{},
 		 [&](auto t)
@@ -452,6 +446,16 @@ void test3(const SpaceTime locVol, ///< Volume to simulate
 /// pool is sent to work while the workers are sent in the background
 void inMain(int narg,char **arg)
 {
+  // Field<SpaceTime,SU3Comps,double,StorLoc::ON_CPU,FieldLayout::CPU_LAYOUT> E(spaceTime(8));
+  // Field<SpaceTime,SU3Comps,double,StorLoc::ON_CPU,FieldLayout::SIMD_LAYOUT> F(E);
+
+  // ASM_BOOKMARK_BEGIN("CICCIO");
+  // F=E;
+  // ASM_BOOKMARK_END("CICCIO");
+
+  // LOGGER<<"Eccoci"<<endl;
+  
+  // return;
   /// Workreducer is useful for speeding up the test
   int workReducer=1;
   

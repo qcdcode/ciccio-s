@@ -108,8 +108,6 @@ namespace ciccios
     /// Fused component
     using FusedSPComp=
       TensComp<FusedSPCompSignature,RC,Which>;
-    
-    
   };
   
   /// SIMD field layout

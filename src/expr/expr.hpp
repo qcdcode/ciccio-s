@@ -3,6 +3,7 @@
 
 #include <base/feature.hpp>
 #include <base/metaProgramming.hpp>
+#include <dataTypes/SIMD.hpp>
 #include <tensors/componentsList.hpp>
 
 namespace ciccios
@@ -46,18 +47,60 @@ namespace ciccios
     
     template <typename U1,
 	      typename U2>
-    auto operator+=(const Product<U1,U2>& u) const
+    constexpr INLINE_FUNCTION
+    auto operator+=(const Product<U1,U2>& u)
     {
+      using F=
+	std::tuple_element_t<0,typename U1::Comps>;
+      
+      const auto& _f1=u.f1[F{0}];
+      
+      const auto& f1=
+	*reinterpret_cast<const Simd<std::decay_t<decltype(_f1)>>*>(&_f1);
+      
+      const auto& _f2=u.f2[F{0}];
+      
+      const auto& f2=
+	*reinterpret_cast<const Simd<std::decay_t<decltype(_f2)>>*>(&_f2);
+      
+      auto& _t=this->deFeat()[F{0}];
+      
+      auto& t=
+	*reinterpret_cast<Simd<std::decay_t<decltype(_t)>>*>(&_t);
+      
+      t+=f1*f2;
+      
       return
 	this->deFeat();
     }
     
     template <typename U1,
 	      typename U2>
-    auto operator-=(const Product<U1,U2>& u) const
+    constexpr INLINE_FUNCTION
+    auto operator-=(const Product<U1,U2>& u)
     {
+      using F=
+	std::tuple_element_t<0,typename U1::Comps>;
+      
+      const auto& _f1=u.f1[F{0}];
+      
+      const auto& f1=
+	*reinterpret_cast<const Simd<std::decay_t<decltype(_f1)>>*>(&_f1);
+      
+      const auto& _f2=u.f2[F{0}];
+      
+      const auto& f2=
+	*reinterpret_cast<const Simd<std::decay_t<decltype(_f2)>>*>(&_f2);
+      
+      auto& _t=this->deFeat()[F{0}];
+      
+      auto& t=
+	*reinterpret_cast<Simd<std::decay_t<decltype(_t)>>*>(&_t);
+      
+      t-=f1*f2;
+      
       return
-	*this;
+	this->deFeat();
     }
   };
   
