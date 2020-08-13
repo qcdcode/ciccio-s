@@ -61,7 +61,7 @@ namespace ciccios
     
 #undef PROVIDE_SIMD
     
-    /// Actual intinsic to be used
+    /// Actual intrinsic to be used
     template <typename Fund>
     using ActualSimd=
       typename resources::Simd<SIMD_INST_SET,Fund>::Type;
@@ -81,6 +81,13 @@ namespace ciccios
     ArithmeticArray<Fund,simdLength<Fund>>
 #endif
     ;
+  
+  /// Determine whether a type can be simdified
+  template <typename T>
+  [[ maybe_unused ]]
+  static constexpr bool simdOfTypeExists=
+    std::is_same<T,float>::value or
+    std::is_same<T,double>::value;
 }
 
 #endif
