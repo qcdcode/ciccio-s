@@ -31,7 +31,8 @@ namespace ciccios
 	    FieldLayout FL>
   struct Field : public
   FieldFeat<IsField,THIS>,
-    FTP
+    FTP,
+    Expr<THIS>
   {
     /// Construct from sizes
     template <typename...TD,

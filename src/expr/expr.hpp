@@ -1,5 +1,9 @@
-#ifndef _EXPR_HPP
-#define _EXPR_HPP
+#ifndef _EXPR_EXPR_HPP
+#define _EXPR_EXPR_HPP
+
+/// \file expr/expr.hpp
+///
+/// \brief Implements base expression
 
 #include <base/feature.hpp>
 #include <base/metaProgramming.hpp>
@@ -8,10 +12,6 @@
 
 namespace ciccios
 {
-  template <typename F1,
-	    typename F2>
-  struct Product;
-  
   template <typename T>
   struct Expr
   {
@@ -37,86 +37,8 @@ namespace ciccios
     {
       assign(*this,u,(typename U::Comps*)nullptr);
     }
-    
-    template <typename U>
-    auto operator*(const Expr<U>& u) const
-    {
-      return
-	Product<T,U>(this->deFeat(),u.deFeat());
-    }
-    
-    template <typename U1,
-	      typename U2>
-    constexpr INLINE_FUNCTION
-    auto operator+=(const Product<U1,U2>& u)
-    {
-      using F=
-	std::tuple_element_t<0,typename U1::Comps>;
-      
-      const auto& _f1=u.f1[F{0}];
-      
-      const auto& f1=
-	*reinterpret_cast<const Simd<std::decay_t<decltype(_f1)>>*>(&_f1);
-      
-      const auto& _f2=u.f2[F{0}];
-      
-      const auto& f2=
-	*reinterpret_cast<const Simd<std::decay_t<decltype(_f2)>>*>(&_f2);
-      
-      auto& _t=this->deFeat()[F{0}];
-      
-      auto& t=
-	*reinterpret_cast<Simd<std::decay_t<decltype(_t)>>*>(&_t);
-      
-      t+=f1*f2;
-      
-      return
-	this->deFeat();
-    }
-    
-    template <typename U1,
-	      typename U2>
-    constexpr INLINE_FUNCTION
-    auto operator-=(const Product<U1,U2>& u)
-    {
-      using F=
-	std::tuple_element_t<0,typename U1::Comps>;
-      
-      const auto& _f1=u.f1[F{0}];
-      
-      const auto& f1=
-	*reinterpret_cast<const Simd<std::decay_t<decltype(_f1)>>*>(&_f1);
-      
-      const auto& _f2=u.f2[F{0}];
-      
-      const auto& f2=
-	*reinterpret_cast<const Simd<std::decay_t<decltype(_f2)>>*>(&_f2);
-      
-      auto& _t=this->deFeat()[F{0}];
-      
-      auto& t=
-	*reinterpret_cast<Simd<std::decay_t<decltype(_t)>>*>(&_t);
-      
-      t-=f1*f2;
-      
-      return
-	this->deFeat();
-    }
   };
   
-  template <typename F1,
-	    typename F2>
-  struct Product : Expr<Product<F1,F2>>
-  {
-    const F1& f1;
-    const F2& f2;
-    
-    Product(const F1& f1,
-	    const F2& f2)
-      : f1(f1),f2(f2)
-    {
-    }
-  };
 }
 
 #endif
