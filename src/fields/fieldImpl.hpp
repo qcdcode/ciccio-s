@@ -9,7 +9,7 @@
 # include "config.hpp"
 #endif
 
-#include <expr/expr.hpp>
+#include <expr/exprImpl.hpp>
 #include <fields/field.hpp>
 #include <fields/fieldTensProvider.hpp>
 

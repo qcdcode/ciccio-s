@@ -5,6 +5,7 @@
 ///
 /// \brief Topical header for all expressions
 
+#include <expr/assign.hpp>
 #include <expr/expr.hpp>
 #include <expr/product.hpp>
 #include <expr/subtassignTheProduct.hpp>
