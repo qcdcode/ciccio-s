@@ -6,6 +6,7 @@
 /// \brief Implements subraction of product of expressions
 
 #include <expr/product.hpp>
+#include <dataTypes/SIMD.hpp>
 
 namespace ciccios
 {

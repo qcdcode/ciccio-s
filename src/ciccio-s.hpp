@@ -10,6 +10,7 @@
 #endif
 
 #include <Base.hpp>
+#include <Expr.hpp>
 #include <Gpu.hpp>
 #include <DataTypes.hpp>
 #include <Fields.hpp>

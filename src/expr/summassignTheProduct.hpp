@@ -5,6 +5,7 @@
 ///
 /// \brief Implements sum of product of expressions
 
+#include <dataTypes/SIMD.hpp>
 #include <expr/product.hpp>
 
 namespace ciccios

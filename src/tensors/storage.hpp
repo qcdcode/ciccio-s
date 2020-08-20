@@ -103,7 +103,7 @@ namespace ciccios
       
       /// Constructor: since the data is statically allocated, we need to do nothing
       CUDA_HOST_DEVICE
-      StackStorage(const Size&)
+      StackStorage(const Size& size=0)
       {
       }
       
@@ -160,7 +160,7 @@ namespace ciccios
     }
     
     /// Construct taking the size to allocate
-    TensStorage() ///< Size to allocate
+    TensStorage()
     {
       static_assert(stackAllocated,"If not stack allocated must pass the size");
     }

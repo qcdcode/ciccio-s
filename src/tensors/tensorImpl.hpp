@@ -5,6 +5,7 @@
 ///
 /// \brief Implements all functionalities of tensors
 
+#include <expr/expr.hpp>
 #include <tensors/tensor.hpp>
 #include <tensors/componentsList.hpp>
 #include <tensors/reference.hpp>
@@ -23,6 +24,7 @@ namespace ciccios
 	    typename...TC,
 	    Stackable IsStackable>
   struct THIS : public
+    Expr<THIS>,
     TensFeat<IsTens,THIS>
   {
     /// Fundamental type
@@ -263,7 +265,7 @@ namespace ciccios
     
     /// Initialize the tensor when no dynamic component is present
     template <typename...TD,
-	      ENABLE_THIS_TEMPLATE_IF(sizeof...(TD)==0 and sizeof...(TC)==0)>
+	      ENABLE_THIS_TEMPLATE_IF(sizeof...(TD)==0)>
     CUDA_HOST_DEVICE
     Tens() :
       dynamicSizes{}
@@ -291,8 +293,6 @@ namespace ciccios
 	 const Dyn&...dynamicSizes) : dynamicSizes(dynamicSizes...),data(oth)
     {
     }
-    
-    
     
     /// Provide trivial access to the fundamental data
     const Fund& trivialAccess(const Size& i)
