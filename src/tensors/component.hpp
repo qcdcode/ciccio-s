@@ -37,16 +37,12 @@ namespace ciccios
   template <typename S,
 	    RwCl RC=ROW,
 	    int Which=0>
-  struct TensComp : public TensCompFeat<IsTensComp,THIS>
+  struct TensComp :
+    public TensCompFeat<IsTensComp,THIS>
   {
-    /// Transposed type of component
-    static constexpr
-    RwCl TranspRC=
-      (RC==ANY)?ANY:((RC==CLN)?ROW:CLN);
-    
     /// Transposed component
     using Transp=
-      TensComp<S,TranspRC,Which>;
+      TensComp<S,transp<RC>,Which>;
     
     /// Base type
     using Base=
@@ -112,7 +108,7 @@ namespace ciccios
     }
     
     /// Convert to actual value
-    CUDA_HOST_DEVICE
+    CUDA_HOST_DEVICE constexpr
     operator Index&()
     {
       return
@@ -120,7 +116,7 @@ namespace ciccios
     }
     
     /// Convert to actual value with const attribute
-    CUDA_HOST_DEVICE
+    CUDA_HOST_DEVICE constexpr
     operator const Index&() const
     {
       return

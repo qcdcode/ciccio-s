@@ -17,6 +17,27 @@ namespace ciccios
   /// Row or column
   enum RwCl{ROW,CLN,ANY};
   
+  /// Transposed of a row or column
+  ///
+  /// Forward declaration
+  template <RwCl>
+  RwCl transp;
+  
+  /// Transposed of a row
+  template <>
+  constexpr RwCl transp<ROW> =
+    CLN;
+  
+  /// Transposed of a column
+  template <>
+  constexpr RwCl transp<CLN> =
+    ROW;
+  
+  /// Transposed of any
+  template <>
+  constexpr RwCl transp<ANY> =
+    ANY;
+  
   /// Define the signature for a componenent convertible to TYPE of given NAME and SIZE
   ///
   /// The specified name is suffixed with "Signature", to allow the
