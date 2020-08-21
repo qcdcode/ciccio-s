@@ -19,7 +19,7 @@ namespace ciccios
     /// Result
     T out=init;
     
-    T l[]{list...};
+    T l[]{(T)list...};
     
     for(auto& i : l)
       out=f(out,i);

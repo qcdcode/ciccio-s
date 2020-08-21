@@ -18,24 +18,25 @@ namespace ciccios
       /// Filter a single element, forward declaration
       template <bool,
 		typename>
-      struct TupleFilterEl;
+      struct _TupleFilterEl;
       
       /// Helper to filter a tuple on the basis of a predicate
       ///
       /// Filter a single element: True case, in which the type passes
       /// the filter
       template <typename T>
-      struct TupleFilterEl<true,T>
+      struct _TupleFilterEl<true,T>
       {
 	/// Helper type, used to cat the results
-	using type=std::tuple<T>;
+	using type=
+	  std::tuple<T>;
 	
 	/// Filtered value
 	const type value;
 	
 	/// Construct, taking a tuple type and filtering the valid casis
 	template <typename Tp>
-	TupleFilterEl(Tp&& t) : ///< Tuple to filter
+	_TupleFilterEl(Tp&& t) : ///< Tuple to filter
 	  value{std::get<T>(t)}
 	{
 	}
@@ -46,7 +47,7 @@ namespace ciccios
       /// Filter a single element: False case, in which the type does
       /// not pass the filter
       template <typename T>
-      struct TupleFilterEl<false,T>
+      struct _TupleFilterEl<false,T>
       {
 	/// Helper empty type, used to cat the results
 	using type=std::tuple<>;
@@ -56,7 +57,7 @@ namespace ciccios
 	
 	/// Construct without getting the type
 	template <typename Tp>
-	TupleFilterEl(Tp&& t) ///< Tuple to filter
+	_TupleFilterEl(Tp&& t) ///< Tuple to filter
 	{
 	}
       };
@@ -67,13 +68,15 @@ namespace ciccios
 	    typename...T>                      // Types contained in the tuple to be filtered
   auto tupleFilter(const std::tuple<T...>& t) ///< Tuple to filter
   {
-    return std::tuple_cat(impl::TupleFilterEl<F<T>::value,T>{t}.value...);
+    return
+      std::tuple_cat(impl::_TupleFilterEl<F<T>::value,T>{t}.value...);
   }
   
   /// Type obtained applying the predicate filter F on the tuple T
   template <template <class> class F,
 	    typename T>
-  using TupleFilter=decltype(tupleFilter<F>(*(T*)nullptr));
+  using TupleFilter=
+    decltype(tupleFilter<F>(*(T*)nullptr));
   
   /////////////////////////////////////////////////////////////////
   
@@ -84,12 +87,12 @@ namespace ciccios
     /// Forward definition
     template <typename F,
 	      typename Tp>
-    struct TupleFilterOut;
+    struct _TupleFilterOut;
     
     /// Cannot use directly the TupleFilter, because of some template template limitation
     template <typename...Fs,
 	      typename...Tps>
-    struct TupleFilterOut<std::tuple<Fs...>,std::tuple<Tps...>>
+    struct _TupleFilterOut<std::tuple<Fs...>,std::tuple<Tps...>>
     {
       /// Predicate to filter out
       template <typename T>
@@ -109,7 +112,7 @@ namespace ciccios
   template <typename F,
 	    typename Tp>
   using TupleFilterOut=
-    typename impl::TupleFilterOut<F,Tp>::type;
+    typename impl::_TupleFilterOut<F,Tp>::type;
   
   /////////////////////////////////////////////////////////////////
   
@@ -120,19 +123,20 @@ namespace ciccios
     /// Forward definition
     template <int N,       // Number of times that the type must be present
 	      typename Tp> // Tuple in which to search
-    struct TypeIsInList;
+    struct _TypeIsInList;
     
     /// Predicate returning whether the type is present in the list
     template <int N,
 	      typename...Tp>
-    struct TypeIsInList<N,std::tuple<Tp...>>
+    struct _TypeIsInList<N,std::tuple<Tp...>>
     {
       /// Internal implementation
       template <typename T>  // Type to search
       struct t
       {
 	/// Predicate result
-	static constexpr bool value=(sumAll<int>(std::is_same<T,Tp>::value...)==N);
+	static constexpr bool value=
+	  (sumAll<int>(std::is_same<T,Tp>::value...)==N);
       };
     };
   }
@@ -142,13 +146,13 @@ namespace ciccios
 	    typename Tp,
 	    int N=1>
   constexpr bool TupleHasType=
-    impl::TypeIsInList<N,Tp>::template t<T>::value;
+    impl::_TypeIsInList<N,Tp>::template t<T>::value;
   
   /// Returns a tuple containing all types common to the two tuples
   template <typename TupleToSearch,
 	    typename TupleBeingSearched>
   using TupleCommonTypes=
-    TupleFilter<impl::TypeIsInList<1,TupleToSearch>::template t,TupleBeingSearched>;
+    TupleFilter<impl::_TypeIsInList<1,TupleToSearch>::template t,TupleBeingSearched>;
   
   /////////////////////////////////////////////////////////////////
   
@@ -158,7 +162,7 @@ namespace ciccios
     /// Returns a tuple filled with a list of arguments
     ///
     /// Internal implementation, no more arguments to parse
-    void fillTuple(T&)
+    void _fillTuple(T&)
     {
     }
     
@@ -168,13 +172,13 @@ namespace ciccios
     template <typename T,
 	      typename Head,
 	      typename...Tail>
-    void fillTuple(T& t,                ///< Tuple to fill
+    void _fillTuple(T& t,                ///< Tuple to fill
 		   const Head& head,    ///< Argument to fill
 		   const Tail&...tail)  ///< Next arguments, filled recursively
     {
       std::get<Head>(t)=head;
       
-      fillTuple(t,tail...);
+      _fillTuple(t,tail...);
     }
   }
   
@@ -188,7 +192,7 @@ namespace ciccios
     /// Returned tuple
     T t;
     
-    impl::fillTuple(t,std::get<Tp>(in)...);
+    impl::_fillTuple(t,std::get<Tp>(in)...);
     
     return
       t;
@@ -198,20 +202,49 @@ namespace ciccios
   {
     template <typename I,
 	      typename T>
-    struct TupleElOfList;
+    struct _TupleElOfList;
     
     template <std::size_t...Is,
 	      typename T>
-    struct TupleElOfList<std::index_sequence<Is...>,T>
+    struct _TupleElOfList<std::index_sequence<Is...>,T>
     {
       using type=
 	std::tuple<std::tuple_element_t<Is,T>...>;
     };
   }
   
+  /// Type of the tuple obtained removing last element
   template <typename Tp>
   using TupleAllButLast=
-    typename impl::TupleElOfList<std::make_index_sequence<std::tuple_size<Tp>::value-1>,Tp>::type;
+    typename impl::_TupleElOfList<std::make_index_sequence<std::tuple_size<Tp>::value-1>,Tp>::type;
+
+  namespace impl
+  {
+    /// Type of the tuple obtained catting two tuples
+    ///
+    /// Forward declaration, internal implementation
+    template <typename TP1,
+	      typename TP2>
+    struct _TupleCat;
+    
+    /// Type of the tuple obtained catting two tuples
+    ///
+    /// Internal implementation
+    template <typename...Tp1,
+	      typename...Tp2>
+    struct _TupleCat<std::tuple<Tp1...>,
+		    std::tuple<Tp2...>>
+    {
+      using type=
+	std::tuple<Tp1...,Tp2...>;
+    };
+  }
+  
+  /// Type of the tuple obtained catting two tuples
+  template <typename TP1,
+	    typename TP2>
+  using TupleCat=
+    typename impl::_TupleCat<TP1,TP2>::type;
 }
 
 #endif
