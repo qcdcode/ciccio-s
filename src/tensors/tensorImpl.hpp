@@ -112,7 +112,7 @@ namespace ciccios
     static constexpr Index staticSize=
       productAll<Index>((TC::SizeIsKnownAtCompileTime?
 			 TC::Base::sizeAtCompileTime:
-			 1)...);
+			 Index{1})...);
     
     /// Size of the Tv component
     ///
@@ -201,7 +201,7 @@ namespace ciccios
     
     /// Computes the storage size at compile time, if knwon
     static constexpr Index storageSizeAtCompileTime=
-      allCompsAreStatic?staticSize:DYNAMIC;
+      allCompsAreStatic?(Index)staticSize:(Index)DYNAMIC;
     
     /// Storage type
     using StorageType=
