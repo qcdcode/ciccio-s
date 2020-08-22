@@ -13,21 +13,6 @@
 
 namespace ciccios
 {
-  /// Product of two expressions
-  template <typename F1,
-	    typename F2>
-  struct Product;
-  
-  /// Capture the product operator for two generic expressions
-  template <typename U1,
-	    typename U2>
-  auto operator*(const Expr<U1>& u1, ///< Left of the product
-		 const Expr<U2>& u2) ///> Right of the product
-  {
-    return
-      Product<U1,U2>(u1.deFeat(),u2.deFeat());
-  }
-  
   namespace impl
   {
     /// Computes the resulting components
@@ -89,8 +74,58 @@ namespace ciccios
   
   /// Product of two expressions
   template <typename F1,
+	    typename F2,
+	    typename ExtComps=typename impl::ProductComps<typename F1::Comps,typename F2::Comps>::Comps>
+  struct Product;
+  
+  /// Capture the product operator for two generic expressions
+  template <typename U1,
+	    typename U2>
+  auto operator*(const Expr<U1>& u1, ///< Left of the product
+		 const Expr<U2>& u2) ///> Right of the product
+  {
+    return
+      Product<U1,U2>(u1.deFeat(),u2.deFeat());
+  }
+  
+  template <bool B,
+	    typename T,
+	    typename F1,
 	    typename F2>
-  struct Product : Expr<Product<F1,F2>>
+  struct ProductFundCastProvider;
+  
+  template <typename T,
+	    typename F1,
+	    typename F2>
+  struct ProductFundCastProvider<false,T,F1,F2>
+  {
+  };
+  
+  template <typename T,
+	    typename F1,
+	    typename F2>
+  struct ProductFundCastProvider<true,T,F1,F2>
+  {
+    /// Resulting fundamental type
+    using Fund=
+      std::common_type_t<typename F1::Fund,
+			 typename F2::Fund>;
+    
+    INLINE_FUNCTION explicit
+    operator Fund()
+      const
+    {
+      
+    }
+  };
+  
+  /// Product of two expressions
+  template <typename F1,
+	    typename F2,
+	    typename ExtComps>
+  struct Product :
+    Expr<Product<F1,F2>>,
+    ProductFundCastProvider<std::tuple_size<ExtComps>::value==0,Product<F1,F2,ExtComps>,F1,F2>
   {
     /// First expression
     const F1& f1;
@@ -105,7 +140,7 @@ namespace ciccios
     
     /// Resulting components
     using Comps=
-      typename impl::ProductComps<typename F1::Comps,typename F2::Comps>::Comps;
+      ExtComps;
     
     /// Construct taking two expressions
     Product(const F1& f1,
@@ -113,7 +148,7 @@ namespace ciccios
       : f1(f1),f2(f2)
     {
     }
-
+    
     //va aggiunto l'operatore sottoscrizione, che prende la componente
     //dal primo operando se e' riga, dal secondo se e' colonna, o da
     //tutt e due se e' any. Quando non ci sono piu componenti
@@ -128,13 +163,13 @@ namespace ciccios
     /// dynamic storage lo facciano, e facciamo si che importare in un
     /// kernel sia esplicito
     
-    auto close()
-      const
-    {
-	Tens<Comps,Fund> a;
+    // auto close()
+    //   const
+    // {
+    // 	Tens<Comps,Fund> a;
 	
-	return a;
-    }
+    // 	return a;
+    // }
   };
 }
 
