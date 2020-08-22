@@ -72,15 +72,45 @@ namespace ciccios
     };
   }
   
+  template <bool B,
+	    typename T,
+	    typename ExtFund>
+  struct ProductFundCastProvider;
+  
+  template <typename T,
+	    typename ExtFund>
+  struct ProductFundCastProvider<false,T,ExtFund>
+  {
+  };
+  
+  template <typename T,
+	    typename ExtFund>
+  struct ProductFundCastProvider<true,T,ExtFund>
+  {
+    PROVIDE_DEFEAT_METHOD(T);
+    
+    INLINE_FUNCTION
+    operator ExtFund()
+      const
+    {
+      return
+    	this->deFeat().eval();
+    }
+  };
+  
   /// Product of two expressions
   template <typename F1,
 	    typename F2,
-	    typename ExtComps=typename impl::ProductComps<typename F1::Comps,typename F2::Comps>::Comps>
+	    typename ExtComps=typename impl::ProductComps<typename F1::Comps,typename F2::Comps>::Comps,
+	    typename ExtFund=std::common_type_t<typename F1::Fund,typename F2::Fund>,
+	    bool CanBeCastToFund=std::tuple_size<ExtComps>::value==0>
   struct Product;
   
   /// Capture the product operator for two generic expressions
   template <typename U1,
-	    typename U2>
+	    typename U2,
+	    ENABLE_THIS_TEMPLATE_IF(nOfComps<U1> >0 or
+				    nOfComps<U2> >0)>
   auto operator*(const Expr<U1>& u1, ///< Left of the product
 		 const Expr<U2>& u2) ///> Right of the product
   {
@@ -88,44 +118,55 @@ namespace ciccios
       Product<U1,U2>(u1.deFeat(),u2.deFeat());
   }
   
-  template <bool B,
-	    typename T,
-	    typename F1,
-	    typename F2>
-  struct ProductFundCastProvider;
-  
-  template <typename T,
-	    typename F1,
-	    typename F2>
-  struct ProductFundCastProvider<false,T,F1,F2>
+  namespace impl
   {
-  };
-  
-  template <typename T,
-	    typename F1,
-	    typename F2>
-  struct ProductFundCastProvider<true,T,F1,F2>
-  {
-    /// Resulting fundamental type
-    using Fund=
-      std::common_type_t<typename F1::Fund,
-			 typename F2::Fund>;
+    template <typename...>
+    struct _ProductContracter;
     
-    INLINE_FUNCTION explicit
-    operator Fund()
-      const
+    template <>
+    struct _ProductContracter<TensComps<>>
     {
-      
-    }
-  };
+      template <typename T>
+      static constexpr INLINE_FUNCTION
+      void eval(T& out,
+    		const T& f1,
+    		const T& f2)
+      {
+    	out+=
+    	  f1*f2;
+      }
+    };
+    
+    template <typename Head,
+	      typename...Tail>
+    struct _ProductContracter<TensComps<Head,Tail...>>
+    {
+      template <typename T,
+		typename F1,
+		typename F2>
+      static constexpr INLINE_FUNCTION
+      void eval(T& out,
+		const F1& f1,
+		const F2& f2)
+      {
+	for(Head i{0};i<f2.template compSize<Head>();i++)
+	  _ProductContracter<TensComps<Tail...>>::eval(out,f1[i.transp()],f2[i]);
+      }
+    };
+  }
+  
+#define THIS					\
+  Product<F1,F2,ExtComps,ExtFund,CanBeCastToFund>
   
   /// Product of two expressions
   template <typename F1,
 	    typename F2,
-	    typename ExtComps>
+	    typename ExtComps,
+	    typename ExtFund,
+	    bool CanBeCastToFund>
   struct Product :
-    Expr<Product<F1,F2>>,
-    ProductFundCastProvider<std::tuple_size<ExtComps>::value==0,Product<F1,F2,ExtComps>,F1,F2>
+    Expr<THIS>,
+    ProductFundCastProvider<CanBeCastToFund,THIS,ExtFund>
   {
     /// First expression
     const F1& f1;
@@ -135,12 +176,27 @@ namespace ciccios
     
     /// Resulting fundamental type
     using Fund=
-      std::common_type_t<typename F1::Fund,
-			 typename F2::Fund>;
+      ExtFund;
     
     /// Resulting components
     using Comps=
       ExtComps;
+    
+    template <typename F=Fund>
+    INLINE_FUNCTION
+    F eval()
+      const
+    {
+      F out;
+      
+      using ContractedComps=
+	typename impl::ProductComps<typename F1::Comps,typename F2::Comps>::ContractedComps;
+    
+      impl::_ProductContracter<ContractedComps>::eval(out,f1,f2);
+      
+      return
+	out;
+    }
     
     /// Construct taking two expressions
     Product(const F1& f1,
@@ -171,6 +227,8 @@ namespace ciccios
     // 	return a;
     // }
   };
+  
+  #undef THIS
 }
 
 #endif
