@@ -187,7 +187,8 @@ namespace ciccios
     F eval()
       const
     {
-      F out;
+      F out=
+	0;
       
       using ContractedComps=
 	typename impl::ProductComps<typename F1::Comps,typename F2::Comps>::ContractedComps;
