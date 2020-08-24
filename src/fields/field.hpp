@@ -9,7 +9,7 @@
 # include "config.hpp"
 #endif
 
-#include <tensors/tensor.hpp>
+#include <tensors/tens.hpp>
 #include <tensors/componentsList.hpp>
 
 namespace ciccios

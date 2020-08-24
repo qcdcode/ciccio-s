@@ -1,7 +1,7 @@
-#ifndef _TENSOR_HPP
-#define _TENSOR_HPP
+#ifndef _TENS_HPP
+#define _TENS_HPP
 
-/// \file tensor.hpp
+/// \file tens.hpp
 ///
 /// \brief Declaration of tensor class
 

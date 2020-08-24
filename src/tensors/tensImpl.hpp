@@ -1,12 +1,12 @@
-#ifndef _TENSOR_IMPL_HPP
-#define _TENSOR_IMPL_HPP
+#ifndef _TENS_IMPL_HPP
+#define _TENS_IMPL_HPP
 
-/// \file tensorImpl.hpp
+/// \file tensImpl.hpp
 ///
 /// \brief Implements all functionalities of tensors
 
 #include <expr/expr.hpp>
-#include <tensors/tensor.hpp>
+#include <tensors/tens.hpp>
 #include <tensors/componentsList.hpp>
 #include <tensors/tensFeat.hpp>
 #include <tensors/tensSlice.hpp>

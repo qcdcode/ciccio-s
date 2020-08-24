@@ -9,7 +9,7 @@
 #include <expr/exprArg.hpp>
 #include <tensors/component.hpp>
 #include <tensors/componentsList.hpp>
-#include <tensors/tensor.hpp>
+#include <tensors/tens.hpp>
 #include <utilities/tuple.hpp>
 
 namespace ciccios
