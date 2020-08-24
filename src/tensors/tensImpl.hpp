@@ -5,7 +5,7 @@
 ///
 /// \brief Implements all functionalities of tensors
 
-#include <expr/expr.hpp>
+#include <expr/exprImpl.hpp>
 #include <tensors/tens.hpp>
 #include <tensors/componentsList.hpp>
 #include <tensors/tensFeat.hpp>
@@ -82,9 +82,9 @@ namespace ciccios
     auto simdify()							\
       CONST_ATTR							\
     {									\
-	return								\
+      return								\
 	  Tens<TupleAllButLast<TensComps<TC...>>,Simd<F>,SL,IsStackable> \
-	  ((Simd<F>*)(this->getDataPtr()),dynamicSizes);		\
+	((Simd<F>*)(this->getDataPtr()),this->data.getSize(),dynamicSizes); \
       }
     
     PROVIDE_SIMDIFY(const);
@@ -284,8 +284,12 @@ namespace ciccios
     
     /// Copy constructor
     CUDA_HOST_DEVICE
-    Tens(const Tens& oth) : dynamicSizes(oth.dynamicSizes),data(oth.data)
+    Tens(const Tens& oth) :
+      dynamicSizes(oth.dynamicSizes),
+      data(oth.data.getSize())
     {
+      static_cast<Expr<Tens>>(*this)=
+	static_cast<const Expr<Tens>&>(oth);
     }
     
     /// HACK
@@ -294,7 +298,9 @@ namespace ciccios
     template <typename...Dyn>
     CUDA_HOST_DEVICE
     Tens(Fund* oth,
-	 const Dyn&...dynamicSizes) : dynamicSizes(dynamicSizes...),data(oth)
+	 const Size& size,
+	 const Dyn&...dynamicSizes) :
+      dynamicSizes(dynamicSizes...),data(oth,size)
     {
     }
     

@@ -12,7 +12,7 @@ namespace ciccios
 {
   /// Assign an expression, parsing one component
   ///
-  /// /\todo reshape
+  /// /\todo reshape, add check on size
   template <typename Head,
 	    typename...Tail,
 	    typename A,

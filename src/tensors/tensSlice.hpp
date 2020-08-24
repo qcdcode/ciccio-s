@@ -165,7 +165,7 @@ namespace ciccios
 	offset;
       
       return
-	Tens<Comps,typename T::Fund,T::storLoc,Stackable::CANNOT_GO_ON_STACK>(carriedData);
+	Tens<Comps,typename T::Fund,T::storLoc,Stackable::CANNOT_GO_ON_STACK>(carriedData,t.data.getSize());
     }
   };
   
