@@ -8,8 +8,8 @@
 #include <expr/expr.hpp>
 #include <tensors/tensor.hpp>
 #include <tensors/componentsList.hpp>
-#include <tensors/reference.hpp>
 #include <tensors/tensFeat.hpp>
+#include <tensors/tensSlice.hpp>
 #include <utilities/tuple.hpp>
 
 namespace ciccios
@@ -336,7 +336,7 @@ namespace ciccios
 	TensComps<C>;							\
 									\
       return								\
-	TensRef<CONST_AS_BOOL,THIS,SubsComps>(*this,SubsComps(cFeat.deFeat())); \
+	TensSlice<CONST_AS_BOOL,THIS,SubsComps>(*this,SubsComps(cFeat.deFeat())); \
     }
     
     PROVIDE_SUBSCRIBE_OPERATOR(/* not const */, false);

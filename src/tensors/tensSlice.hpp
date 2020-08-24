@@ -1,9 +1,9 @@
-#ifndef _REFERENCE_HPP
-#define _REFERENCE_HPP
+#ifndef _TENS_SLICE_HPP
+#define _TENS_SLICE_HPP
 
-/// \file reference.hpp
+/// \file tensSlice.hpp
 ///
-/// \brief Implements a reference to a tensor
+/// \brief Implements a sliced view of a tensor
 
 #include <base/feature.hpp>
 #include <base/metaProgramming.hpp>
@@ -16,38 +16,38 @@
 
 namespace ciccios
 {
-  DEFINE_FEATURE(IsTensRef);
+  DEFINE_FEATURE(IsTensSlice);
   
-  DEFINE_FEATURE_GROUP(TensRefFeat);
+  DEFINE_FEATURE_GROUP(TensSliceFeat);
   
-  /// Reference to a Tensor
+  /// Sliced view of a tensor
   ///
   /// Forward implementation
   template <bool Const,    // Const or not
 	    typename T,    // Tensor
 	    typename S>    // Subscribed componenents
-  struct TensRef;
+  struct TensSlice;
   
-  /// Shortcut for TensRef
+  /// Shortcut for TensSlice
 #define THIS					\
-  TensRef<Const,T,TensComps<Sc...>>
+  TensSlice<Const,T,TensComps<Sc...>>
   
-  /// Reference to a Tensor
+  /// Sliced view of a tensor
   template <bool Const,    // Const or not
 	    typename T,    // Tensor
 	    typename...Sc> // Subscribed components
   struct THIS : public
     Expr<THIS>,
-    TensRefFeat<IsTensRef,THIS>
+    TensSliceFeat<IsTensSlice,THIS>
   {
-    /// References can be copied easily
+    /// A slice can be copied easily
     static constexpr bool takeAsArgByRef=
       false;
     
     /// Import assignement from Expr class
     using Expr<THIS>::operator=;
     
-    /// Holds info on whether the reference is constant
+    /// Holds info on whether the slice is constant
     static constexpr bool IsConst=
       Const;
     
@@ -77,13 +77,6 @@ namespace ciccios
     /// Subscribed components
     const SubsComps subsComps;
     
-    /// Returns the reference
-    ConstIf<IsConst,OrigTens>& deRef() const
-    {
-      return
-	t;
-    }
-    
     /// Get components size from the tensor
     template <typename C>
     INLINE_FUNCTION constexpr
@@ -95,11 +88,11 @@ namespace ciccios
     
     /// Provide subscribe operator when returning a reference
 #define PROVIDE_SUBSCRIBE_OPERATOR(CONST_ATTR,CONST_AS_BOOL)		\
-    /*! Operator to take a const reference to a given component */	\
+    /*! Operator to take a const slice to a given component */		\
     template <typename C,						\
 	      typename Cp=Comps,					\
-	      ENABLE_THIS_TEMPLATE_IF((std::tuple_size<Cp>::value>1) and	\
-				 TupleHasType<C,Cp>)>			\
+	      ENABLE_THIS_TEMPLATE_IF((std::tuple_size<Cp>::value>1) and \
+				      TupleHasType<C,Cp>)>		\
     CUDA_HOST_DEVICE INLINE_FUNCTION					\
     auto operator[](const TensCompFeat<IsTensComp,C>& cFeat) CONST_ATTR	\
     {									\
@@ -109,15 +102,15 @@ namespace ciccios
 	std::tuple_cat(subsComps,TensComps<C>{cFeat.deFeat()});		\
 									\
       /*! Type used to hold all components */				\
-    using NestedSubsComps=						\
-      decltype(nestedSubsComps);					\
+      using NestedSubsComps=						\
+	decltype(nestedSubsComps);					\
     									\
-    /*! Reference type */						\
-    using R=								\
-      TensRef<CONST_AS_BOOL or IsConst,T,NestedSubsComps>;		\
-    									\
-    return								\
-      R(this->t,nestedSubsComps);					\
+      /*! Reference type */						\
+      using R=								\
+	TensSlice<CONST_AS_BOOL or IsConst,T,NestedSubsComps>;		\
+      									\
+      return								\
+	R(this->t,nestedSubsComps);					\
     }
     
     PROVIDE_SUBSCRIBE_OPERATOR(/* not const */, false);
@@ -144,10 +137,11 @@ namespace ciccios
     
 #undef PROVIDE_SUBSCRIBE_OPERATOR
     
-    /// Create from reference and list of subscribed components
+    /// Create from slice and list of subscribed components
     CUDA_HOST_DEVICE
-    TensRef(const TensFeat<IsTens,T>& t,
-	    const SubsComps& subsComps) : t(t.deFeat()),subsComps(subsComps)
+    TensSlice(const TensFeat<IsTens,T>& t,
+	      const SubsComps& subsComps) :
+      t(t.deFeat()),subsComps(subsComps)
     {
     }
     
@@ -176,23 +170,6 @@ namespace ciccios
   };
   
 #  undef THIS
-  
-  /////////////////////////////////////////////////////////////////
-  
-  /// Provides a constant or not dereferencing
-#define PROVIDE_DEREF(ATTR)					\
-  /*! Returns the referred tensor */				\
-  template <typename T>						\
-  decltype(auto) deRef(ATTR TensRefFeat<IsTensRef,T>& rFeat)	\
-  {								\
-    return rFeat.deFeat().deRef();				\
-  }
-  
-  PROVIDE_DEREF();
-  PROVIDE_DEREF(const);
-  
-#undef PROVIDE_DEREF
-  
 }
 
 #endif

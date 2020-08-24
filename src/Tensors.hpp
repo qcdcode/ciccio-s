@@ -10,8 +10,8 @@
 #endif
 
 #include <tensors/component.hpp>
-#include <tensors/reference.hpp>
 #include <tensors/tensor.hpp>
 #include <tensors/tensorImpl.hpp>
+#include <tensors/tensSlice.hpp>
 
 #endif
