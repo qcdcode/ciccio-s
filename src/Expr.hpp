@@ -7,6 +7,8 @@
 
 #include <expr/assign.hpp>
 #include <expr/expr.hpp>
+#include <expr/exprArg.hpp>
+#include <expr/exprImpl.hpp>
 #include <expr/product.hpp>
 #include <expr/subtassignTheProduct.hpp>
 #include <expr/summassignTheProduct.hpp>

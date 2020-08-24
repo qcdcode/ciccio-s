@@ -165,10 +165,11 @@ namespace ciccios
   using ConstIf=
     std::conditional_t<B,const T,T>;
   
-  /// If the type is an l-value reference, provide the type T&, otherwise wih T
-  template <typename T>
-  using ref_or_val_t=
-    std::conditional_t<std::is_lvalue_reference<T>::value,T&,T>;
+  /// Return the type T or T& if B is true
+  template <bool B,
+	    typename T>
+  using RefIf=
+    std::conditional_t<B,T&,T>;
   
   /// First part of the non-const method provider
 #define _PROVIDE_ALSO_NON_CONST_METHOD_BEGIN				\

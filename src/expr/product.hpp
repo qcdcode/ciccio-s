@@ -6,6 +6,7 @@
 /// \brief Implements product of expressions
 
 #include <expr/expr.hpp>
+#include <expr/exprArg.hpp>
 #include <tensors/component.hpp>
 #include <tensors/componentsList.hpp>
 #include <tensors/tensor.hpp>
@@ -168,11 +169,15 @@ namespace ciccios
     Expr<THIS>,
     ProductFundCastProvider<CanBeCastToFund,THIS,ExtFund>
   {
+    /// Product is simple to create
+    static constexpr bool takeAsArgByRef=
+      false;
+    
     /// First expression
-    const F1& f1;
+    ExprArg<F1 const> f1;
     
     /// Second expression
-    const F2& f2;
+    ExprArg<F2 const> f2;
     
     /// Resulting fundamental type
     using Fund=
@@ -204,6 +209,43 @@ namespace ciccios
 	    const F2& f2)
       : f1(f1),f2(f2)
     {
+    }
+    
+    template <typename Tc>
+    static constexpr bool firstOperandHasFreeComp=
+      TupleHasType<Tc,
+		   typename impl::ProductComps<typename F1::Comps,typename F2::Comps>::F1FilteredContractedComps>;
+    
+    template <typename Tc>
+    static constexpr bool secondOperandHasFreeComp=
+      TupleHasType<Tc,
+		   typename impl::ProductComps<typename F1::Comps,typename F2::Comps>::F2FilteredContractedComps>;
+      
+    template <typename Tc,
+	      ENABLE_THIS_TEMPLATE_IF(firstOperandHasFreeComp<Tc> and
+				      secondOperandHasFreeComp<Tc>)>
+    auto operator[](const Tc& tc)
+    {
+      return
+	f1[tc]*f2[tc];
+    }
+    
+    template <typename Tc,
+	      ENABLE_THIS_TEMPLATE_IF((not firstOperandHasFreeComp<Tc>) and
+				      secondOperandHasFreeComp<Tc>)>
+    auto operator[](const Tc& tc)
+    {
+      return
+	f1*f2[tc];
+    }
+    
+    template <typename Tc,
+	      ENABLE_THIS_TEMPLATE_IF(firstOperandHasFreeComp<Tc> and
+				      not secondOperandHasFreeComp<Tc>)>
+    auto operator[](const Tc& tc)
+    {
+      return
+	f1[tc]*f2;
     }
     
     //va aggiunto l'operatore sottoscrizione, che prende la componente

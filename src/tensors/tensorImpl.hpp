@@ -27,6 +27,10 @@ namespace ciccios
     Expr<THIS>,
     TensFeat<IsTens,THIS>
   {
+    /// Tensor should not be copied when taken as arguments in expression
+    static constexpr bool takeAsArgByRef=
+      true;
+    
     /// Fundamental type
     using Fund=
       F;
@@ -295,24 +299,24 @@ namespace ciccios
     }
     
     /// Provide trivial access to the fundamental data
-    const Fund& trivialAccess(const Size& i)
+    decltype(auto) trivialAccess(const Index& i)
       const
     {
       return
 	data[i];
     }
     
-    PROVIDE_ALSO_NON_CONST_METHOD(trivialAccess);
+    //PROVIDE_ALSO_NON_CONST_METHOD(trivialAccess);
     
     /// Gets access to the inner data
-    const Fund* getRawAccess()
-      const
-    {
-      return
-	&trivialAccess(0);
-    }
+    // const Fund* getRawAccess()
+    //   const
+    // {
+    //   return
+    // 	&trivialAccess(0);
+    // }
     
-    PROVIDE_ALSO_NON_CONST_METHOD(getRawAccess);
+    // PROVIDE_ALSO_NON_CONST_METHOD(getRawAccess);
     
     /// Provide subscribe operator when returning a reference
     ///

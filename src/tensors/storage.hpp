@@ -93,10 +93,12 @@ namespace ciccios
       Fund data[StaticSize];
       
       /// Return the pointer to inner data
-      CUDA_HOST_DEVICE
-      const Fund* getDataPtr() const
+      INLINE_FUNCTION CUDA_HOST_DEVICE
+      const Fund* getDataPtr()
+	const
       {
-	return data;
+	return
+	  data;
       }
       
       PROVIDE_ALSO_NON_CONST_METHOD_GPU(getDataPtr);
@@ -178,10 +180,11 @@ namespace ciccios
     }
     
     /// Access to a sepcific value via subscribe operator
-    template <typename T>                       // Subscribed component type
-    const auto& operator[](const T& t) const  ///< Subscribed component
+    template <typename T>                        // Subscribed component type
+    const Fund& operator[](const T& t) const  ///< Subscribed component
     {
-      return data.data[t];
+      return
+	data.data[t];
     }
     
     PROVIDE_ALSO_NON_CONST_METHOD(operator[]);

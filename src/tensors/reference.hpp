@@ -40,12 +40,20 @@ namespace ciccios
     Expr<THIS>,
     TensRefFeat<IsTensRef,THIS>
   {
+    /// References can be copied easily
+    static constexpr bool takeAsArgByRef=
+      false;
+    
     /// Import assignement from Expr class
     using Expr<THIS>::operator=;
     
     /// Holds info on whether the reference is constant
     static constexpr bool IsConst=
       Const;
+    
+    /// Fundamental type
+    using Fund=
+      typename T::Fund;
     
     /// Original tensor to which we refer
     using OrigTens=
@@ -72,7 +80,8 @@ namespace ciccios
     /// Returns the reference
     ConstIf<IsConst,OrigTens>& deRef() const
     {
-      return t;
+      return
+	t;
     }
     
     /// Get components size from the tensor
@@ -124,10 +133,10 @@ namespace ciccios
 	      ENABLE_THIS_TEMPLATE_IF(std::tuple_size<Cp>::value==1 and	\
 				 TupleHasType<C,Cp>)>			\
     CUDA_HOST_DEVICE INLINE_FUNCTION					\
-    CONST_ATTR auto& operator[](const TensCompFeat<IsTensComp,C>& cFeat) CONST_ATTR \
+    ConstIf<IsConst,Fund>& operator[](const TensCompFeat<IsTensComp,C>& cFeat) CONST_ATTR \
     {									\
       return								\
-	t.getDataPtr()[t.index(std::tuple_cat(subsComps,std::make_tuple(cFeat.deFeat())))]; \
+	(ConstIf<IsConst,Fund>&)t.trivialAccess(t.index(std::tuple_cat(subsComps,std::make_tuple(cFeat.deFeat())))); \
     }
     
     PROVIDE_SUBSCRIBE_OPERATOR(/* not const */);
