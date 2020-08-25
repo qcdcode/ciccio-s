@@ -7,7 +7,7 @@
 /// field, given layout and list of components
 
 #include <dataTypes/SIMD.hpp>
-#include <fields/field.hpp>
+#include <fields/fieldDecl.hpp>
 #include <tensors/component.hpp>
 
 namespace ciccios
