@@ -10,8 +10,8 @@
 #include <expr/expr.hpp>
 #include <tensors/component.hpp>
 #include <tensors/componentsList.hpp>
+#include <tensors/tensDecl.hpp>
 #include <tensors/tensFeat.hpp>
-#include <tensors/tens.hpp>
 #include <utilities/tuple.hpp>
 
 namespace ciccios

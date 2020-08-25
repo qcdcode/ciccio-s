@@ -11,7 +11,7 @@
 
 #include <tensors/component.hpp>
 #include <tensors/tens.hpp>
-#include <tensors/tensImpl.hpp>
+#include <tensors/tensDecl.hpp>
 #include <tensors/tensRef.hpp>
 #include <tensors/tensSlice.hpp>
 

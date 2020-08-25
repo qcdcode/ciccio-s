@@ -9,7 +9,7 @@
 #include <base/metaProgramming.hpp>
 #include <dataTypes/SIMD.hpp>
 #include <expr/assign.hpp>
-#include <tensors/tens.hpp>
+#include <tensors/tensDecl.hpp>
 #include <tensors/componentsList.hpp>
 
 namespace ciccios
