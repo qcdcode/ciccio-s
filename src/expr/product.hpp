@@ -5,7 +5,7 @@
 ///
 /// \brief Implements product of expressions
 
-#include <expr/expr.hpp>
+#include <expr/exprImpl.hpp>
 #include <expr/exprArg.hpp>
 #include <tensors/component.hpp>
 #include <tensors/componentsList.hpp>
@@ -262,16 +262,23 @@ namespace ciccios
     /// dynamic storage lo facciano, e facciamo si che importare in un
     /// kernel sia esplicito
     
-    // auto close()
-    //   const
-    // {
-    // 	Tens<Comps,Fund> a;
+    /// Close the product
+    ///
+    /// \todo move to expr
+    auto close()
+      const
+    {
+    	Tens<Comps,Fund> a;
 	
-    // 	return a;
-    // }
+	static_cast<Expr<Tens<Comps,Fund>>>(a)=
+	  static_cast<const Expr<THIS>&>(*this);
+	
+    	return
+	  a;
+    }
   };
   
-  #undef THIS
+#undef THIS
 }
 
 #endif

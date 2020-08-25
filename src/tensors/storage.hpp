@@ -135,13 +135,16 @@ namespace ciccios
       {
       }
       
-      /// Copy constructor is deleted
+      /// Copy constructor
       CUDA_HOST_DEVICE
-      StackStorage(const StackStorage&) =delete;
+      StackStorage(const StackStorage& oth)
+      {
+	memcpy(this->data,oth.data,StaticSize);
+      }
       
-      /// Move constructor is deleted
-      CUDA_HOST_DEVICE
-      StackStorage(StackStorage&&) =delete;
+      // /// Move constructor is deleted
+      // CUDA_HOST_DEVICE
+      // StackStorage(StackStorage&&) =delete;
     };
     
     /// Threshold beyond which allocate dynamically in any case
@@ -215,8 +218,9 @@ namespace ciccios
     }
     
     /// Access to a sepcific value via subscribe operator
-    template <typename T>                        // Subscribed component type
-    const Fund& operator[](const T& t) const  ///< Subscribed component
+    template <typename T>                  // Subscribed component type
+    const Fund& operator[](const T& t)   ///< Subscribed component
+      const
     {
       return
 	data.data[t];
