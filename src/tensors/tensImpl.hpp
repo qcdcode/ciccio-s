@@ -5,7 +5,7 @@
 ///
 /// \brief Implements all functionalities of tensors
 
-#include <expr/exprImpl.hpp>
+#include <expr/expr.hpp>
 #include <tensors/tens.hpp>
 #include <tensors/componentsList.hpp>
 #include <tensors/tensFeat.hpp>

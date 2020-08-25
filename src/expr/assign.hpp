@@ -5,7 +5,7 @@
 ///
 /// \brief Implements assignment
 
-#include <expr/expr.hpp>
+#include <expr/exprDecl.hpp>
 #include <tensors/componentsList.hpp>
 
 namespace ciccios

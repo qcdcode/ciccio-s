@@ -5,7 +5,7 @@
 ///
 /// \brief Implements product of expressions
 
-#include <expr/exprImpl.hpp>
+#include <expr/expr.hpp>
 #include <expr/exprArg.hpp>
 #include <tensors/component.hpp>
 #include <tensors/componentsList.hpp>
