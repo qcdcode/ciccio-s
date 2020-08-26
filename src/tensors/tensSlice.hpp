@@ -8,6 +8,7 @@
 #include <base/feature.hpp>
 #include <base/metaProgramming.hpp>
 #include <expr/expr.hpp>
+#include <tensors/complSubscribe.hpp>
 #include <tensors/component.hpp>
 #include <tensors/componentsList.hpp>
 #include <tensors/tensDecl.hpp>
@@ -38,18 +39,23 @@ namespace ciccios
 	    typename...Sc> // Subscribed components
   struct THIS : public
     Expr<THIS>,
+    ComplexSubscribe<THIS>,
     TensSliceFeat<IsTensSlice,THIS>
   {
     /// A slice can be copied easily
     static constexpr bool takeAsArgByRef=
       false;
     
-    /// Import assignement from Expr class
-    using Expr<THIS>::operator=;
-    
     /// Holds info on whether the slice is constant
     static constexpr bool IsConst=
       Const;
+    
+    /// A slice can be assigned provided is not const
+    static constexpr bool canBeAssigned=
+      not IsConst;
+    
+    /// Import assignement from Expr class
+    using Expr<THIS>::operator=;
     
     /// Fundamental type
     using Fund=

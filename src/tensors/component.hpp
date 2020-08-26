@@ -147,8 +147,8 @@ namespace ciccios
   /// Promotes the argument i to a COMPONENT, through a function with given NAME
 #define DECLARE_COMPONENT_FACTORY(NAME,COMPONENT...)		\
   template <typename T>						\
-  CUDA_HOST_DEVICE						\
-  INLINE_FUNCTION COMPONENT NAME(T&& i)				\
+  INLINE_FUNCTION constexpr CUDA_HOST_DEVICE			\
+  COMPONENT NAME(T&& i)						\
   {								\
     return							\
       COMPONENT(i);						\

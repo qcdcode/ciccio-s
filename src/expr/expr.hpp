@@ -20,13 +20,20 @@ namespace ciccios
   {
     PROVIDE_DEFEAT_METHOD(T);
     
+    // /// Assign to an expression
+    // template <typename U>
+    // INLINE_FUNCTION CUDA_HOST_DEVICE
+    // void operator=(const Expr<U>& u)
+    // {
+    //   assign(*this,u,(typename U::Comps*)nullptr);
+    // }
+    
     /// Assign to an expression
-    template <typename U// ,
-	      // ENABLE_THIS_TEMPLATE_IF(std::is_same<typename T::Comps,typename U::Comps>::value)
-	      >
-    void operator=(const Expr<U>& u)
+    template <typename U>
+    INLINE_FUNCTION CUDA_HOST_DEVICE
+    void operator=(const U& t)
     {
-      assign(*this,u,(typename U::Comps*)nullptr);
+      assign(*this,t,(typename T::Comps*)nullptr);
     }
   };
 }

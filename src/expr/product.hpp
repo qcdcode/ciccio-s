@@ -173,6 +173,10 @@ namespace ciccios
     static constexpr bool takeAsArgByRef=
       false;
     
+    /// Product cannot be assigned
+    static constexpr bool canBeAssigned=
+      false;
+    
     /// First expression
     ExprArg<F1 const> f1;
     
@@ -220,29 +224,57 @@ namespace ciccios
     static constexpr bool secondOperandHasFreeComp=
       TupleHasType<Tc,
 		   typename impl::ProductComps<typename F1::Comps,typename F2::Comps>::F2FilteredContractedComps>;
-      
+    
+    /// Returns the real part
+    INLINE_FUNCTION constexpr CUDA_HOST_DEVICE
+    decltype(auto) real()
+      const
+    {
+      return
+	f1[RE]*f2[RE]-f1[IM]*f2[IM];
+    }
+    
+    PROVIDE_ALSO_NON_CONST_METHOD_GPU(real);
+    
+    /// Returns the imaginary part
+    INLINE_FUNCTION constexpr CUDA_HOST_DEVICE
+    decltype(auto) imag()
+      const
+    {
+      return
+	f1[RE]*f2[IM]+f1[IM]*f2[RE];
+    }
+    
+    PROVIDE_ALSO_NON_CONST_METHOD_GPU(imag);
+    
     template <typename Tc,
-	      ENABLE_THIS_TEMPLATE_IF(firstOperandHasFreeComp<Tc> and
-				      secondOperandHasFreeComp<Tc>)>
+	      ENABLE_THIS_TEMPLATE_IF(firstOperandHasFreeComp<Tc>),
+	      ENABLE_THIS_TEMPLATE_IF(secondOperandHasFreeComp<Tc>)>
+    INLINE_FUNCTION CUDA_HOST_DEVICE
     auto operator[](const Tc& tc)
+      const
     {
       return
 	f1[tc]*f2[tc];
     }
     
     template <typename Tc,
-	      ENABLE_THIS_TEMPLATE_IF((not firstOperandHasFreeComp<Tc>) and
-				      secondOperandHasFreeComp<Tc>)>
+	      ENABLE_THIS_TEMPLATE_IF(not firstOperandHasFreeComp<Tc>),
+	      ENABLE_THIS_TEMPLATE_IF(secondOperandHasFreeComp<Tc>)>
+    INLINE_FUNCTION CUDA_HOST_DEVICE
     auto operator[](const Tc& tc)
+      const
     {
       return
 	f1*f2[tc];
     }
     
     template <typename Tc,
-	      ENABLE_THIS_TEMPLATE_IF(firstOperandHasFreeComp<Tc> and
-				      not secondOperandHasFreeComp<Tc>)>
+	      ENABLE_THIS_TEMPLATE_IF(firstOperandHasFreeComp<Tc>),
+	      ENABLE_THIS_TEMPLATE_IF(not secondOperandHasFreeComp<Tc>)>
+    INLINE_FUNCTION CUDA_HOST_DEVICE
     auto operator[](const Tc& tc)
+      const
     {
       return
 	f1[tc]*f2;
@@ -268,13 +300,13 @@ namespace ciccios
     auto close()
       const
     {
-    	Tens<Comps,Fund> a;
+      Tens<Comps,Fund> a;
+      
+      a=
+	*this;
 	
-	static_cast<Expr<Tens<Comps,Fund>>>(a)=
-	  static_cast<const Expr<THIS>&>(*this);
-	
-    	return
-	  a;
+      return
+	a;
     }
   };
   

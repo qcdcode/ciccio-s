@@ -15,7 +15,7 @@
 
 namespace ciccios
 {
-  enum{RE,IM};
+  enum{_RE,_IM};
   
   /// Complex number
   template <typename T>

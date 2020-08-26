@@ -20,6 +20,9 @@ using SU3FieldComps=
 using SU3Comps=
   TensComps<ColRow,ColCln,Compl>;
 
+using SU3bComps=
+  TensComps<ColCln,Compl,ColRow>;
+
 // Provides the assembly comment useful to catch the produced code for each data type
 PROVIDE_ASM_DEBUG_HANDLE(sumProd,CpuSU3Field<float,StorLoc::ON_CPU>*);
 PROVIDE_ASM_DEBUG_HANDLE(sumProd,GpuSU3Field<float,StorLoc::ON_GPU>*);
@@ -442,13 +445,166 @@ void test3(const SpaceTime locVol, ///< Volume to simulate
   LOGGER<<endl;
 }
 
+void p1(Tens<TensComps<SpinCln>,double,StorLoc::ON_CPU>& a,
+	Tens<TensComps<SpinRow>,double,StorLoc::ON_CPU>& b)
+{
+  ASM_BOOKMARK_BEGIN("PRODUCT");
+  
+  auto ab=a*b;
+  
+  double abb=ab;
+  
+  ASM_BOOKMARK_END("PRODUCT");
+  
+  LOGGER<<abb<<endl;
+}
+
+void p2(Tens<TensComps<SpinCln>,double,StorLoc::ON_CPU>& a,
+	Tens<TensComps<SpinRow>,double,StorLoc::ON_CPU>& b)
+{
+  ASM_BOOKMARK_BEGIN("PRODUCT_NAIVE");
+  
+  double abb=0;
+  
+  double* _a=a.getDataPtr();
+  double* _b=b.getDataPtr();
+  
+  for(int i=0;i<4;i++)
+    abb+=_a[i]*_b[i];
+  
+  ASM_BOOKMARK_END("PRODUCT_NAIVE");
+  
+  LOGGER<<abb<<endl;
+}
+
+void mp1(Tens<TensComps<SpinRow,SpinCln,Compl>,double,StorLoc::ON_CPU>& a2,
+	 Tens<TensComps<SpinRow,SpinCln,Compl>,double,StorLoc::ON_CPU>& b2,
+	 SpinRow o,
+	 SpinCln p)
+{
+  LOGGER<<decltype(a2*b2)::firstOperandHasFreeComp<SpinRow><<" "
+	<<decltype(a2*b2)::secondOperandHasFreeComp<SpinRow><<endl;
+  
+  LOGGER<<decltype(a2*b2)::firstOperandHasFreeComp<SpinCln><<" "
+	<<decltype(a2*b2)::secondOperandHasFreeComp<SpinCln><<endl;
+  
+  LOGGER<<decltype((a2*b2)[o])::firstOperandHasFreeComp<SpinRow><<" "
+	<<decltype((a2*b2)[o])::secondOperandHasFreeComp<SpinRow><<endl;
+  
+  LOGGER<<decltype((a2*b2)[o])::firstOperandHasFreeComp<SpinCln><<" "
+	<<decltype((a2*b2)[o])::secondOperandHasFreeComp<SpinCln><<endl;
+  
+  LOGGER<<decltype((a2*b2)[p])::firstOperandHasFreeComp<SpinRow><<" "
+	<<decltype((a2*b2)[p])::secondOperandHasFreeComp<SpinRow><<endl;
+  
+  LOGGER<<decltype((a2*b2)[p])::firstOperandHasFreeComp<SpinCln><<" "
+	<<decltype((a2*b2)[p])::secondOperandHasFreeComp<SpinCln><<endl;
+  
+  LOGGER<<decltype((a2*b2)[o][p])::firstOperandHasFreeComp<SpinRow><<" "
+	<<decltype((a2*b2)[o][p])::secondOperandHasFreeComp<SpinRow><<endl;
+  
+  LOGGER<<decltype((a2*b2)[o][p])::firstOperandHasFreeComp<SpinCln><<" "
+	<<decltype((a2*b2)[o][p])::secondOperandHasFreeComp<SpinCln><<endl;
+  
+  ASM_BOOKMARK_BEGIN("MPRODUCT");
+  Tens<TensComps<SpinRow,SpinCln,Compl>,double,StorLoc::ON_CPU> a2b2;
+  a2b2// [complComp(0)]
+    =a2*b2;
+  
+  ASM_BOOKMARK_END("MPRODUCT");
+  
+  LOGGER<<a2b2[complComp(0)][o][p]<<endl;
+}
+
+void mp2(Tens<TensComps<SpinRow,SpinCln,Compl>,double,StorLoc::ON_CPU>& a2,
+	 Tens<TensComps<SpinRow,SpinCln,Compl>,double,StorLoc::ON_CPU>& b2,
+	 SpinRow o,
+	 SpinCln p)
+{
+  ASM_BOOKMARK_BEGIN("MPRODUCT_NAIVE");
+  
+  double* _a2=a2.getDataPtr();
+  double* _b2=b2.getDataPtr();
+  
+  Tens<TensComps<SpinRow,SpinCln,Compl>,double,StorLoc::ON_CPU> a2b2;
+  double* _a2b2=a2b2.getDataPtr();
+  
+  for(int i(0);i<4;i++)
+    for(int j(0);j<4;j++)
+      {
+	_a2b2[0+2*(j+4*i)]=0.0;
+	_a2b2[1+2*(j+4*i)]=0.0;
+	for(int k=0;k<4;k++)
+	  {
+	    _a2b2[0+2*(j+4*i)]+=
+	      _a2[0+2*(k+4*i)]*
+	      _b2[0+2*(j+4*k)]-
+	      _a2[1+2*(k+4*i)]*
+	      _b2[1+2*(j+4*k)];
+	    
+	    _a2b2[0+2*(j+4*i)]+=
+	      _a2[0+2*(k+4*i)]*
+	      _b2[1+2*(j+4*k)]+
+	      _a2[1+2*(k+4*i)]*
+	      _b2[0+2*(j+4*k)];
+	  }
+      }
+  
+  ASM_BOOKMARK_END("MPRODUCT_NAIVE");
+  
+  LOGGER<<a2b2[o][p][RE]<<endl;
+}
+
 /// inMmain is the actual main, which is where the main thread of the
 /// pool is sent to work while the workers are sent in the background
 void inMain(int narg,char **arg)
 {
+  Tens<TensComps<SpinCln>,double,StorLoc::ON_CPU> a;
+  Tens<TensComps<SpinRow>,double,StorLoc::ON_CPU> b;
+  
+  ref(a);
+  
+  for(SpinCln i(0);i<4;i++) a[i]=i+1;
+  for(SpinRow i(0);i<4;i++) b[i]=i+1;
+  
+  p1(a,b);
+  p2(a,b);
+  
+  LOGGER<<"Cominciamo"<<endl;
+  
+  Tens<TensComps<SpinRow,SpinCln,Compl>,double,StorLoc::ON_CPU> a2;
+  Tens<TensComps<SpinRow,SpinCln,Compl>,double,StorLoc::ON_CPU> b2;
+  
+  for(SpinCln i(0);i<4;i++)
+    for(SpinRow j(0);j<4;j++)
+      {
+	a2[i][j][RE]=b2[i][j][RE]=i+1;
+	a2[i][j][IM]=b2[i][j][IM]=0;
+      }
+  
+  mp1(a2, b2,spRow(0),spCln(1));
+  mp2(a2, b2,spRow(0),spCln(1));
+  
+  
+  // Tens<TensComps<SpinCln// ,SpinCln,ColRow,ColCln,Compl
+  // 		 >,double,StorLoc::ON_CPU> a;
+  // Tens<TensComps<SpinRow// ,ColRow,Compl
+  // 		 >,double,StorLoc::ON_CPU> b;
+  
+  
+  // ASM_BOOKMARK_BEGIN("PRODUCT_NAIVE");
+  
+  // auto abb=a*b;
+  
+  // double abbb=ab*ab;
+  
+  // ASM_BOOKMARK_END("PRODUCT_NAIVE");
+  
+  //ab.close();
+  
   // Field<SpaceTime,SU3Comps,double,StorLoc::ON_CPU,FieldLayout::CPU_LAYOUT> E(spaceTime(8));
   // Field<SpaceTime,SU3Comps,double,StorLoc::ON_CPU,FieldLayout::SIMD_LAYOUT> F(E);
-
+  
   // ASM_BOOKMARK_BEGIN("CICCIO");
   // F=E;
   // ASM_BOOKMARK_END("CICCIO");

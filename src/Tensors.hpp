@@ -10,6 +10,7 @@
 #endif
 
 #include <tensors/component.hpp>
+#include <tensors/complSubscribe.hpp>
 #include <tensors/tens.hpp>
 #include <tensors/tensDecl.hpp>
 #include <tensors/tensRef.hpp>

@@ -7,6 +7,7 @@
 
 #include <expr/expr.hpp>
 #include <tensors/tensDecl.hpp>
+#include <tensors/complSubscribe.hpp>
 #include <tensors/componentsList.hpp>
 #include <tensors/tensFeat.hpp>
 #include <tensors/tensSlice.hpp>
@@ -25,6 +26,7 @@ namespace ciccios
 	    Stackable IsStackable>
   struct THIS : public
     Expr<THIS>,
+    ComplexSubscribe<THIS>,
     TensFeat<IsTens,THIS>
   {
     /// Import assign operator from expression
