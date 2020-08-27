@@ -73,24 +73,34 @@ namespace ciccios
     };
   }
   
+  /// Provide a function which casts to the fundamental type
+  ///
+  /// Forward declaration
   template <bool B,
 	    typename T,
 	    typename ExtFund>
   struct ProductFundCastProvider;
   
+  /// Provide a function which casts to the fundamental type
+  ///
+  /// Does not provide the access
   template <typename T,
 	    typename ExtFund>
   struct ProductFundCastProvider<false,T,ExtFund>
   {
   };
   
+  /// Provide a function which casts to the fundamental type
+  ///
+  /// Provides the actual access
   template <typename T,
 	    typename ExtFund>
   struct ProductFundCastProvider<true,T,ExtFund>
   {
     PROVIDE_DEFEAT_METHOD(T);
     
-    INLINE_FUNCTION
+    /// Provide the cast to fundamental
+    INLINE_FUNCTION constexpr CUDA_HOST_DEVICE
     operator ExtFund()
       const
     {
@@ -121,31 +131,44 @@ namespace ciccios
   
   namespace impl
   {
+    /// Contract inner indices of a product
+    ///
+    /// Forward declaration
     template <typename...>
     struct _ProductContracter;
     
+    /// Contract inner indices of a product
+    ///
+    /// Case in which no more components are left
     template <>
     struct _ProductContracter<TensComps<>>
     {
-      template <typename T>
-      static constexpr INLINE_FUNCTION
+      /// Contract the actual data
+      template <typename T,
+		typename F1,
+		typename F2>
+      static constexpr INLINE_FUNCTION CUDA_HOST_DEVICE
       void eval(T& out,
-    		const T& f1,
-    		const T& f2)
+    		const F1& f1,
+    		const F2& f2)
       {
     	out+=
     	  f1*f2;
       }
     };
     
+    /// Contract inner indices of a product
+    ///
+    /// Contract component Head
     template <typename Head,
 	      typename...Tail>
     struct _ProductContracter<TensComps<Head,Tail...>>
     {
+      /// Evaluate the contruction
       template <typename T,
 		typename F1,
 		typename F2>
-      static constexpr INLINE_FUNCTION
+      static constexpr INLINE_FUNCTION CUDA_HOST_DEVICE
       void eval(T& out,
 		const F1& f1,
 		const F2& f2)
@@ -192,16 +215,18 @@ namespace ciccios
       ExtComps;
     
     template <typename F=Fund>
-    INLINE_FUNCTION
+    constexpr INLINE_FUNCTION CUDA_HOST_DEVICE
     F eval()
       const
     {
+      /// Result
       F out=
 	0;
       
+      /// Components to contract
       using ContractedComps=
 	typename impl::ProductComps<typename F1::Comps,typename F2::Comps>::ContractedComps;
-    
+      
       impl::_ProductContracter<ContractedComps>::eval(out,f1,f2);
       
       return
@@ -215,11 +240,13 @@ namespace ciccios
     {
     }
     
+    /// Check if the free components of factor1 contain Tc
     template <typename Tc>
     static constexpr bool firstOperandHasFreeComp=
       TupleHasType<Tc,
 		   typename impl::ProductComps<typename F1::Comps,typename F2::Comps>::F1FilteredContractedComps>;
     
+    /// Check if the free components of factor2 contain Tc
     template <typename Tc>
     static constexpr bool secondOperandHasFreeComp=
       TupleHasType<Tc,
@@ -247,10 +274,11 @@ namespace ciccios
     
     PROVIDE_ALSO_NON_CONST_METHOD_GPU(imag);
     
+    /// Subscribe a component present in both factors
     template <typename Tc,
 	      ENABLE_THIS_TEMPLATE_IF(firstOperandHasFreeComp<Tc>),
 	      ENABLE_THIS_TEMPLATE_IF(secondOperandHasFreeComp<Tc>)>
-    INLINE_FUNCTION CUDA_HOST_DEVICE
+    INLINE_FUNCTION constexpr CUDA_HOST_DEVICE
     auto operator[](const Tc& tc)
       const
     {
@@ -258,10 +286,11 @@ namespace ciccios
 	f1[tc]*f2[tc];
     }
     
+    /// Subscribe a component present in second factors
     template <typename Tc,
 	      ENABLE_THIS_TEMPLATE_IF(not firstOperandHasFreeComp<Tc>),
 	      ENABLE_THIS_TEMPLATE_IF(secondOperandHasFreeComp<Tc>)>
-    INLINE_FUNCTION CUDA_HOST_DEVICE
+    INLINE_FUNCTION constexpr CUDA_HOST_DEVICE
     auto operator[](const Tc& tc)
       const
     {
@@ -269,44 +298,16 @@ namespace ciccios
 	f1*f2[tc];
     }
     
+    /// Subscribe a component present in first factors
     template <typename Tc,
 	      ENABLE_THIS_TEMPLATE_IF(firstOperandHasFreeComp<Tc>),
 	      ENABLE_THIS_TEMPLATE_IF(not secondOperandHasFreeComp<Tc>)>
-    INLINE_FUNCTION CUDA_HOST_DEVICE
+    INLINE_FUNCTION constexpr CUDA_HOST_DEVICE
     auto operator[](const Tc& tc)
       const
     {
       return
 	f1[tc]*f2;
-    }
-    
-    //va aggiunto l'operatore sottoscrizione, che prende la componente
-    //dal primo operando se e' riga, dal secondo se e' colonna, o da
-    //tutt e due se e' any. Quando non ci sono piu componenti
-    //disponibili, la contrazione degli indici colonna/riga avviene.
-    //Quando si assegna, l'operatore di assegnazione procedera' a
-    //fissare i vari indici dell'output. Poi un giorno si puo'
-    //scrivere anche l'assegnazione di un prodotto, che ciclera'
-    //diversamente
-    
-    /// Occorre far si che il costruttore di copie di un tensore
-    /// effettui effettivamente una copia, e che anche gli stack e
-    /// dynamic storage lo facciano, e facciamo si che importare in un
-    /// kernel sia esplicito
-    
-    /// Close the product
-    ///
-    /// \todo move to expr
-    auto close()
-      const
-    {
-      Tens<Comps,Fund> a;
-      
-      a=
-	*this;
-	
-      return
-	a;
     }
   };
   

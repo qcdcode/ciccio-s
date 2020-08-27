@@ -35,6 +35,25 @@ namespace ciccios
     {
       assign(*this,t,(typename T::Comps*)nullptr);
     }
+    
+    /// Closes the expression
+    ///
+    /// Returns a tensor with the components of the expression
+    /// \todo Dynamic case to be implemented
+    INLINE_FUNCTION constexpr CUDA_HOST_DEVICE
+    auto close()
+      const
+    {
+      /// Result to be returned
+      Tens<typename T::Comps,typename T::Fund> a;
+      
+      a=
+	this->deFeat();
+	
+      return
+	a;
+    }
+    
   };
 }
 
