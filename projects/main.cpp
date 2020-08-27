@@ -452,6 +452,7 @@ void p1(Tens<TensComps<SpinCln>,double,StorLoc::ON_CPU>& a,
   
   auto ab=a*b;
   
+  (a*b).close();
   double abb=ab;
   
   ASM_BOOKMARK_END("PRODUCT");

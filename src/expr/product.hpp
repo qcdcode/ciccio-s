@@ -17,10 +17,16 @@ namespace ciccios
   namespace impl
   {
     /// Computes the resulting components
-    template <typename Comps1,
-	      typename Comps2>
+    template <typename F1,
+	      typename F2>
     struct ProductComps
     {
+      using Comps1=
+	typename F1::Comps;
+      
+      using Comps2=
+	typename F2::Comps;
+      
       /// Gets col components from 1
       using Cln1=
 	TensCompsFilterCln<Comps1>;
@@ -112,7 +118,7 @@ namespace ciccios
   /// Product of two expressions
   template <typename F1,
 	    typename F2,
-	    typename ExtComps=typename impl::ProductComps<typename F1::Comps,typename F2::Comps>::Comps,
+	    typename ExtComps=typename impl::ProductComps<F1,F2>::Comps,
 	    typename ExtFund=std::common_type_t<typename F1::Fund,typename F2::Fund>,
 	    bool CanBeCastToFund=std::tuple_size<ExtComps>::value==0>
   struct Product;
@@ -225,7 +231,7 @@ namespace ciccios
       
       /// Components to contract
       using ContractedComps=
-	typename impl::ProductComps<typename F1::Comps,typename F2::Comps>::ContractedComps;
+	typename impl::ProductComps<F1,F2>::ContractedComps;
       
       impl::_ProductContracter<ContractedComps>::eval(out,f1,f2);
       
@@ -244,13 +250,13 @@ namespace ciccios
     template <typename Tc>
     static constexpr bool firstOperandHasFreeComp=
       TupleHasType<Tc,
-		   typename impl::ProductComps<typename F1::Comps,typename F2::Comps>::F1FilteredContractedComps>;
+		   typename impl::ProductComps<F1,F2>::F1FilteredContractedComps>;
     
     /// Check if the free components of factor2 contain Tc
     template <typename Tc>
     static constexpr bool secondOperandHasFreeComp=
       TupleHasType<Tc,
-		   typename impl::ProductComps<typename F1::Comps,typename F2::Comps>::F2FilteredContractedComps>;
+		   typename impl::ProductComps<F1,F2>::F2FilteredContractedComps>;
     
     /// Returns the real part
     INLINE_FUNCTION constexpr CUDA_HOST_DEVICE
