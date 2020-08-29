@@ -453,6 +453,7 @@ void p1(Tens<TensComps<SpinCln>,double,StorLoc::ON_CPU>& a,
   auto ab=a*b;
   
   (a*b).close();
+
   double abb=ab;
   
   ASM_BOOKMARK_END("PRODUCT");
@@ -562,8 +563,6 @@ void inMain(int narg,char **arg)
 {
   Tens<TensComps<SpinCln>,double,StorLoc::ON_CPU> a;
   Tens<TensComps<SpinRow>,double,StorLoc::ON_CPU> b;
-  
-  ref(a);
   
   for(SpinCln i(0);i<4;i++) a[i]=i+1;
   for(SpinRow i(0);i<4;i++) b[i]=i+1;

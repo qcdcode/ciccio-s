@@ -25,27 +25,26 @@ namespace ciccios
   {
     PROVIDE_DEFEAT_METHOD(T);
     
-    /// Returns the real part
-    INLINE_FUNCTION constexpr CUDA_HOST_DEVICE
-    decltype(auto) real()
-      const
-    {
-      return
-	this->deFeat()[RE];
+    /// The usual trick mess up slice IsConst detection
+#define PROVIDE_RE_OR_IM_CONST_OR_NOT(REAL_OR_IMAG,RE_OR_IM,CONST_ATTR)	\
+    /*! Returns the real part */					\
+    INLINE_FUNCTION constexpr CUDA_HOST_DEVICE				\
+    decltype(auto) REAL_OR_IMAG()					\
+      CONST_ATTR							\
+    {									\
+      return								\
+	this->deFeat()[RE_OR_IM];					\
     }
     
-    PROVIDE_ALSO_NON_CONST_METHOD_GPU(real);
+#define PROVIDE_RE_OR_IM_CONST_AND_NOT(REAL_OR_IMAG,RE_OR_IM)		\
+    PROVIDE_RE_OR_IM_CONST_OR_NOT(REAL_OR_IMAG,RE_OR_IM,/* not const */) \
+    PROVIDE_RE_OR_IM_CONST_OR_NOT(REAL_OR_IMAG,RE_OR_IM,const)		\
     
-    /// Returns the imaginary part
-    INLINE_FUNCTION constexpr CUDA_HOST_DEVICE
-    decltype(auto) imag()
-      const
-    {
-      return
-	this->deFeat()[IM];
-    }
+    PROVIDE_RE_OR_IM_CONST_AND_NOT(real,RE)
+    PROVIDE_RE_OR_IM_CONST_AND_NOT(imag,RE)
     
-    PROVIDE_ALSO_NON_CONST_METHOD_GPU(imag);
+#undef PROVIDE_RE_OR_IM_CONST_AND_NOT
+#undef PROVIDE_RE_OR_IM_CONST_OR_NOT
   };
 }
 

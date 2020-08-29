@@ -79,42 +79,6 @@ namespace ciccios
     };
   }
   
-  /// Provide a function which casts to the fundamental type
-  ///
-  /// Forward declaration
-  template <bool B,
-	    typename T,
-	    typename ExtFund>
-  struct ProductFundCastProvider;
-  
-  /// Provide a function which casts to the fundamental type
-  ///
-  /// Does not provide the access
-  template <typename T,
-	    typename ExtFund>
-  struct ProductFundCastProvider<false,T,ExtFund>
-  {
-  };
-  
-  /// Provide a function which casts to the fundamental type
-  ///
-  /// Provides the actual access
-  template <typename T,
-	    typename ExtFund>
-  struct ProductFundCastProvider<true,T,ExtFund>
-  {
-    PROVIDE_DEFEAT_METHOD(T);
-    
-    /// Provide the cast to fundamental
-    INLINE_FUNCTION constexpr CUDA_HOST_DEVICE
-    operator ExtFund()
-      const
-    {
-      return
-    	this->deFeat().eval();
-    }
-  };
-  
   /// Product of two expressions
   template <typename F1,
 	    typename F2,
@@ -196,7 +160,7 @@ namespace ciccios
 	    bool CanBeCastToFund>
   struct Product :
     Expr<THIS>,
-    ProductFundCastProvider<CanBeCastToFund,THIS,ExtFund>
+    ToFundCastProvider<CanBeCastToFund,THIS,ExtFund>
   {
     /// Product is simple to create
     static constexpr bool takeAsArgByRef=
@@ -220,6 +184,7 @@ namespace ciccios
     using Comps=
       ExtComps;
     
+    /// Return evalutation of the product, valid only if no free component is present
     template <typename F=Fund>
     constexpr INLINE_FUNCTION CUDA_HOST_DEVICE
     F eval()

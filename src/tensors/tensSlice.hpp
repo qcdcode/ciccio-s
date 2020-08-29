@@ -21,64 +21,93 @@ namespace ciccios
   
   DEFINE_FEATURE_GROUP(TensSliceFeat);
   
+  namespace impl
+  {
+    /// Computes the resulting components
+    template <typename T,
+	      typename SC>
+    struct TensSliceComps
+    {
+      /// Visible components
+      using Comps=
+	TupleFilterOut<SC,typename T::Comps>;
+    };
+  }
+  
   /// Sliced view of a tensor
   ///
   /// Forward implementation
-  template <bool Const,    // Const or not
-	    typename T,    // Tensor
-	    typename S>    // Subscribed componenents
+  template <bool IsConst,         // Const or not
+	    typename T,           // Tensor
+	    typename S,           // Subscribed componenents
+	    typename ExtComps=typename impl::TensSliceComps<T,S>::Comps,
+	    typename ExtFund=typename T::Fund,
+	    bool CanBeCastToFund=std::tuple_size<ExtComps>::value==0>
   struct TensSlice;
   
   /// Shortcut for TensSlice
 #define THIS					\
-  TensSlice<Const,T,TensComps<Sc...>>
+  TensSlice<IsConst,T,TensComps<Sc...>,ExtComps,ExtFund,CanBeCastToFund>
   
   /// Sliced view of a tensor
-  template <bool Const,    // Const or not
+  template <bool IsConst,  // Const or not
 	    typename T,    // Tensor
-	    typename...Sc> // Subscribed components
+	    typename...Sc, // Subscribed components
+	    typename ExtComps,
+	    typename ExtFund,
+	    bool CanBeCastToFund>
   struct THIS : public
     Expr<THIS>,
     ComplexSubscribe<THIS>,
+    AssignFromFundProvider<not IsConst,THIS,ExtFund>,
+    ToFundCastProvider<CanBeCastToFund,THIS,ConstIf<IsConst,ExtFund>&>,
     TensSliceFeat<IsTensSlice,THIS>
   {
+    /// Import assign operator from expression
+    using Expr<THIS>::operator=;
+    
     /// A slice can be copied easily
     static constexpr bool takeAsArgByRef=
       false;
     
     /// Holds info on whether the slice is constant
-    static constexpr bool IsConst=
-      Const;
+    static constexpr bool isConst=
+      IsConst;
     
     /// A slice can be assigned provided is not const
     static constexpr bool canBeAssigned=
       not IsConst;
     
-    /// Import assignement from Expr class
-    using Expr<THIS>::operator=;
+    // /// Import assign operator from fund
+    // template <typename O=ExtFund,
+    // 	      bool CBA=canBeAssigned,
+    // 	      ENABLE_THIS_TEMPLATE_IF(CBA)>
+    // const O& operator=(const O& o)
+    // {
+    //   return
+    // 	this->eval()=
+    // 	o;
+    // }
+    using AssignFromFundProvider<canBeAssigned,THIS,ExtFund>::operator=;
     
     /// Fundamental type
     using Fund=
-      typename T::Fund;
+      ExtFund;
+    
+    /// Resulting components
+    using Comps=
+      ExtComps;
     
     /// Original tensor to which we refer
     using OrigTens=
       T;
     
-    /// Original components
-    using OrigComps=
-      typename T::Comps;
+    /// Reference to original tensor
+    const OrigTens& t;
     
     /// Subscribed components
     using SubsComps=
       TensComps<Sc...>;
-    
-    /// Visible components
-    using Comps=
-      TupleFilterOut<SubsComps,OrigComps>;
-    
-    /// Reference to original tensor
-    const OrigTens& t;
     
     /// Subscribed components
     const SubsComps subsComps;
@@ -96,9 +125,7 @@ namespace ciccios
 #define PROVIDE_SUBSCRIBE_OPERATOR(CONST_ATTR,CONST_AS_BOOL)		\
     /*! Operator to take a const slice to a given component */		\
     template <typename C,						\
-	      typename Cp=Comps,					\
-	      ENABLE_THIS_TEMPLATE_IF((std::tuple_size<Cp>::value>1) and \
-				      TupleHasType<C,Cp>)>		\
+	      typename Cp=Comps>					\
     CUDA_HOST_DEVICE INLINE_FUNCTION					\
     auto operator[](const TensCompFeat<IsTensComp,C>& cFeat) CONST_ATTR	\
     {									\
@@ -124,24 +151,24 @@ namespace ciccios
     
 #undef PROVIDE_SUBSCRIBE_OPERATOR
     
-    /// Provide subscribe operator when returning direct access
-#define PROVIDE_SUBSCRIBE_OPERATOR(CONST_ATTR)				\
+    /// Provide eval method, converting to fundamental
+#define PROVIDE_EVAL_METHOD(CONST_ATTR)					\
     /*! Operator to return direct access to data */			\
-    template <typename C,						\
-	      typename Cp=Comps,					\
-	      ENABLE_THIS_TEMPLATE_IF(std::tuple_size<Cp>::value==1 and	\
-				 TupleHasType<C,Cp>)>			\
+    template <typename Cp=Comps,					\
+	      typename Ret=ConstIf<IsConst,Fund>&,			\
+	      ENABLE_THIS_TEMPLATE_IF(std::tuple_size<Cp>::value==0)>	\
     CUDA_HOST_DEVICE INLINE_FUNCTION					\
-    ConstIf<IsConst,Fund>& operator[](const TensCompFeat<IsTensComp,C>& cFeat) CONST_ATTR \
+    Ret eval()								\
+      CONST_ATTR							\
     {									\
       return								\
-	(ConstIf<IsConst,Fund>&)t.trivialAccess(t.index(std::tuple_cat(subsComps,std::make_tuple(cFeat.deFeat())))); \
+	(Ret)(t.trivialAccess(t.index(subsComps)));			\
     }
     
-    PROVIDE_SUBSCRIBE_OPERATOR(/* not const */);
-    PROVIDE_SUBSCRIBE_OPERATOR(const);
+    PROVIDE_EVAL_METHOD(/* not const */);
+    PROVIDE_EVAL_METHOD(const);
     
-#undef PROVIDE_SUBSCRIBE_OPERATOR
+#undef PROVIDE_EVAL_METHOD
     
     /// Create from slice and list of subscribed components
     CUDA_HOST_DEVICE
@@ -163,7 +190,7 @@ namespace ciccios
       
       /// Offset to data
       const auto offset=
-	t.index(fillTuple<OrigComps>(subsComps));
+	t.index(fillTuple<typename T::Comps>(subsComps));
       
       /// Data with offset
       auto carriedData=
