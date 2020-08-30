@@ -63,6 +63,10 @@ namespace ciccios
     ToFundCastProvider<CanBeCastToFund,THIS,ConstIf<IsConst,ExtFund>&>,
     TensSliceFeat<IsTensSlice,THIS>
   {
+    /// Keep note of the template par
+    static constexpr bool canBeCastToFund=
+      CanBeCastToFund;
+    
     /// Import assign operator from expression
     using Expr<THIS>::operator=;
     

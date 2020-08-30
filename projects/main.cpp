@@ -276,8 +276,8 @@ INLINE_FUNCTION void su3FieldsSumProd(F1& field1,const F2& field2,const F3& fiel
 			      
 			      /// Result real and imaginary part
 			      auto f1c=f1[clRow(i)][clCln(j)];
-			      auto& f1r=f1c[complComp(RE)];
-			      auto& f1i=f1c[complComp(IM)];
+			      auto f1r=f1c[complComp(RE)];
+			      auto f1i=f1c[complComp(IM)];
 			     
 			     /// First operand, real and imaginary
 			     const auto f2c=f2[clRow(i)][clCln(k)];
@@ -602,9 +602,14 @@ void inMain(int narg,char **arg)
   
   //ab.close();
   
-  // Field<SpaceTime,SU3Comps,double,StorLoc::ON_CPU,FieldLayout::CPU_LAYOUT> E(spaceTime(8));
-  // Field<SpaceTime,SU3Comps,double,StorLoc::ON_CPU,FieldLayout::SIMD_LAYOUT> F(E);
-  
+  Field<SpaceTime,SU3Comps,double,StorLoc::ON_CPU,FieldLayout::CPU_LAYOUT> E(spaceTime(8));
+  Field<SpaceTime,SU3Comps,double,StorLoc::ON_CPU,FieldLayout::SIMD_LAYOUT> F(E);
+
+  //decltype(F[decltype(F.t)::Comp<0>(0)].carryOver().simdify()[clRow(0)][clCln(0)].real())::isConst>
+   auto h=F[decltype(F.t)::Comp<0>(0)].carryOver().simdify()[clRow(0)][clCln(0)].real().carryOver();
+   h*h;
+   auto hh=E[decltype(E.t)::Comp<0>(0)].carryOver().simdify()[clRow(0)][clCln(0)].real();
+   hh*hh;
   // ASM_BOOKMARK_BEGIN("CICCIO");
   // F=E;
   // ASM_BOOKMARK_END("CICCIO");

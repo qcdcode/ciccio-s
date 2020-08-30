@@ -13,9 +13,11 @@ namespace ciccios
   /// Captures the sum-assign of a product
   template <typename S,
 	    typename U1,
-	    typename U2>
+	    typename U2,
+	    ENABLE_THIS_TEMPLATE_IF(nOfComps<U1> >0 or
+				    nOfComps<U2> >0)>
   constexpr INLINE_FUNCTION
-  void operator+=(const Expr<S>& a,
+  auto operator+=(const Expr<S>& a,
 		  const Product<U1,U2>& bc)
   {
     using F=
@@ -36,8 +38,24 @@ namespace ciccios
     auto& t=
       *reinterpret_cast<Simd<std::decay_t<decltype(_t)>>*>(&_t);
     
-    t+=f1*f2;
+    return
+      t+=f1*f2;
   }
+  
+  /// Captures the sum-assign of a product
+  template <typename S,
+	    typename U1,
+	    typename U2,
+	    ENABLE_THIS_TEMPLATE_IF(nOfComps<U1> ==0 and
+				    nOfComps<U2> ==0)>
+  constexpr INLINE_FUNCTION
+  auto operator+=(const Expr<S>& a,
+		  const Product<U1,U2>& bc)
+  {
+    return
+      a.deFeat().eval()+=bc.eval();
+  }
+  
 }
 
 #endif

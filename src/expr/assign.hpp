@@ -10,6 +10,20 @@
 
 namespace ciccios
 {
+  /// Assign an expression, parsing no component
+  ///
+  /// /\todo reshape, add check on size
+  template <typename A,
+	    typename B>
+  INLINE_FUNCTION constexpr CUDA_HOST_DEVICE
+  void assign(Expr<A>& a,
+	      const Expr<B>& b,
+	      TensComps<>*)
+  {
+    a.deFeat().eval()=
+      b.deFeat().eval();
+  }
+  
   /// Assign an expression, parsing one component
   ///
   /// /\todo reshape, add check on size

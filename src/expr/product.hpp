@@ -89,15 +89,28 @@ namespace ciccios
   
   /// Capture the product operator for two generic expressions
   template <typename U1,
-	    typename U2,
-	    ENABLE_THIS_TEMPLATE_IF(nOfComps<U1> >0 or
-				    nOfComps<U2> >0)>
+	    typename U2// ,
+	    // ENABLE_THIS_TEMPLATE_IF(nOfComps<U1> >0 or
+	    // 			    nOfComps<U2> >0)
+    >
   auto operator*(const Expr<U1>& u1, ///< Left of the product
 		 const Expr<U2>& u2) ///> Right of the product
   {
     return
       Product<U1,U2>(u1.deFeat(),u2.deFeat());
   }
+  
+  // /// Capture the product operator for two generic expressions
+  // template <typename U1,
+  // 	    typename U2,
+  // 	    ENABLE_THIS_TEMPLATE_IF(nOfComps<U1> ==0 or
+  // 				    nOfComps<U2> ==0)>
+  // auto operator*(const Expr<U1>& u1, ///< Left of the product
+  // 		 const Expr<U2>& u2) ///> Right of the product
+  // {
+  //   return
+  //     u1.deFeat().eval()*u2.deFeat().eval();
+  // }
   
   namespace impl
   {
@@ -191,8 +204,7 @@ namespace ciccios
       const
     {
       /// Result
-      F out=
-	0;
+      F out{0};
       
       /// Components to contract
       using ContractedComps=

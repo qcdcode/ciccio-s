@@ -63,20 +63,42 @@ namespace ciccios
     using Comp=
       std::tuple_element_t<I,Comps>;
     
-    /// Last component type
-    using LastComp=
-      Comp<sizeof...(TC)-1>;
+    /// Determine whether this can be simdfified
+    template <typename _Fund=Fund,
+	      typename _Comps=Comps,
+	      ENABLE_THIS_TEMPLATE_IF(std::tuple_size<_Comps>::value>0)>
+    static constexpr bool _canBeSimdified()
+    {
+      /// Last component type
+      using LastComp=
+	Comp<sizeof...(TC)-1>;
+    
+      return
+	LastComp::template canBeSimdified<Fund> and
+	LastComp::Base::sizeAtCompileTime==simdLength<_Fund>;
+    }
     
     /// Determine whether this can be simdfified
+    template <typename _Fund=Fund,
+	      typename _Comps=Comps,
+	      ENABLE_THIS_TEMPLATE_IF(std::tuple_size<_Comps>::value==0)>
+    static constexpr bool _canBeSimdified()
+    {
+      return
+	false;
+    }
+    
+    template <typename _Fund=Fund,
+	      typename _Comps=Comps>
     static constexpr bool canBeSimdified=
-      LastComp::template canBeSimdified<Fund>;
+      _canBeSimdified<_Fund,_Comps>();
     
     /// Provide constant/not constant simdify method when not simdifiable
 #define PROVIDE_SIMDIFY(CONST_ATTR)					\
     /*! Convert into simdified, CONST_ATTR case */			\
     template <typename _F=F,						\
 	      ENABLE_THIS_TEMPLATE_IF					\
-	      (not LastComp::template canBeSimdified<_F>)>		\
+	      (not canBeSimdified<_F>)>					\
     decltype(auto) simdify()						\
       CONST_ATTR							\
     {									\
@@ -96,8 +118,7 @@ namespace ciccios
     /*! Convert into simdified, CONST_ATTR case */			\
     template <typename _F=F,						\
 	      ENABLE_THIS_TEMPLATE_IF					\
-	      (LastComp::template canBeSimdified<_F> and		\
-	       LastComp::Base::sizeAtCompileTime==simdLength<_F>)>	\
+	      (canBeSimdified<_F>)>					\
     auto simdify()							\
       CONST_ATTR							\
     {									\
@@ -111,6 +132,24 @@ namespace ciccios
     
 #undef PROVIDE_SIMDIFY
     
+    /// Provide eval method, converting to fundamental
+#define PROVIDE_EVAL_METHOD(CONST_ATTR)					\
+    /*! Operator to return direct access to data */			\
+    template <typename Cp=Comps,					\
+	      ENABLE_THIS_TEMPLATE_IF(std::tuple_size<Cp>::value==0)>	\
+    CUDA_HOST_DEVICE INLINE_FUNCTION					\
+    decltype(auto) eval()						\
+      CONST_ATTR							\
+    {									\
+      return								\
+	trivialAccess(0);						\
+    }
+    
+    PROVIDE_EVAL_METHOD(/* not const */);
+    PROVIDE_EVAL_METHOD(const);
+    
+#undef PROVIDE_EVAL_METHOD
+    
     /// Storage Location
     static constexpr
     StorLoc storLoc=
@@ -118,7 +157,7 @@ namespace ciccios
     
     /// Type to be used for the index
     using Index=
-      std::common_type_t<TC...>;
+      std::common_type_t<int,TC...>;
     
     /// List of all statically allocated components
     using StaticComps=
@@ -350,8 +389,7 @@ namespace ciccios
     /*! Operator to take a const reference to a given component */	\
     template <typename C,						\
 	      typename Cp=Comps,					\
-	      ENABLE_THIS_TEMPLATE_IF(std::tuple_size<Cp>::value>1 and	\
-				      TupleHasType<C,Comps>)>		\
+	      ENABLE_THIS_TEMPLATE_IF(TupleHasType<C,Cp>)>		\
     CUDA_HOST_DEVICE INLINE_FUNCTION					\
     auto operator[](const TensCompFeat<IsTensComp,C>& cFeat)		\
       CONST_ATTR							\
@@ -366,26 +404,6 @@ namespace ciccios
     
     PROVIDE_SUBSCRIBE_OPERATOR(/* not const */, false);
     PROVIDE_SUBSCRIBE_OPERATOR(const, true);
-    
-#undef PROVIDE_SUBSCRIBE_OPERATOR
-    
-    /// Provide subscribe operator when returning direct access
-#define PROVIDE_SUBSCRIBE_OPERATOR(CONST_ATTR)				\
-    /*! Operator to return direct access to data */			\
-    template <typename C,						\
-	      typename Cp=Comps,					\
-	      ENABLE_THIS_TEMPLATE_IF(std::tuple_size<Cp>::value==1 and	\
-				      TupleHasType<C,Comps>)>		\
-    CUDA_HOST_DEVICE INLINE_FUNCTION CONST_ATTR				\
-    Fund& operator[](const TensCompFeat<IsTensComp,C>& cFeat)		\
-      CONST_ATTR							\
-    {									\
-      return								\
-	data[cFeat.deFeat()];						\
-    }
-    
-    PROVIDE_SUBSCRIBE_OPERATOR(/* not const */);
-    PROVIDE_SUBSCRIBE_OPERATOR(const);
     
 #undef PROVIDE_SUBSCRIBE_OPERATOR
     
