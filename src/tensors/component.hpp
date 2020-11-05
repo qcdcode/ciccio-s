@@ -102,7 +102,7 @@ namespace ciccios
       _canBeSimdified<F>();
     
     /// Init from value
-    CUDA_HOST_DEVICE
+    INLINE_FUNCTION CUDA_HOST_DEVICE
     explicit constexpr TensComp(const Index& i=0) : i(i)
     {
     }
@@ -116,23 +116,25 @@ namespace ciccios
     }
     
     /// Convert to actual value with const attribute
-    CUDA_HOST_DEVICE constexpr
-    operator const Index&() const
+    INLINE_FUNCTION constexpr CUDA_HOST_DEVICE
+    operator const Index&()
+      const
     {
       return
 	i;
     }
     
     /// Transposed index
-    CUDA_HOST_DEVICE
-    auto transp() const
+    INLINE_FUNCTION CUDA_HOST_DEVICE constexpr
+    auto transp()
+      const
     {
       return
 	Transp{i};
     }
     
     /// Assignment operator
-    CUDA_HOST_DEVICE constexpr
+    INLINE_FUNCTION CUDA_HOST_DEVICE constexpr
     TensComp& operator=(const Index& oth)
     {
       i=oth;

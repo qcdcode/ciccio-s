@@ -60,7 +60,7 @@ namespace ciccios
     Expr<THIS>,
     ComplexSubscribe<THIS>,
     AssignFromFundProvider<not IsConst,THIS,ExtFund>,
-    ToFundCastProvider<CanBeCastToFund,THIS,ConstIf<IsConst,ExtFund>&>,
+    ToFundCastProvider<CanBeCastToFund,THIS,ConstIf<IsConst,ExtFund>,FundCastByRefVal::BY_REF>,
     TensSliceFeat<IsTensSlice,THIS>
   {
     /// Keep note of the template par

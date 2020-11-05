@@ -11,13 +11,11 @@ namespace ciccios
 {
   /// Real part index
   [[ maybe_unused ]]
-  static constexpr auto RE=
-    complComp(0);
+  constexpr Compl RE(0);
   
   /// Imaginary part index
   [[ maybe_unused ]]
-  static constexpr auto IM=
-    complComp(1);
+  constexpr Compl IM(1);
   
   /// Provides a simple complex subscribe
   template <typename T>

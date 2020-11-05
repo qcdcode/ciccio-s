@@ -48,15 +48,31 @@ namespace ciccios
 	    typename A,
 	    typename B>
   INLINE_FUNCTION constexpr CUDA_HOST_DEVICE
-  void assign(Expr<A>& a,
-	      const Expr<B>& b,
+  void assign(Expr<A>& lhs,
+	      const Expr<B>& rhs,
 	      TensComps<Compl,Tail...>*)
   {
-    a.deFeat().real()=
-      b.deFeat().real();
+    /// Instantiate sub-assignment of real part of l.h.s
+    decltype(auto) lhsReal=
+      lhs.deFeat().real();
     
-    a.deFeat().imag()=
-      b.deFeat().imag();
+    /// Instantiate sub-assignment of imag part of l.h.s
+    decltype(auto) lhsImag=
+      lhs.deFeat().imag();
+    
+    /// Instantiate sub-assignment of real part of r.h.s
+    auto rhsReal=
+      rhs.deFeat().real();
+    
+    /// Instantiate sub-assignment of imag part of r.h.s
+    auto rhsImag=
+      rhs.deFeat().imag();
+    
+    lhsReal=
+      rhsReal;
+    
+    lhsImag=
+      rhsImag;
   }
 }
 

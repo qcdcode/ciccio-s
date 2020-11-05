@@ -36,7 +36,7 @@ namespace ciccios
       assign(*this,u.deFeat(),(typename T::Comps*)nullptr);
       
       return
-	u.deFeat();
+	this->deFeat();
     }
     
     // Feature used to signal to close to tens
@@ -90,20 +90,24 @@ namespace ciccios
     }
   };
   
+  enum class FundCastByRefVal{BY_REF,BY_VAL};
+  
   /// Provide a function which casts to the fundamental type
   ///
   /// Forward declaration
   template <bool B,
 	    typename T,
-	    typename ExtFund>
+	    typename ExtFund,
+	    FundCastByRefVal>
   struct ToFundCastProvider;
   
   /// Provide a function which casts to the fundamental type
   ///
   /// Does not provide the access
   template <typename T,
-	    typename ExtFund>
-  struct ToFundCastProvider<false,T,ExtFund>
+	    typename ExtFund,
+	    FundCastByRefVal RV>
+  struct ToFundCastProvider<false,T,ExtFund,RV>
   {
   };
   
@@ -111,18 +115,19 @@ namespace ciccios
   ///
   /// Provides the actual access
   template <typename T,
-	    typename ExtFund>
-  struct ToFundCastProvider<true,T,ExtFund>
+	    typename ExtFund,
+	    FundCastByRefVal RV>
+  struct ToFundCastProvider<true,T,ExtFund,RV>
   {
     PROVIDE_DEFEAT_METHOD(T);
     
     /// Provide the cast to fundamental
-    INLINE_FUNCTION constexpr CUDA_HOST_DEVICE
-    operator ExtFund()
+    inline constexpr CUDA_HOST_DEVICE
+    operator ciccios::RefIf<RV==FundCastByRefVal::BY_REF,std::remove_reference_t<ExtFund>>()
       const
     {
       return
-    	this->deFeat().eval();
+	this->deFeat().eval();
     }
   };
   

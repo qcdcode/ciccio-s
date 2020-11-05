@@ -135,8 +135,16 @@ namespace ciccios
     		const F1& f1,
     		const F2& f2)
       {
+	/// Evaluate first factor
+	const auto e1=
+	  f1.eval();
+	
+	/// Evaluate second factor
+	const auto e2=
+	  f2.eval();
+	
     	out+=
-    	  f1*f2;
+    	  e1*e2;
       }
     };
     
@@ -157,7 +165,7 @@ namespace ciccios
 		const F2& f2)
       {
 	for(Head i{0};i<f2.template compSize<Head>();i++)
-	  _ProductContracter<TensComps<Tail...>>::eval(out,f1[i.transp()],f2[i]);
+	  _ProductContracter<TensComps<Tail...>>::_eval(out,f1[i.transp()],f2[i]);
       }
     };
   }
@@ -197,7 +205,7 @@ namespace ciccios
     using Comps=
       ExtComps;
     
-    /// Return evalutation of the product, valid only if no free component is present
+    /// Return evaluation of the product, valid only if no free component is present
     template <typename F=Fund>
     constexpr INLINE_FUNCTION CUDA_HOST_DEVICE
     F eval()
@@ -210,7 +218,7 @@ namespace ciccios
       using ContractedComps=
 	typename impl::ProductComps<F1,F2>::ContractedComps;
       
-      impl::_ProductContracter<ContractedComps>::eval(out,f1,f2);
+      impl::_ProductContracter<ContractedComps>::_eval(out,f1,f2);
       
       return
 	out;
@@ -237,22 +245,32 @@ namespace ciccios
     
     /// Returns the real part
     INLINE_FUNCTION constexpr CUDA_HOST_DEVICE
-    decltype(auto) real()
+    auto real()
       const
     {
-      return
+      auto out=
 	f1[RE]*f2[RE]-f1[IM]*f2[IM];
+      
+      //LOGGER<<"Computing real part for output type: "<<nameOfType((decltype(out)*)nullptr)<<" "<<out<<endl;
+      
+      return
+	out;
     }
     
     PROVIDE_ALSO_NON_CONST_METHOD_GPU(real);
     
     /// Returns the imaginary part
     INLINE_FUNCTION constexpr CUDA_HOST_DEVICE
-    decltype(auto) imag()
+    auto imag()
       const
     {
-      return
+      auto out=
 	f1[RE]*f2[IM]+f1[IM]*f2[RE];
+      
+      //LOGGER<<"Computing imag part for output type: "<<nameOfType((decltype(out)*)nullptr)<<" "<<out<<endl;
+      
+      return
+	out;
     }
     
     PROVIDE_ALSO_NON_CONST_METHOD_GPU(imag);

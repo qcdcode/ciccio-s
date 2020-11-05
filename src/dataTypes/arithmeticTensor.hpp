@@ -23,9 +23,11 @@ namespace ciccios
     
     /// Access to internal data
     INLINE_FUNCTION CUDA_HOST_DEVICE
-    const T& operator[](const int i) const
+    const T& operator[](const int i)
+      const
     {
-      return data[i];
+      return
+	data[i];
     }
     
     PROVIDE_ALSO_NON_CONST_METHOD_GPU(operator[]);
@@ -42,7 +44,8 @@ namespace ciccios
       for(int i=0;i<N;i++)
 	out[i]+=(*this)[i]*oth[i];
       
-      return out;
+      return
+	out;
     }
     
     /// Summassign another array
@@ -53,7 +56,8 @@ namespace ciccios
       for(int i=0;i<N;i++)
 	(*this)[i]+=oth[i];
       
-      return *this;
+      return
+	*this;
     }
     
     /// Subtassign another array

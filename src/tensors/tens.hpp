@@ -72,10 +72,9 @@ namespace ciccios
       /// Last component type
       using LastComp=
 	Comp<sizeof...(TC)-1>;
-    
+      
       return
-	LastComp::template canBeSimdified<Fund> and
-	LastComp::Base::sizeAtCompileTime==simdLength<_Fund>;
+	LastComp::template canBeSimdified<Fund>;
     }
     
     /// Determine whether this can be simdfified
@@ -88,17 +87,15 @@ namespace ciccios
 	false;
     }
     
-    template <typename _Fund=Fund,
-	      typename _Comps=Comps>
     static constexpr bool canBeSimdified=
-      _canBeSimdified<_Fund,_Comps>();
+      _canBeSimdified<Fund,Comps>();
     
     /// Provide constant/not constant simdify method when not simdifiable
 #define PROVIDE_SIMDIFY(CONST_ATTR)					\
     /*! Convert into simdified, CONST_ATTR case */			\
     template <typename _F=F,						\
 	      ENABLE_THIS_TEMPLATE_IF					\
-	      (not canBeSimdified<_F>)>					\
+	      (not _canBeSimdified<_F>())>				\
     decltype(auto) simdify()						\
       CONST_ATTR							\
     {									\
@@ -118,12 +115,12 @@ namespace ciccios
     /*! Convert into simdified, CONST_ATTR case */			\
     template <typename _F=F,						\
 	      ENABLE_THIS_TEMPLATE_IF					\
-	      (canBeSimdified<_F>)>					\
+	      (_canBeSimdified<_F>())>					\
     auto simdify()							\
       CONST_ATTR							\
     {									\
       return								\
-	  Tens<TupleAllButLast<TensComps<TC...>>,Simd<F>,SL,IsStackable> \
+	Tens<TupleAllButLast<TensComps<TC...>>,Simd<F>,SL,Stackable::CANNOT_GO_ON_STACK> \
 	((Simd<F>*)(this->getDataPtr()),this->data.getSize(),dynamicSizes); \
       }
     
@@ -137,7 +134,7 @@ namespace ciccios
     /*! Operator to return direct access to data */			\
     template <typename Cp=Comps,					\
 	      ENABLE_THIS_TEMPLATE_IF(std::tuple_size<Cp>::value==0)>	\
-    CUDA_HOST_DEVICE INLINE_FUNCTION					\
+    CUDA_HOST_DEVICE constexpr INLINE_FUNCTION				\
     decltype(auto) eval()						\
       CONST_ATTR							\
     {									\
