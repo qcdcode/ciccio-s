@@ -24,20 +24,27 @@ namespace ciccios
   /// Kinds of instruction set
   enum InstSet{NONE,MMX,AVX,AVX512};
   
-  namespace resources
+  /// Determine whether the simd type exists for the passed type
+  template <typename T>
+  [[ maybe_unused ]]
+  static constexpr bool simdOfTypeExists=
+    std::is_same<T,float>::value or
+    std::is_same<T,double>::value;
+  
+  namespace impl
   {
     /// SIMD type for a given instruction set and fundamental
     ///
     /// Forward definition
     template <InstSet IS,
 	      typename Fund>
-    struct Simd;
+    struct _Simd;
     
     /// Provides the proper datatype for the given fundamental and instruction set
 #define PROVIDE_SIMD(INST_SET,FUND,TYPE...)		\
     /*! SIMD FUND for instruction set INST_SET */	\
     template <>						\
-    struct Simd<INST_SET,FUND>				\
+    struct _Simd<INST_SET,FUND>				\
     {							\
       /*! Provide the type*/				\
       using Type=TYPE;					\
@@ -64,30 +71,23 @@ namespace ciccios
     /// Actual intrinsic to be used
     template <typename Fund>
     using ActualSimd=
-      typename resources::Simd<SIMD_INST_SET,Fund>::Type;
+      typename impl::_Simd<SIMD_INST_SET,Fund>::Type;
   }
   
   /// Length of a SIMD vector
   template <typename Fund>
   constexpr int simdLength=
-    sizeof(resources::ActualSimd<Fund>)/sizeof(Fund);
+    sizeof(impl::ActualSimd<Fund>)/sizeof(Fund);
   
   /// Simd datatype
   template <typename Fund>
   using Simd=
 #ifndef COMPILING_FOR_DEVICE
-    resources::ActualSimd<Fund>
+    impl::ActualSimd<Fund>
 #else
     ArithmeticArray<Fund,simdLength<Fund>>
 #endif
     ;
-  
-  /// Determine whether a type can be simdified
-  template <typename T>
-  [[ maybe_unused ]]
-  static constexpr bool simdOfTypeExists=
-    std::is_same<T,float>::value or
-    std::is_same<T,double>::value;
 }
 
 #endif
